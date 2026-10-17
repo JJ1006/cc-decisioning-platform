@@ -1,6 +1,7 @@
 # Local stack. Run via `make up PROFILE=core,analytics` (needs `make pki` first).
 #   core       kafka (mTLS), topic-init, elasticsearch (TLS), es-setup, odm, the event services, logstash, filebeat
-#   analytics  kibana, kafka-ui   (requires core)
+#   analytics  kibana, kafka-ui, decision-query-api   (requires core)
+#   edge       application-api   (requires core; status and manual decisions also need decision-query-api from analytics)
 # All images are multi-arch; ODM and the rest run natively on Apple Silicon.
 # Dev only: passwords come from ../../.env (see .env.example); keys live in security/pki/out.
 name: ${COMPOSE_PROJECT_NAME:-ccplatform}
@@ -358,6 +359,69 @@ services:
       test: ["CMD-SHELL", "wget -q -O- http://localhost:8080/actuator/health | grep -q UP"]
       interval: 15s
       timeout: 10s
+      retries: 10
+      start_period: 40s
+
+  decision-query-api:
+    build: { context: ../.., dockerfile: services/decision-query-api/Dockerfile }
+    image: ccplatform/decision-query-api:dev
+    labels:
+      co.elastic.logs/enabled: "true" # Filebeat ships this container's logs
+    logging: # Docker Desktop defaults to the "local" driver, which Filebeat cannot read
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
+    profiles: [analytics]
+    env_file: [.env.derived] # QUERY_API_PASSWORD: the read-only Elasticsearch user decision-query-api
+    mem_limit: 320m
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8085:8080"
+    depends_on:
+      elasticsearch: { condition: service_healthy }
+      es-setup: { condition: service_completed_successfully }
+    environment:
+      ES_URL: https://elasticsearch:9200
+      ES_CA: /pki/ca.crt
+    volumes:
+      - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health/readiness >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  # ----------------------------------------------------------- edge
+  application-api:
+    build: { context: ../.., dockerfile: services/application-api/Dockerfile }
+    image: ccplatform/application-api:dev
+    labels:
+      co.elastic.logs/enabled: "true" # Filebeat ships this container's logs
+    logging: # Docker Desktop defaults to the "local" driver, which Filebeat cannot read
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
+    profiles: [edge]
+    env_file: [.env.derived]
+    mem_limit: 320m
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8084:8080"
+    depends_on:
+      kafka: { condition: service_healthy }
+      topic-init: { condition: service_completed_successfully }
+      decision-query-api: { condition: service_healthy, required: false } # analytics profile
+    environment:
+      KAFKA_BOOTSTRAP: kafka:9093
+      KAFKA_KEYSTORE: /pki/keystore.p12
+      KAFKA_TRUSTSTORE: /pki/truststore.p12
+      QUERY_API_URL: http://decision-query-api:8080
+    volumes:
+      - ${PKI_DIR:-../../security/pki/out}/application-api/application-api.p12:/pki/keystore.p12:ro
+      - ${PKI_DIR:-../../security/pki/out}/truststore.p12:/pki/truststore.p12:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health/readiness >/dev/null"]
+      interval: 15s
+      timeout: 5s
       retries: 10
       start_period: 40s
 

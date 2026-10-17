@@ -1,0 +1,361 @@
+openapi: 3.0.1
+info:
+  title: Maple Northern Bank application API
+  description: "Submit credit card applications, read their status and record underwriter\
+    \ decisions on referrals. Fictitious bank, synthetic data. Errors are RFC 7807\
+    \ problem+json. The X-Role header is a placeholder until the gateway sets the\
+    \ role (P6)."
+  contact:
+    name: Platform team
+    email: platform@maplenorthern.example
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  version: 1.0.0
+servers:
+- url: http://localhost:8084
+  description: local compose stack
+tags:
+- name: Applications
+  description: "Submit applications, read their status, record underwriter decisions"
+paths:
+  /v1/applications:
+    post:
+      tags:
+      - Applications
+      summary: Submit a credit card application
+      description: "The body is an application (see the schema). applicationId is\
+        \ optional: the server assigns one. The event is validated against the contract\
+        \ and published to cc.applications.submitted.v1. Send an Idempotency-Key to\
+        \ make retries safe."
+      operationId: submitApplication
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        description: Makes the request idempotent for 24 hours (max 128 characters)
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Application"
+        required: true
+      responses:
+        "202":
+          description: Accepted; Location points at the status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Accepted"
+        default:
+          description: Problem
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /v1/applications/{applicationId}/manual-decision:
+    post:
+      tags:
+      - Applications
+      summary: Underwriter decision on a REFERRED application
+      description: "Role UNDERWRITER only, from the X-Role header (placeholder until\
+        \ the gateway sets it, P6). The application must be REFERRED. Publishes cc.decisions.manual.v1\
+        \ and an audit event in one transaction. A caller with another role is refused\
+        \ with 403 and the refusal is audited."
+      operationId: recordManualDecision
+      parameters:
+      - name: applicationId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: X-Role
+        in: header
+        description: Caller role; must be UNDERWRITER
+        required: false
+        schema:
+          type: string
+      - name: Idempotency-Key
+        in: header
+        description: Makes the request idempotent for 24 hours (max 128 characters)
+        required: false
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManualDecisionRequest"
+        required: true
+      responses:
+        "202":
+          description: Decision recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManualAccepted"
+        default:
+          description: Problem
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /v1/applications/{applicationId}/status:
+    get:
+      tags:
+      - Applications
+      summary: Status of an application
+      description: "SUBMITTED until a decision is indexed, then APPROVED, DECLINED\
+        \ or REFERRED; after an underwriter decides it shows that decision (decisionSource\
+        \ MANUAL). Read from decision-query-api."
+      operationId: getApplicationStatus
+      parameters:
+      - name: applicationId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Status"
+        default:
+          description: Problem
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+components:
+  schemas:
+    Address:
+      type: object
+      properties:
+        line1:
+          type: string
+        city:
+          type: string
+        province:
+          type: string
+          enum:
+          - AB
+          - BC
+          - MB
+          - NB
+          - NL
+          - NS
+          - NT
+          - NU
+          - "ON"
+          - PE
+          - QC
+          - SK
+          - YT
+        postalCode:
+          type: string
+    Applicant:
+      type: object
+      properties:
+        applicantId:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        ageYears:
+          type: integer
+          format: int32
+        sin:
+          type: string
+        residencyStatus:
+          type: string
+          enum:
+          - CITIZEN
+          - PERMANENT_RESIDENT
+          - WORK_PERMIT_VALID
+          - WORK_PERMIT_EXPIRED
+          - NON_RESIDENT
+    Application:
+      type: object
+      properties:
+        applicationId:
+          type: string
+        requestedProduct:
+          type: string
+          enum:
+          - NO_FEE
+          - CASHBACK
+          - TRAVEL_INFINITE
+        requestedLimit:
+          type: number
+        monthlyHousingCost:
+          type: number
+        channel:
+          type: string
+          enum:
+          - WEB
+          - MOBILE
+          - BRANCH
+          - PARTNER
+        applicant:
+          $ref: "#/components/schemas/Applicant"
+        address:
+          $ref: "#/components/schemas/Address"
+        employment:
+          $ref: "#/components/schemas/Employment"
+        bureau:
+          $ref: "#/components/schemas/CreditBureauReport"
+    CreditBureauReport:
+      type: object
+      properties:
+        score:
+          type: integer
+          format: int32
+        monthlyDebtPayments:
+          type: number
+        existingCreditLimit:
+          type: number
+        delinquencies:
+          type: integer
+          format: int32
+        inquiriesLast6Months:
+          type: integer
+          format: int32
+        activeBankruptcy:
+          type: boolean
+        fileAgeMonths:
+          type: integer
+          format: int32
+    Employment:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - EMPLOYED
+          - SELF_EMPLOYED
+          - RETIRED
+          - STUDENT
+          - UNEMPLOYED
+        employer:
+          type: string
+        annualIncome:
+          type: number
+        monthsAtEmployer:
+          type: integer
+          format: int32
+    Accepted:
+      type: object
+      properties:
+        applicationId:
+          type: string
+        status:
+          type: string
+        correlationId:
+          type: string
+      description: "An accepted application: the decision follows asynchronously"
+    ManualDecisionRequest:
+      required:
+      - creditLimit
+      - outcome
+      - reason
+      - underwriterId
+      type: object
+      properties:
+        outcome:
+          type: string
+          description: APPROVE or DECLINE; REFER is refused
+          enum:
+          - APPROVE
+          - DECLINE
+          - REFER
+        creditLimit:
+          type: number
+          description: "CAD; positive for APPROVE, 0 for DECLINE"
+        product:
+          type: string
+          description: "Required for APPROVE, absent for DECLINE"
+          enum:
+          - NO_FEE
+          - CASHBACK
+          - TRAVEL_INFINITE
+        reason:
+          maxLength: 500
+          minLength: 0
+          type: string
+        underwriterId:
+          maxLength: 64
+          minLength: 0
+          type: string
+      description: An underwriter's decision on a REFERRED application
+    ManualAccepted:
+      type: object
+      properties:
+        applicationId:
+          type: string
+        decisionId:
+          type: string
+        status:
+          type: string
+        decisionSource:
+          type: string
+      description: The recorded manual decision
+    Status:
+      type: object
+      properties:
+        applicationId:
+          type: string
+        status:
+          type: string
+          enum:
+          - SUBMITTED
+          - APPROVED
+          - DECLINED
+          - REFERRED
+        decisionSource:
+          type: string
+          enum:
+          - ODM
+          - MANUAL
+        creditLimit:
+          type: number
+        product:
+          type: string
+        decidedAt:
+          type: string
+      description: Where the application stands
+    Problem:
+      type: object
+      properties:
+        type:
+          type: string
+          example: about:blank
+        title:
+          type: string
+          example: Invalid parameter
+        status:
+          type: integer
+          format: int32
+          example: 400
+        detail:
+          type: string
+          example: size must be 1 to 100
+        instance:
+          type: string
+          example: /v1/decisions
+        correlationId:
+          type: string
+          description: Quote it when reporting a problem
+        errors:
+          type: array
+          description: "Validation messages, when there are several"
+          items:
+            type: string
+      description: RFC 7807 problem details
