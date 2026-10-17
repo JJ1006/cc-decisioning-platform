@@ -1,5 +1,5 @@
 # Local stack. Run via `make up PROFILE=core,analytics` (needs `make pki` first).
-#   core       kafka (mTLS), topic-init, elasticsearch (TLS), es-setup, odm
+#   core       kafka (mTLS), topic-init, elasticsearch (TLS), es-setup, odm, the event services, logstash, filebeat
 #   analytics  kibana, kafka-ui   (requires core)
 # All images are multi-arch; ODM and the rest run natively on Apple Silicon.
 # Dev only: passwords come from ../../.env (see .env.example); keys live in security/pki/out.
@@ -116,7 +116,7 @@ services:
     restart: "no"
     depends_on:
       elasticsearch: { condition: service_healthy }
-    # kibana_system password, least-privilege es-indexer user, index templates, write aliases
+    # kibana_system password, least-privilege logstash_writer user, index templates, write aliases
     entrypoint: ["/bin/bash", "/scripts/es-setup.sh"]
     volumes:
       - ../../scripts/es-setup.sh:/scripts/es-setup.sh:ro
@@ -152,6 +152,11 @@ services:
   txn-generator:
     build: { context: ../.., dockerfile: services/txn-generator/Dockerfile }
     image: ccplatform/txn-generator:dev
+    labels:
+      co.elastic.logs/enabled: "true" # Filebeat ships this container's logs
+    logging: # Docker Desktop defaults to the "local" driver, which Filebeat cannot read
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
     profiles: [core]
     env_file: [.env.derived]
     mem_limit: 256m
@@ -178,6 +183,11 @@ services:
   decision-orchestrator:
     build: { context: ../.., dockerfile: services/decision-orchestrator/Dockerfile }
     image: ccplatform/decision-orchestrator:dev
+    labels:
+      co.elastic.logs/enabled: "true" # Filebeat ships this container's logs
+    logging: # Docker Desktop defaults to the "local" driver, which Filebeat cannot read
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
     profiles: [core]
     env_file: [.env.derived]
     mem_limit: 320m
@@ -207,6 +217,11 @@ services:
   notification-svc:
     build: { context: ../.., dockerfile: services/notification-svc/Dockerfile }
     image: ccplatform/notification-svc:dev
+    labels:
+      co.elastic.logs/enabled: "true" # Filebeat ships this container's logs
+    logging: # Docker Desktop defaults to the "local" driver, which Filebeat cannot read
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
     profiles: [core]
     env_file: [.env.derived]
     mem_limit: 256m
@@ -230,34 +245,58 @@ services:
       retries: 10
       start_period: 40s
 
-  es-indexer:
-    build: { context: ../.., dockerfile: services/es-indexer/Dockerfile }
-    image: ccplatform/es-indexer:dev
+  logstash:
+    # Kafka -> Elasticsearch ingestion with PII masking (replaces the custom es-indexer, ADR-0009), DLQ topics,
+    # Filebeat logs. Pinned to the Elasticsearch version. Elastic licence (free basic tier).
+    image: docker.elastic.co/logstash/logstash:8.19.23
     profiles: [core]
     env_file: [.env.derived]
-    mem_limit: 320m
+    mem_limit: 768m
+    hostname: logstash
     restart: unless-stopped
     ports:
-      - "127.0.0.1:8084:8080"
+      - "127.0.0.1:9600:9600" # monitoring API (Prometheus scrapes it in P8)
     depends_on:
       kafka: { condition: service_healthy }
       topic-init: { condition: service_completed_successfully }
       es-setup: { condition: service_completed_successfully }
     environment:
-      KAFKA_BOOTSTRAP: kafka:9093
-      KAFKA_KEYSTORE: /pki/keystore.p12
-      KAFKA_TRUSTSTORE: /pki/truststore.p12
-      ES_URL: https://elasticsearch:9200
-      ES_TRUSTSTORE: /pki/truststore.p12
+      LS_JAVA_OPTS: -Xms384m -Xmx384m
     volumes:
-      - ${PKI_DIR:-../../security/pki/out}/es-indexer/es-indexer.p12:/pki/keystore.p12:ro
+      - ../logstash/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ../logstash/pipelines.yml:/usr/share/logstash/config/pipelines.yml:ro
+      - ../logstash/pipelines:/usr/share/logstash/pipeline:ro
+      - ../logstash/ruby:/usr/share/logstash/ruby:ro
+      - logstash-data:/usr/share/logstash/data # persistent queues and the dead letter queue
+      - ${PKI_DIR:-../../security/pki/out}/logstash/logstash.p12:/pki/keystore.p12:ro
       - ${PKI_DIR:-../../security/pki/out}/truststore.p12:/pki/truststore.p12:ro
+      - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/logstash/logstash.crt:/pki/logstash.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/logstash/logstash.pk8.key:/pki/logstash.pk8.key:ro
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health/readiness >/dev/null"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:9600/ >/dev/null"]
       interval: 15s
       timeout: 5s
-      retries: 10
-      start_period: 40s
+      retries: 20
+      start_period: 60s
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.19.23
+    profiles: [core]
+    mem_limit: 128m
+    restart: unless-stopped
+    # root: needs the Docker socket and the container log files (the one image here that is not non-root)
+    user: root
+    command: ["filebeat", "-e", "--strict.perms=false"]
+    depends_on:
+      logstash: { condition: service_healthy }
+    volumes:
+      - ../filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/filebeat/filebeat.crt:/pki/filebeat.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/filebeat/filebeat.key:/pki/filebeat.key:ro
 
   # ----------------------------------------------------------- analytics
   kibana:
@@ -325,3 +364,4 @@ services:
 volumes:
   kafka-data:
   es-data:
+  logstash-data:
