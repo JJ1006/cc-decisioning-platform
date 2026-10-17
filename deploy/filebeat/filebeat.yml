@@ -1,9 +1,17 @@
 # Container logs of our services only: opt in with the label co.elastic.logs/enabled=true in docker-compose.yml.
+# Label keys arrive as nested fields (co -> elastic -> logs/enabled). The opted-in services use the json-file
+# log driver (Docker Desktop's default "local" driver is not readable by Filebeat).
 filebeat.autodiscover:
   providers:
     - type: docker
-      hints.enabled: true
-      hints.default_config.enabled: false
+      templates:
+        - condition:
+            equals:
+              docker.container.labels.co.elastic.logs/enabled: "true"
+          config:
+            - type: container
+              paths:
+                - /var/lib/docker/containers/${data.docker.container.id}/*.log
 
 processors:
   - add_docker_metadata: ~
@@ -14,6 +22,6 @@ output.logstash:
   ssl.certificate: "/pki/filebeat.crt"
   ssl.key: "/pki/filebeat.key"
 
-logging.level: warning
+logging.level: info
 logging.to_stderr: true
 http.enabled: false

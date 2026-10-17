@@ -84,7 +84,11 @@ es_dec=$(es_count cc-decisions)
 es_aud=$(es_count cc-audit)
 es_not=$(es_count cc-notifications)
 es_dlq=$(es_count cc-dlq)
-es_log=$(es_count cc-logs)
+for _ in $(seq 1 30); do # Filebeat scans for new log lines every 10 s
+  es_log=$(es_count cc-logs)
+  [[ "$es_log" -gt 0 ]] && break
+  sleep 2
+done
 printf '%-42s %s\n' cc-decisions "$es_dec" cc-audit "$es_aud" cc-notifications "$es_not" cc-dlq "$es_dlq" cc-logs "$es_log"
 
 # 5. masking, checked with queries
