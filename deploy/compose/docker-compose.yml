@@ -10,6 +10,7 @@ services:
   kafka:
     image: apache/kafka:3.9.2
     profiles: [core]
+    env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
     mem_limit: 768m
     hostname: kafka
     ports:
@@ -27,11 +28,8 @@ services:
       KAFKA_SSL_CLIENT_AUTH: required
       KAFKA_SSL_KEYSTORE_TYPE: PKCS12
       KAFKA_SSL_KEYSTORE_LOCATION: /pki/kafka.p12
-      KAFKA_SSL_KEYSTORE_PASSWORD: ${PKI_PASSWORD:-changeit}
-      KAFKA_SSL_KEY_PASSWORD: ${PKI_PASSWORD:-changeit}
       KAFKA_SSL_TRUSTSTORE_TYPE: PKCS12
       KAFKA_SSL_TRUSTSTORE_LOCATION: /pki/truststore.p12
-      KAFKA_SSL_TRUSTSTORE_PASSWORD: ${PKI_PASSWORD:-changeit}
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -74,6 +72,7 @@ services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.19.23
     profiles: [core]
+    env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
     mem_limit: 1g
     hostname: elasticsearch
     ports:
@@ -82,7 +81,6 @@ services:
     environment:
       discovery.type: single-node
       ES_JAVA_OPTS: -Xms512m -Xmx512m
-      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?set ELASTIC_PASSWORD in .env}
       xpack.security.enabled: "true"
       xpack.ml.enabled: "false"
       cluster.routing.allocation.disk.threshold_enabled: "false"
@@ -113,13 +111,12 @@ services:
   es-setup:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.19.23
     profiles: [core]
+    env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
     mem_limit: 64m
     restart: "no"
     depends_on:
       elasticsearch: { condition: service_healthy }
     environment:
-      ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:?set ELASTIC_PASSWORD in .env}
-      KIBANA_PASSWORD: ${KIBANA_PASSWORD:?set KIBANA_PASSWORD in .env}
     entrypoint:
       - /bin/bash
       - -c
@@ -136,6 +133,7 @@ services:
     # source, dev/eval only: you accept the IBM licence by running it. Pulled, never redistributed.
     image: icr.io/cpopen/odm-k8s/odm:9.5.0.1-IF019_25.1.0
     profiles: [core]
+    env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
     mem_limit: ${ODM_MEM:-2560m}
     hostname: odm
     ports:
@@ -145,8 +143,6 @@ services:
       LICENSE: accept
       # Liberty HTTPS uses our CA-signed cert. Client-cert enforcement is switched on later
       # (ENABLE_MTLS=true) once the orchestrator and MCP server present certificates.
-      KEYSTORE_PASSWORD: ${PKI_PASSWORD:-changeit}
-      TRUSTSTORE_PASSWORD: ${PKI_PASSWORD:-changeit}
     volumes:
       - ${PKI_DIR:-../../security/pki/out}/odm/odm.jks:/config/security/volume/keystore.jks:ro
       - ${PKI_DIR:-../../security/pki/out}/truststore.jks:/config/security/volume/truststore.jks:ro
@@ -161,6 +157,7 @@ services:
   kibana:
     image: docker.elastic.co/kibana/kibana:8.19.23
     profiles: [analytics]
+    env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
     mem_limit: 900m
     hostname: kibana
     ports:
@@ -172,7 +169,6 @@ services:
       NODE_OPTIONS: --max-old-space-size=512
       ELASTICSEARCH_HOSTS: https://elasticsearch:9200
       ELASTICSEARCH_USERNAME: kibana_system
-      ELASTICSEARCH_PASSWORD: ${KIBANA_PASSWORD:?set KIBANA_PASSWORD in .env}
       ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES: /pki/ca.crt
       SERVER_SSL_ENABLED: "true"
       SERVER_SSL_CERTIFICATE: /pki/kibana.crt
@@ -193,6 +189,7 @@ services:
   kafka-ui:
     image: kafbat/kafka-ui:v1.5.0
     profiles: [analytics]
+    env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
     mem_limit: 512m
     ports:
       - "127.0.0.1:8080:8080"
