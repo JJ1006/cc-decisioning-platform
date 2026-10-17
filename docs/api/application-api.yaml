@@ -57,21 +57,17 @@ paths:
       - Applications
   /v1/applications/{applicationId}/manual-decision:
     post:
-      description: "Role UNDERWRITER only, from the X-Role header (placeholder until\
-        \ the gateway sets it, P6). The application must be REFERRED. Publishes cc.decisions.manual.v1\
-        \ and an audit event in one transaction. A caller with another role is refused\
-        \ with 403 and the refusal is audited."
+      description: "Role UNDERWRITER only. The role comes from the client certificate:\
+        \ the gateway maps the certificate CN to a consumer and role and forwards\
+        \ them over mutual TLS; this service trusts them only from the gateway's certificate.\
+        \ The application must be REFERRED. Publishes cc.decisions.manual.v1 and an\
+        \ audit event in one transaction. A caller with another role is refused with\
+        \ 403 and the refusal is audited."
       operationId: recordManualDecision
       parameters:
       - in: path
         name: applicationId
         required: true
-        schema:
-          type: string
-      - description: Caller role; must be UNDERWRITER
-        in: header
-        name: X-Role
-        required: false
         schema:
           type: string
       - description: Makes the request idempotent for 24 hours (max 128 characters)

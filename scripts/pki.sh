@@ -29,8 +29,9 @@ COMPONENTS=(
   logstash filebeat
   kafka-ui
 )
-# Pure clients: client authentication only.
-CLIENTS=(admin demo-partner underwriter-portal mcp)
+# Pure clients: client authentication only. The CN is the consumer name at the gateway (gateway/apisix/README.md); load-test is
+# used by verify-mtls for the rate-limit checks so the real consumers keep their quota.
+CLIENTS=(admin demo-partner underwriter-portal analyst ops-admin load-test mcp)
 
 KEYTOOL=${KEYTOOL:-$(command -v keytool || true)}
 [[ -z "$KEYTOOL" && -x /opt/homebrew/opt/openjdk@21/bin/keytool ]] && KEYTOOL=/opt/homebrew/opt/openjdk@21/bin/keytool

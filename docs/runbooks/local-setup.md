@@ -29,7 +29,7 @@ Do not run everything at once on an 8 GB Mac (see the README profile table).
 
 | What | URL (host) | Login |
 |---|---|---|
-| ODM Decision Center | <https://localhost:9443/decisioncenter> | `odmAdmin` / `odmAdmin` |
+| ODM Decision Center (client certificate required: import `security/pki/out/admin/admin.p12`, see [security-mtls](../security-mtls.md)) | <https://localhost:9443/decisioncenter> | `odmAdmin` / `odmAdmin` |
 | ODM Rule Execution Server console | <https://localhost:9443/res> | `resAdmin` / `resAdmin` |
 | ODM Decision Runner | <https://localhost:9443/DecisionRunner> | `odmAdmin` / `odmAdmin` |
 | Kibana | <https://localhost:5601> | `elastic` / `ELASTIC_PASSWORD` from `.env` |

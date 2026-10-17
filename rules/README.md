@@ -19,7 +19,7 @@ docs/runbooks/dc-api.md     the DC and RES endpoints we use, from the live OpenA
 
 ```bash
 make pki                      # once
-make up PROFILE=core          # ODM at https://localhost:9443 (container port 9453); wait until healthy
+make up PROFILE=core          # ODM at https://localhost:9443 (container port 9453, client certificate required); wait until healthy
 make deploy-rules             # generate, import to DC, build (fails on errors), deploy to RES, save the jar
 make test-rules               # spec check + 30 scenarios against /DecisionService/rest/ccApprovalApp/1.0/ccApproval/1.0
 make lint-rules               # prohibited-grounds lint + spec check, no ODM needed

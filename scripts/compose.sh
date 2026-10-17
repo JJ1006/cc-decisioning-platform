@@ -37,6 +37,7 @@ KIBANA_PASSWORD=$KIBANA_PASSWORD
 ELASTICSEARCH_PASSWORD=$KIBANA_PASSWORD
 KAFKA_STORE_PASSWORD=$PKI_PASSWORD
 RES_TRUSTSTORE_PASSWORD=$PKI_PASSWORD
+RES_KEYSTORE_PASSWORD=$PKI_PASSWORD
 ES_TRUSTSTORE_PASSWORD=$PKI_PASSWORD
 LOGSTASH_WRITER_PASSWORD=$LOGSTASH_WRITER_PASSWORD
 QUERY_API_PASSWORD=$QUERY_API_PASSWORD
@@ -46,5 +47,8 @@ EOV
 profiles=()
 IFS=, read -ra wanted <<<"${PROFILE:-core}"
 for p in "${wanted[@]}"; do profiles+=(--profile "$p"); done
-exec docker compose -f "$ROOT/deploy/compose/docker-compose.yml" --env-file "$ROOT/.env" \
+files=(-f "$ROOT/deploy/compose/docker-compose.yml")
+# COMPOSE_DEBUG=1 publishes the service ports on 127.0.0.1 (deploy/compose/compose.debug.yml); off by default
+[[ -n "${COMPOSE_DEBUG:-}" ]] && files+=(-f "$ROOT/deploy/compose/compose.debug.yml")
+exec docker compose "${files[@]}" --env-file "$ROOT/.env" \
   "${profiles[@]}" "$@"

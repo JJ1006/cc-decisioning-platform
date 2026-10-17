@@ -25,6 +25,7 @@ The repo is empty (`ODM_kafka_OCP/`). The machine is an M2 with **8 GB RAM**. do
 | Log shipping | **Filebeat 8.x** (Docker autodiscover, labelled services only) to Logstash over TLS, into `cc-logs-*` with ILM 7d, read in Kibana | Elastic licence, free |
 | Monitoring (Dynatrace substitute) | **OpenTelemetry** in every service, plus the **Grafana** stack for metrics and traces only: Prometheus (metrics), Tempo (traces, service map), Grafana (dashboards), Alertmanager. **Logs are not in Grafana**: they live in Elasticsearch and are read in Kibana | Free and open source; the closest match to Dynatrace's full-stack view. Compose uses the single `grafana/otel-lgtm` container (its bundled Loki is not used). k8s uses `kube-prometheus-stack` and the Tempo Helm chart. Exporters cover Kafka (kafka-exporter), JVM/Actuator (Micrometer), APISIX, ES, Logstash (monitoring API :9600) and ODM JMX. |
 | Services | Java 21, Spring Boot 3, Maven multi-module | — |
+| API gateway | **Apache APISIX 3.13**, standalone (declarative `gateway/apisix/apisix.yaml.tmpl`, no etcd): mutual TLS with a required client certificate, certificate CN as consumer, roles per route, quota and spike arrest, correlation id, security headers, Prometheus and OpenTelemetry ([ADR-0011](adr/0011-gateway-identity.md), [Apigee mapping](apigee-mapping.md)) | Apache-2.0 |
 | APIs | `application-api` (Kafka only) and `decision-query-api` (the only Elasticsearch reader, read-only user): Spring MVC, springdoc OpenAPI exported to `docs/api/*.yaml`, Spectral lint, RFC 7807 errors ([ADR-0010](adr/0010-api-tier.md)) | Apache-2.0 |
 | Packaging / delivery | **Helm** umbrella chart plus **ArgoCD** app-of-apps (OpenShift GitOps on OCP) | Apache-2.0 |
 | MCP | (1) the official `DecisionsDev/ibm-odm-decision-mcp-server` (Apache-2.0, RES; supports mTLS). (2) Our own **`odm-dc-mcp-server`** (Python FastMCP), which wraps the Decision Center REST API plus our query API | No official Decision Center MCP exists |
@@ -226,7 +227,7 @@ Do:
 5. Makefile w/ help + stub targets: up down logs verify test pki demo kind-up ocp-render eval-rules eval-agent what-if. `make up PROFILE=core,analytics` style.
 6. .pre-commit-config.yaml: gitleaks, ruff, yamllint, markdownlint, commitlint (conventional). Add commitlint config.
 7. .github/: PULL_REQUEST_TEMPLATE (what/why/test/risk/checklist), ISSUE_TEMPLATE bug/feature/rule-change, CODEOWNERS `* @<GH_USER>`, dependabot (maven, pip, docker, github-actions weekly), workflows: ci.yml (mvn verify, skip if no modules), security.yml (gitleaks, trivy fs, codeql java+python), release.yml (release-please). Pin action versions by SHA or major.
-8. docs/adr/ MADR format: 0001-odm-dev-licence 0002-kafka-kraft-strimzi 0003-custom-es-indexer (superseded by 0009) 0004-apisix-instead-of-apigee 0005-lgtm-instead-of-dynatrace 0006-mcp-strategy 0007-llm-never-decides 0008-mtls-everywhere 0009-elk-ingestion 0010-api-tier.
+8. docs/adr/ MADR format: 0001-odm-dev-licence 0002-kafka-kraft-strimzi 0003-custom-es-indexer (superseded by 0009) 0004-apisix-instead-of-apigee 0005-lgtm-instead-of-dynatrace 0006-mcp-strategy 0007-llm-never-decides 0008-mtls-everywhere 0009-elk-ingestion 0010-api-tier 0011-gateway-identity.
 9. .claude/: CLAUDE.md, settings.json, hooks/:
    - pre_tool_guard.sh (PreToolUse Bash|Read|Edit|Write): block *.key *.p12 *.pem-private .env* security/pki/out/**, git push --force, rm -rf /, kubectl delete ns, git commit on main after P0. exit 2 + reason.
    - post_edit_fmt.sh (PostToolUse Edit|Write): java->spotless apply file module, py->ruff format, yaml->yamllint, contracts/*.json->schema validate.
@@ -338,6 +339,14 @@ Phase 6. Branch feat/p6-gateway-mtls. Read CLAUDE.md + PLAN guardrails.
 3. docs/apigee-mapping.md: Apigee proxy/target/product/developer app/quota/spike arrest/verify API key/OAuth -> APISIX equivalent table. docs/security-mtls.md: cert chain diagram, rotation, every hop.
 4. Compose profile edge.
 Verify: curl w/ demo-partner cert -> 202/200; no cert -> TLS fail; wrong CA -> fail; over rate -> 429. Show. PR flow.
+
+Delivered in PR feat/p6-gateway-mtls (deltas to the runbook above, see ADR-0011, docs/security-mtls.md, gateway/apisix/README.md): consumers are
+the client certificate CNs demo-partner (PARTNER), underwriter-portal (UNDERWRITER), analyst (ANALYST), ops-admin (OPS) and load-test (ANALYST, for
+the rate-limit checks); the role is mapped and checked in a global serverless function (OSS APISIX has no certificate-to-consumer plugin) against
+`labels.roles` of each route; services accept only CN=apisix (decision-query-api also application-api) and believe X-Role and X-Consumer only from
+that certificate; the services publish no host ports (`COMPOSE_DEBUG=1` override); ODM Liberty requires client certificates (`deploy/odm/mtls.xml`);
+Elasticsearch PKI realm is not in the basic licence, so TLS plus least-privilege users stay; `make verify-mtls` grew from 17 to 33 checks;
+`make api-call`, `make cert-expiry`.
 ```
 
 ### P7 — Kibana

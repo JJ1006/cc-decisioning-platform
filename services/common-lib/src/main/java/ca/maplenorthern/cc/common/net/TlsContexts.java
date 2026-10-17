@@ -4,6 +4,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
+import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
 
@@ -39,6 +40,39 @@ public final class TlsContexts {
       return ctx;
     } catch (Exception e) {
       throw new IllegalStateException("cannot load truststore " + truststorePath, e);
+    }
+  }
+
+  /**
+   * @return a context that presents the client certificate in {@code keystorePath} (PKCS12) and
+   *     trusts only the CA in {@code truststorePath}
+   */
+  public static SSLContext mutual(
+      String keystorePath,
+      String keystorePassword,
+      String truststorePath,
+      String truststorePassword) {
+    try {
+      KeyStore keys = KeyStore.getInstance("PKCS12");
+      try (InputStream in = Files.newInputStream(Path.of(keystorePath))) {
+        keys.load(in, keystorePassword.toCharArray());
+      }
+      KeyManagerFactory kmf =
+          KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
+      kmf.init(keys, keystorePassword.toCharArray());
+      KeyStore trust = KeyStore.getInstance("PKCS12");
+      try (InputStream in = Files.newInputStream(Path.of(truststorePath))) {
+        trust.load(in, truststorePassword.toCharArray());
+      }
+      TrustManagerFactory tmf =
+          TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+      tmf.init(trust);
+      SSLContext ctx = SSLContext.getInstance("TLS");
+      ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+      return ctx;
+    } catch (Exception e) {
+      throw new IllegalStateException(
+          "cannot build the mutual TLS context from " + keystorePath, e);
     }
   }
 }

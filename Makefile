@@ -4,7 +4,7 @@ JAVA_HOME := $(shell [ -d /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Conte
 export JAVA_HOME
 
 .DEFAULT_GOAL := help
-.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules test-logstash lint-api api-docs test-api-docs demo kind-up ocp-render eval-rules eval-agent what-if
+.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules test-logstash lint-api api-docs test-api-docs api-call cert-expiry demo kind-up ocp-render eval-rules eval-agent what-if
 
 help: ## Show targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -14,6 +14,7 @@ bootstrap: ## Preflight: tools, Docker memory, Rosetta
 
 up: ## Start compose profiles: make up PROFILE=core,analytics (run make pki first)
 	@scripts/bootstrap.sh || echo "bootstrap reported problems (continuing)"
+	@PROFILE=$(PROFILE) scripts/compose.sh build -q # first, so the Maven builds do not compete with the starting containers
 	@PROFILE=$(PROFILE) scripts/compose.sh up -d --remove-orphans
 	@PROFILE=$(PROFILE) scripts/wait-healthy.sh
 	@scripts/check-es-mapping.sh
@@ -38,6 +39,9 @@ test: ## Unit tests
 
 pki: ## Generate private CA and certs (idempotent; make pki FORCE=1 regenerates)
 	@JAVA_HOME=$(JAVA_HOME) scripts/pki.sh $(if $(FORCE),--force,)
+
+cert-expiry: ## Days left on every certificate of the demo PKI (warns below 14)
+	@scripts/cert-expiry.sh
 
 verify-mtls: ## Check TLS/mTLS endpoints and rejection of clients without certs
 	@PROFILE=$(PROFILE) scripts/verify-mtls.sh
@@ -64,6 +68,9 @@ lint-api: ## Spectral lint of docs/api/*.yaml (needs node; skipped without npx)
 api-docs: ## Regenerate docs/api/*.yaml from the code (springdoc); mvn verify and CI fail when they drift
 	@mvn -B -ntp -q -pl services/application-api,services/decision-query-api -am test -Dopenapi.write=true -Dsurefire.failIfNoSpecifiedTests=false -Dtest=OpenApiContractTest
 	@git diff --stat -- docs/api || true
+
+api-call: ## curl through the gateway with a client certificate: make api-call CLIENT=analyst P=/v1/stats/latency [ARGS='-X POST ...']
+	@scripts/api-call.sh $(CLIENT) $(ARGS) $(P)
 
 test-api-docs: ## Run every curl example of docs/api/README.md against the running stack (make up PROFILE=core,analytics,edge)
 	@scripts/run-api-docs.sh

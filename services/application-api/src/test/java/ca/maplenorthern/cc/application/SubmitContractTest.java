@@ -153,7 +153,10 @@ class SubmitContractTest {
     mvc.perform(
             post("/v1/applications/REF-C1/manual-decision")
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("X-Role", "UNDERWRITER")
+                .requestAttr(
+                    ca.maplenorthern.cc.common.web.Caller.ATTR,
+                    new ca.maplenorthern.cc.common.web.Caller(
+                        "apisix", "underwriter-portal", "UNDERWRITER"))
                 .header("X-Correlation-Id", "contract-2")
                 .content(
                     "{\"outcome\":\"APPROVE\",\"creditLimit\":3000,\"product\":\"NO_FEE\",\"reason\":\"Verified income by phone\",\"underwriterId\":\"UW-77\"}"))

@@ -1,0 +1,21 @@
+# Debug override: publishes the service ports on 127.0.0.1 so you can reach a service directly. Off by default: in the normal
+# stack the gateway (https://localhost:8443, client certificate required) is the only way in to the APIs.
+#   COMPOSE_DEBUG=1 make up PROFILE=core,analytics,edge
+# The service ports still speak mutual TLS and only accept the client certificate with CN=apisix (and CN=application-api on
+# decision-query-api). To call one directly, present the gateway's certificate and set the identity headers yourself:
+#   curl --cacert security/pki/out/ca/ca.crt --cert security/pki/out/apisix/apisix.crt --key security/pki/out/apisix/apisix.key \
+#     -H 'X-Consumer: debug' -H 'X-Role: ANALYST' https://localhost:8085/v1/stats/latency
+# (The Spring management port 9090 stays unpublished; use `docker compose exec` for it.) See docs/security-mtls.md.
+services:
+  application-api:
+    ports: ["127.0.0.1:8084:8080"]
+  decision-query-api:
+    ports: ["127.0.0.1:8085:8080"]
+  txn-generator:
+    ports: ["127.0.0.1:8081:8080"]
+  decision-orchestrator:
+    ports: ["127.0.0.1:8082:8080"]
+  notification-svc:
+    ports: ["127.0.0.1:8083:8080"]
+  odm:
+    ports: ["127.0.0.1:9060:9060"] # plain http dev console, bypasses mutual TLS

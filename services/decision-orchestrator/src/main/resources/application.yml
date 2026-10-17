@@ -36,6 +36,8 @@ res:
   username: ${RES_USERNAME:}
   password: ${RES_PASSWORD:}
   truststore: ${RES_TRUSTSTORE:}
+  keystore: ${RES_KEYSTORE:} # client certificate for mutual TLS to ODM
+  keystore-password: ${RES_KEYSTORE_PASSWORD:}
   truststore-password: ${RES_TRUSTSTORE_PASSWORD:}
 logging:
   config: classpath:logback-spring.xml

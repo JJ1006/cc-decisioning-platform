@@ -50,7 +50,8 @@ make test-api-docs                    # runs every curl example of docs/api/READ
 make verify                           # build, tests, contracts, Logstash pipeline tests, OpenAPI lint
 ```
 
-`make help` lists every target. `make up` hints `run make down V=1` when it finds Elasticsearch indices with an older mapping.
+`make help` lists every target. The APIs are reached only through the gateway, `https://localhost:8443`, with a client certificate
+(`make api-call CLIENT=analyst P=/v1/stats/latency`, [docs/api](docs/api/README.md), [docs/security-mtls.md](docs/security-mtls.md)); `make verify-mtls` checks it from the outside. `make up` hints `run make down V=1` when it finds Elasticsearch indices with an older mapping.
 Stop with `make down` (`make down V=1` also deletes the volumes).
 
 ## Compose profiles (8 GB Mac — never run everything at once)
@@ -59,7 +60,7 @@ Stop with `make down` (`make down V=1` also deletes the volumes).
 |---|---|---|
 | `core` | Kafka, ODM, orchestrator, generator, notifier, ES, Logstash, Filebeat | 5.5 GB |
 | `analytics` | + Kibana, query-api | +1.0 GB |
-| `edge` | + APISIX, application-api | +0.5 GB |
+| `edge` | + APISIX (mutual TLS gateway on :8443), application-api | +0.6 GB |
 | `obs` | + otel-lgtm | +1.0 GB |
 | `mcp` | 2 MCP servers | +0.2 GB |
 
