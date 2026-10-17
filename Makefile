@@ -14,7 +14,7 @@ bootstrap: ## Preflight: tools, Docker memory, Rosetta
 
 up: ## Start compose profiles: make up PROFILE=core,analytics (run make pki first)
 	@scripts/bootstrap.sh || echo "bootstrap reported problems (continuing)"
-	@PROFILE=$(PROFILE) scripts/compose.sh up -d
+	@PROFILE=$(PROFILE) scripts/compose.sh up -d --remove-orphans
 	@PROFILE=$(PROFILE) scripts/wait-healthy.sh
 
 down: ## Stop all compose profiles (make down V=1 also deletes volumes)
