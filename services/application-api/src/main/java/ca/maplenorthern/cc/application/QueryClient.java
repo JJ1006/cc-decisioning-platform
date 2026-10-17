@@ -1,5 +1,6 @@
 package ca.maplenorthern.cc.application;
 
+import ca.maplenorthern.cc.common.net.TlsContexts;
 import ca.maplenorthern.cc.common.web.ApiException;
 import ca.maplenorthern.cc.common.web.CorrelationContext;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -8,6 +9,7 @@ import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
@@ -22,14 +24,31 @@ public class QueryClient {
   private static final Logger LOG = LoggerFactory.getLogger(QueryClient.class);
   private final RestClient http;
 
-  public QueryClient(@Value("${api.query-url}") String url) {
+  public QueryClient(String url) {
+    this(url, "", "", "", "");
+  }
+
+  /**
+   * Mutual TLS to decision-query-api when a keystore is configured: our certificate, trusting only
+   * our CA.
+   */
+  @Autowired
+  public QueryClient(
+      @Value("${api.query-url}") String url,
+      @Value("${api.tls.keystore:}") String keystore,
+      @Value("${api.tls.keystore-password:}") String keystorePassword,
+      @Value("${api.tls.truststore:}") String truststore,
+      @Value("${api.tls.truststore-password:}") String truststorePassword) {
     // HTTP/1.1 only: no h2c upgrade attempt against Tomcat
-    var factory =
-        new JdkClientHttpRequestFactory(
-            java.net.http.HttpClient.newBuilder()
-                .version(java.net.http.HttpClient.Version.HTTP_1_1)
-                .connectTimeout(Duration.ofSeconds(3))
-                .build());
+    var client =
+        java.net.http.HttpClient.newBuilder()
+            .version(java.net.http.HttpClient.Version.HTTP_1_1)
+            .connectTimeout(Duration.ofSeconds(3));
+    if (!keystore.isBlank()) {
+      client.sslContext(
+          TlsContexts.mutual(keystore, keystorePassword, truststore, truststorePassword));
+    }
+    var factory = new JdkClientHttpRequestFactory(client.build());
     factory.setReadTimeout(Duration.ofSeconds(5));
     this.http = RestClient.builder().baseUrl(url).requestFactory(factory).build();
   }

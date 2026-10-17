@@ -12,6 +12,8 @@ public record ResProperties(
     String truststore,
     String truststorePassword,
     String truststoreType,
+    String keystore,
+    String keystorePassword,
     int connectTimeoutMs,
     int readTimeoutMs,
     int retryAttempts,

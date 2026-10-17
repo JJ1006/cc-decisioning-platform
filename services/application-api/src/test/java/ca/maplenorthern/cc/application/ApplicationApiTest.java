@@ -20,6 +20,7 @@ import ca.maplenorthern.cc.common.events.AuditPayload;
 import ca.maplenorthern.cc.common.events.EventTypes;
 import ca.maplenorthern.cc.common.events.ManualDecisionPayload;
 import ca.maplenorthern.cc.common.web.ApiException;
+import ca.maplenorthern.cc.common.web.Caller;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Files;
@@ -223,7 +224,10 @@ class ApplicationApiTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(body);
     if (role != null) {
-      req = req.header("X-Role", role);
+      // what ClientCertFilter sets after the gateway's certificate was accepted
+      req =
+          req.requestAttr(
+              Caller.ATTR, new Caller("apisix", "consumer-" + role.toLowerCase(), role));
     }
     if (key != null) {
       req = req.header("Idempotency-Key", key);
@@ -267,7 +271,8 @@ class ApplicationApiTest {
     verify(publisher, times(1)).publish(eq("R1"), events.capture()); // only the denial audit
     var a = (AuditPayload) events.getValue().get(0).event().payload();
     assertThat(a.result()).isEqualTo(AuditPayload.Result.DENIED);
-    assertThat(a.actor()).isEqualTo("role:PARTNER");
+    assertThat(a.actor()).isEqualTo("consumer-partner");
+    assertThat(a.details()).containsEntry("role", "PARTNER");
     verify(query, never()).latestDecision(any());
   }
 

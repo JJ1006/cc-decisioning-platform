@@ -8,6 +8,7 @@ import ca.maplenorthern.cc.common.events.Envelope;
 import ca.maplenorthern.cc.common.events.EventTypes;
 import ca.maplenorthern.cc.common.events.ManualDecisionPayload;
 import ca.maplenorthern.cc.common.web.ApiException;
+import ca.maplenorthern.cc.common.web.Caller;
 import ca.maplenorthern.cc.common.web.CorrelationContext;
 import ca.maplenorthern.cc.xom.Application;
 import ca.maplenorthern.cc.xom.Product;
@@ -39,6 +40,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -230,29 +232,31 @@ public class ApplicationsController {
       operationId = "recordManualDecision",
       summary = "Underwriter decision on a REFERRED application",
       description =
-          "Role UNDERWRITER only, from the X-Role header (placeholder until the gateway sets it, P6). The application must be"
+          "Role UNDERWRITER only. The role comes from the client certificate: the gateway maps the certificate CN to a consumer and role and"
+              + " forwards them over mutual TLS; this service trusts them only from the gateway's certificate. The application must be"
               + " REFERRED. Publishes cc.decisions.manual.v1 and an audit event in one transaction. A caller with another role is"
               + " refused with 403 and the refusal is audited.")
   @ApiResponse(responseCode = "202", description = "Decision recorded")
   public ResponseEntity<ManualAccepted> manualDecision(
       @PathVariable String applicationId,
-      @Parameter(description = "Caller role; must be UNDERWRITER")
-          @RequestHeader(value = "X-Role", required = false)
-          String role,
+      @RequestAttribute(name = Caller.ATTR, required = false) @Parameter(hidden = true)
+          Caller caller,
       @Parameter(description = "Makes the request idempotent for 24 hours (max 128 characters)")
           @RequestHeader(value = "Idempotency-Key", required = false)
           String idempotencyKey,
       @RequestBody ManualDecisionRequest request) {
-    if (role == null || role.isBlank()) {
+    if (caller == null) {
       throw new ApiException(
-          HttpStatus.UNAUTHORIZED, "Role missing", "the X-Role header is required");
+          HttpStatus.UNAUTHORIZED,
+          "Caller not identified",
+          "no client certificate identity on the request");
     }
-    if (!UNDERWRITER.equals(role)) {
+    if (!UNDERWRITER.equals(caller.role())) {
       audit(
           applicationId,
-          "role:" + cut(role, 32),
+          caller.consumer(),
           AuditPayload.Result.DENIED,
-          Map.of("required", UNDERWRITER));
+          Map.of("required", UNDERWRITER, "role", cut(caller.role(), 32)));
       throw new ApiException(
           HttpStatus.FORBIDDEN,
           "Role not allowed",
@@ -265,7 +269,7 @@ public class ApplicationsController {
             "manual:" + applicationId,
             idempotencyKey,
             hash(Json.mapper().valueToTree(request)),
-            () -> doManual(applicationId, request));
+            () -> doManual(applicationId, request, caller));
     if (result.conflict()) {
       throw conflictingKey();
     }
@@ -302,7 +306,7 @@ public class ApplicationsController {
     }
   }
 
-  private ManualAccepted doManual(String applicationId, ManualDecisionRequest r) {
+  private ManualAccepted doManual(String applicationId, ManualDecisionRequest r, Caller caller) {
     JsonNode current =
         query
             .latestDecision(applicationId)
@@ -348,7 +352,9 @@ public class ApplicationsController {
                     "creditLimit",
                     r.creditLimit(),
                     "decisionId",
-                    decision.eventId().toString())));
+                    decision.eventId().toString(),
+                    "consumer",
+                    caller.consumer())));
     publisher.publish(
         applicationId,
         List.of(new Out(EventTypes.MANUAL, decision), new Out(EventTypes.AUDIT, audit)));

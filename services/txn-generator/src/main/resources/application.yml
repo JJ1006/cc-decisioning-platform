@@ -5,10 +5,21 @@ spring:
     banner-mode: off
 server:
   port: 8080
+  ssl:
+    enabled: ${SERVER_SSL_ENABLED:false} # compose switches it on: mutual TLS, only the listed client CNs may call
+    key-store: ${SERVER_KEYSTORE:}
+    key-store-type: PKCS12
+    key-store-password: ${KEYSTORE_PASSWORD:}
+    trust-store: ${SERVER_TRUSTSTORE:}
+    trust-store-type: PKCS12
+    trust-store-password: ${TRUSTSTORE_PASSWORD:}
+    client-auth: need
   tomcat:
     threads:
       max: 10
 management:
+  server:
+    port: ${MANAGEMENT_PORT:} # compose sets 9090: plain http for probes and metrics, never published
   endpoints:
     web:
       exposure:
@@ -22,6 +33,10 @@ management:
     tags:
       application: ${spring.application.name}
 platform:
+  security:
+    require-client-cert: ${SERVER_SSL_ENABLED:false}
+    allowed-client-cns: apisix
+    gateway-cn: apisix
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9093}
     keystore: ${KAFKA_KEYSTORE:}

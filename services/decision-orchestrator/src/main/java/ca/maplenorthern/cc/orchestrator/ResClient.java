@@ -51,7 +51,16 @@ public class ResClient {
     this.props = props;
     HttpClient.Builder client =
         HttpClient.newBuilder().connectTimeout(Duration.ofMillis(props.connectTimeoutMs()));
-    if (props.truststore() != null && !props.truststore().isBlank()) {
+    if (props.keystore() != null && !props.keystore().isBlank()) {
+      // mutual TLS: ODM Liberty requires a client certificate signed by our CA (the orchestrator's
+      // own)
+      client.sslContext(
+          TlsContexts.mutual(
+              props.keystore(),
+              props.keystorePassword(),
+              props.truststore(),
+              props.truststorePassword()));
+    } else if (props.truststore() != null && !props.truststore().isBlank()) {
       client.sslContext(
           TlsContexts.trusting(
               props.truststore(), props.truststorePassword(), props.truststoreType()));
