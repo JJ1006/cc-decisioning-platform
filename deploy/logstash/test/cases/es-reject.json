@@ -1,0 +1,34 @@
+[
+  {
+    "name": "document Elasticsearch rejected",
+    "ignore": [
+      "@timestamp",
+      "failedAt",
+      "originalValue"
+    ],
+    "contains": {
+      "originalValue": [
+        "44444444"
+      ]
+    },
+    "input": {
+      "_reason": "strict_dynamic_mapping_exception: mapping set to strict",
+      "eventId": "44444444-4444-4444-4444-444444444444",
+      "correlationId": "c-44",
+      "topic": "cc.decisions.declined.v1",
+      "payload": {
+        "surprise": 1
+      }
+    },
+    "expected": {
+      "eventId": "44444444-4444-4444-4444-444444444444",
+      "correlationId": "c-44",
+      "topic": "cc.decisions.declined.v1",
+      "source": "logstash-es-reject",
+      "originalTopic": "cc.decisions.declined.v1",
+      "errorClass": "ElasticsearchRejected",
+      "errorMessage": "strict_dynamic_mapping_exception: mapping set to strict",
+      "_alias": "cc-dlq-write"
+    }
+  }
+]

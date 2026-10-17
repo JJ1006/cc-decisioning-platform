@@ -1,0 +1,110 @@
+[
+  {
+    "name": "service dead letter: original value masked",
+    "input": {
+      "topic": "cc.applications.submitted.v1.dlq",
+      "raw": {
+        "eventId": "66666666-6666-6666-6666-666666666666",
+        "correlationId": "c-9",
+        "eventType": "cc.dlq.v1",
+        "schemaVersion": 1,
+        "occurredAt": "2026-10-17T14:30:00Z",
+        "producer": "decision-orchestrator",
+        "payload": {
+          "originalTopic": "cc.applications.submitted.v1",
+          "originalPartition": 1,
+          "originalOffset": 42,
+          "originalKey": "APP-9",
+          "originalValue": "{\"payload\":{\"application\":{\"applicant\":{\"firstName\":\"Avery\",\"sin\":\"046454286\"}}}}",
+          "errorClass": "java.lang.IllegalStateException",
+          "errorMessage": "boom",
+          "failedAt": "2026-10-17T14:30:05Z",
+          "attempts": 2
+        }
+      }
+    },
+    "expected": {
+      "eventId": "66666666-6666-6666-6666-666666666666",
+      "correlationId": "c-9",
+      "producer": "decision-orchestrator",
+      "topic": "cc.applications.submitted.v1.dlq",
+      "source": "kafka-dlq",
+      "originalTopic": "cc.applications.submitted.v1",
+      "originalPartition": 1,
+      "originalOffset": 42,
+      "originalKey": "APP-9",
+      "originalValue": "{\"payload\":{\"application\":{\"applicant\":{\"firstInitial\":\"A.\"}}}}",
+      "errorClass": "java.lang.IllegalStateException",
+      "errorMessage": "boom",
+      "failedAt": "2026-10-17T14:30:05Z",
+      "attempts": 2,
+      "@timestamp": "2026-10-17T14:30:05.000Z",
+      "_alias": "cc-dlq-write"
+    }
+  },
+  {
+    "name": "service dead letter: plain text value redacted",
+    "input": {
+      "topic": "cc.applications.submitted.v1.dlq",
+      "raw": {
+        "eventId": "77777777-7777-7777-7777-777777777777",
+        "correlationId": "c-9",
+        "eventType": "cc.dlq.v1",
+        "schemaVersion": 1,
+        "occurredAt": "2026-10-17T14:30:00Z",
+        "producer": "decision-orchestrator",
+        "payload": {
+          "originalTopic": "cc.applications.submitted.v1",
+          "originalPartition": 1,
+          "originalOffset": 42,
+          "originalKey": "APP-9",
+          "originalValue": "line with 046454286 and k1a 0b1",
+          "errorClass": "java.lang.IllegalStateException",
+          "errorMessage": "boom",
+          "failedAt": "2026-10-17T14:30:05Z",
+          "attempts": 2
+        }
+      }
+    },
+    "expected": {
+      "eventId": "77777777-7777-7777-7777-777777777777",
+      "correlationId": "c-9",
+      "producer": "decision-orchestrator",
+      "topic": "cc.applications.submitted.v1.dlq",
+      "source": "kafka-dlq",
+      "originalTopic": "cc.applications.submitted.v1",
+      "originalPartition": 1,
+      "originalOffset": 42,
+      "originalKey": "APP-9",
+      "originalValue": "line with *** and ***",
+      "errorClass": "java.lang.IllegalStateException",
+      "errorMessage": "boom",
+      "failedAt": "2026-10-17T14:30:05Z",
+      "attempts": 2,
+      "@timestamp": "2026-10-17T14:30:05.000Z",
+      "_alias": "cc-dlq-write"
+    }
+  },
+  {
+    "name": "garbage on a dlq topic",
+    "deadLetter": true,
+    "input": {
+      "topic": "cc.applications.submitted.v1.dlq",
+      "message": "garbage"
+    },
+    "ignore": [
+      "@timestamp",
+      "errorMessage",
+      "failedAt",
+      "eventId",
+      "topic"
+    ],
+    "expected": {
+      "source": "logstash-parse",
+      "originalTopic": "cc.applications.submitted.v1.dlq",
+      "originalValue": "garbage",
+      "errorClass": "JSON::ParserError",
+      "_alias": "cc-dlq-write"
+    }
+  }
+]

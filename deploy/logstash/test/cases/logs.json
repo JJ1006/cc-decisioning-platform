@@ -1,0 +1,51 @@
+[
+  {
+    "name": "JSON log line",
+    "input": {
+      "raw": {
+        "@timestamp": "2026-10-17T11:50:53.243-04:00",
+        "@version": "1",
+        "message": "decided application APP-1",
+        "logger_name": "ca.x.Y",
+        "thread_name": "main",
+        "level": "INFO",
+        "level_value": 20000,
+        "correlationId": "corr-1"
+      },
+      "container": {
+        "labels": {
+          "com_docker_compose_service": "decision-orchestrator"
+        }
+      }
+    },
+    "expected": {
+      "@timestamp": "2026-10-17T15:50:53.243Z",
+      "message": "decided application APP-1",
+      "logger_name": "ca.x.Y",
+      "thread_name": "main",
+      "level": "INFO",
+      "correlationId": "corr-1",
+      "service": "decision-orchestrator",
+      "_alias": "cc-logs-write"
+    }
+  },
+  {
+    "name": "plain text log line",
+    "ignore": [
+      "@timestamp"
+    ],
+    "input": {
+      "message": "plain text line",
+      "container": {
+        "labels": {
+          "com_docker_compose_service": "odm"
+        }
+      }
+    },
+    "expected": {
+      "message": "plain text line",
+      "service": "odm",
+      "_alias": "cc-logs-write"
+    }
+  }
+]

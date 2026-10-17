@@ -1,11 +1,15 @@
 {
-  "cluster": [],
+  "cluster": [
+    "monitor"
+  ],
   "indices": [
     {
       "names": [
         "cc-decisions-write",
         "cc-audit-write",
-        "cc-notifications-write"
+        "cc-notifications-write",
+        "cc-dlq-write",
+        "cc-logs-write"
       ],
       "privileges": [
         "create_doc"
