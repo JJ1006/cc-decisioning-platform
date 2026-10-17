@@ -1,0 +1,9 @@
+if
+    the requested product of 'the application' is TRAVEL_INFINITE
+    and ( the annual income of the employment of 'the application' is less than 80000
+    or the bureau score of the bureau report of 'the application' is less than 720 )
+    and the annual income of the employment of 'the application' is at least 40000
+    and the bureau score of the bureau report of 'the application' is at least 660
+then
+    set the product of 'the decision' to CASHBACK ;
+    record that rule "PROD-05" fired in 'the decision' ;

@@ -1,0 +1,6 @@
+if
+    the requested limit of 'the application' is not null
+    and the credit limit of 'the decision' is more than the requested limit of 'the application'
+then
+    set the credit limit of 'the decision' to the requested limit of 'the application' ;
+    record that rule "LIM-02" fired in 'the decision' ;

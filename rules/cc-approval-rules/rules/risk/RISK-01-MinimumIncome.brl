@@ -1,0 +1,6 @@
+if
+    the annual income of the employment of 'the application' is less than 15000
+then
+    add reason code R_INSUFFICIENT_INCOME to 'the decision' ;
+    escalate 'the decision' to DECLINE ;
+    record that rule "RISK-01" fired in 'the decision' ;

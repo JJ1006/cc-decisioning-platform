@@ -1,0 +1,6 @@
+if
+    the bureau score of the bureau report of 'the application' is at least 680
+    and the bureau score of the bureau report of 'the application' is at most 739
+then
+    set the APR tier of 'the decision' to TIER_2 ;
+    record that rule "APR-02" fired in 'the decision' ;

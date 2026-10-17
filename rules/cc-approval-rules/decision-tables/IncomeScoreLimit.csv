@@ -1,0 +1,15 @@
+# Package limit. Condition cols: annual income band x bureau score band. Action: set credit limit (CAD), record fired rule.
+# Only approved applicants reach this table (score >= 620). LIM-02 then caps at the requested limit.
+income_min,income_max,score_min,score_max,credit_limit,fired_rule
+0,29999,620,679,1500,LIM-DT-01
+0,29999,680,739,3000,LIM-DT-01
+0,29999,740,900,5000,LIM-DT-01
+30000,59999,620,679,3000,LIM-DT-01
+30000,59999,680,739,6000,LIM-DT-01
+30000,59999,740,900,10000,LIM-DT-01
+60000,99999,620,679,6000,LIM-DT-01
+60000,99999,680,739,12000,LIM-DT-01
+60000,99999,740,900,20000,LIM-DT-01
+100000,,620,679,10000,LIM-DT-01
+100000,,680,739,20000,LIM-DT-01
+100000,,740,900,35000,LIM-DT-01

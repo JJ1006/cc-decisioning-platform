@@ -1,0 +1,6 @@
+if
+    the outcome of 'the decision' is null
+then
+    escalate 'the decision' to APPROVE ;
+    add reason code R_APPROVED_STANDARD to 'the decision' ;
+    record that rule "RSN-01" fired in 'the decision' ;

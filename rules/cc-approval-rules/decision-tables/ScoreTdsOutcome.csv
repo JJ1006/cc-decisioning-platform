@@ -1,0 +1,12 @@
+# Package risk. Condition cols: bureau score range x total debt service ratio range. Action cols: escalate, reason code, fired rule.
+# Blank escalate = approve-range cell, no action (RSN-01 approves later). Ranges are inclusive-low, exclusive-high except TDS upper bounds shown as "<=".
+score_min,score_max,tds_range,escalate,reason_code,fired_rule
+0,559,any,DECLINE,R_LOW_SCORE,RISK-DT-01
+560,619,<=0.35,REFER,R_BORDERLINE_SCORE,RISK-DT-01
+560,619,>0.35,DECLINE,R_HIGH_TDS,RISK-DT-01
+620,679,<=0.42,,,
+620,679,>0.42 and <=0.50,REFER,R_BORDERLINE_TDS,RISK-DT-01
+620,679,>0.50,DECLINE,R_HIGH_TDS,RISK-DT-01
+680,900,<=0.50,,,
+680,900,>0.50 and <=0.60,REFER,R_BORDERLINE_TDS,RISK-DT-01
+680,900,>0.60,DECLINE,R_HIGH_TDS,RISK-DT-01
