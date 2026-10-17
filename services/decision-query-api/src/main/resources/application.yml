@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: decision-query-api
+  main:
+    banner-mode: off
+server:
+  port: 8080
+  tomcat:
+    threads:
+      max: 10
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info
+  health:
+    elasticsearch:
+      enabled: false # needs cluster privileges; SearchHealthIndicator searches instead
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+  metrics:
+    tags:
+      application: ${spring.application.name}
+springdoc:
+  writer-with-order-by-keys: true # same output on every JVM and OS: CI compares it with the committed file
+  swagger-ui:
+    enabled: false
+  api-docs:
+    version: openapi_3_0
+es:
+  url: ${ES_URL:https://localhost:9200}
+  ca: ${ES_CA:}
+  username: ${ES_USERNAME:decision-query-api}
+  password: ${QUERY_API_PASSWORD:}
+logging:
+  config: classpath:logback-spring.xml

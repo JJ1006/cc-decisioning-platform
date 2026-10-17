@@ -61,6 +61,51 @@
       },
       "topic": "cc.decisions.approved.v1",
       "@timestamp": "2026-10-17T14:30:00.000Z",
+      "_alias": "cc-decisions-write",
+      "decisionSource": "ODM"
+    }
+  },
+  {
+    "name": "manual decision is tagged decisionSource MANUAL",
+    "input": {
+      "topic": "cc.decisions.manual.v1",
+      "raw": {
+        "eventId": "7b0f4c1e-5d52-4a53-9d2f-2f6f0d8e9a11",
+        "correlationId": "corr-0001",
+        "eventType": "cc.decisions.manual.v1",
+        "schemaVersion": 1,
+        "occurredAt": "2026-10-17T14:30:00Z",
+        "producer": "application-api",
+        "payload": {
+          "applicationId": "APP-0001",
+          "underwriterId": "UW-77",
+          "outcome": "APPROVE",
+          "creditLimit": 3000,
+          "product": "NO_FEE",
+          "note": "Verified income by phone.",
+          "originalDecisionEventId": "7b0f4c1e-5d52-4a53-9d2f-2f6f0d8e9a11"
+        }
+      }
+    },
+    "expected": {
+      "eventId": "7b0f4c1e-5d52-4a53-9d2f-2f6f0d8e9a11",
+      "correlationId": "corr-0001",
+      "eventType": "cc.decisions.manual.v1",
+      "schemaVersion": 1,
+      "occurredAt": "2026-10-17T14:30:00Z",
+      "producer": "application-api",
+      "payload": {
+        "applicationId": "APP-0001",
+        "underwriterId": "UW-77",
+        "outcome": "APPROVE",
+        "creditLimit": 3000,
+        "product": "NO_FEE",
+        "note": "Verified income by phone.",
+        "originalDecisionEventId": "7b0f4c1e-5d52-4a53-9d2f-2f6f0d8e9a11"
+      },
+      "topic": "cc.decisions.manual.v1",
+      "decisionSource": "MANUAL",
+      "@timestamp": "2026-10-17T14:30:00.000Z",
       "_alias": "cc-decisions-write"
     }
   },
@@ -222,7 +267,8 @@
       },
       "topic": "cc.decisions.declined.v1",
       "@timestamp": "2026-10-17T14:30:00.000Z",
-      "_alias": "cc-decisions-write"
+      "_alias": "cc-decisions-write",
+      "decisionSource": "ODM"
     }
   },
   {
@@ -263,7 +309,8 @@
       },
       "topic": "cc.decisions.declined.v1",
       "@timestamp": "2026-10-17T14:30:00.000Z",
-      "_alias": "cc-decisions-write"
+      "_alias": "cc-decisions-write",
+      "decisionSource": "ODM"
     }
   },
   {

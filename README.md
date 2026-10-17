@@ -47,6 +47,8 @@ make help
 make pki                 # private CA + certs (not committed)
 make up PROFILE=core,analytics
 make demo                # send 1000 synthetic applications
+make up PROFILE=core,analytics,edge   # + the two HTTP APIs, see docs/api/README.md
+make test-api-docs       # runs every curl example of docs/api/README.md
 ```
 
 (Targets are stubs until their phase lands; see the plan.)

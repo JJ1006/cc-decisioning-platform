@@ -1,0 +1,14 @@
+# OpenAPI lint for docs/api/*.yaml (CI: npx @stoplight/spectral-cli lint). Errors fail the build; warnings are shown.
+extends: ["spectral:oas"]
+rules:
+  # every operation documents what it does and how to find it
+  operation-description: error
+  operation-operationId: error
+  operation-tag-defined: error
+  operation-tags: error
+  info-contact: error
+  info-description: error
+  oas3-api-servers: error
+  # the generated specs are not hand-written prose: keep the noise down
+  operation-success-response: error
+  no-$ref-siblings: off

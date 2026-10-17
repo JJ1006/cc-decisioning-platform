@@ -2,6 +2,7 @@ extends: default
 ignore: |
   deploy/helm/**/templates/
   .github/workflows/
+  docs/api/
 rules:
   line-length: disable
   braces: { min-spaces-inside: 0, max-spaces-inside: 1 }

@@ -4,7 +4,7 @@ JAVA_HOME := $(shell [ -d /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Conte
 export JAVA_HOME
 
 .DEFAULT_GOAL := help
-.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules test-logstash demo kind-up ocp-render eval-rules eval-agent what-if
+.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules test-logstash lint-api api-docs test-api-docs demo kind-up ocp-render eval-rules eval-agent what-if
 
 help: ## Show targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -30,6 +30,7 @@ verify: ## Full local verification (build + tests + format check)
 	@uv run --quiet --with jsonschema python scripts/validate-contracts.py
 	@if grep -q '<module>' pom.xml; then mvn -B -ntp -q verify; else echo "no Maven modules yet"; fi
 	@scripts/test-logstash.sh
+	@$(MAKE) --no-print-directory lint-api
 
 test: ## Unit tests
 	@if grep -q '<module>' pom.xml; then mvn -q test; else echo "no Maven modules yet"; fi
@@ -55,6 +56,16 @@ test-rules: ## Run the 30 scenarios in rules/tests against the deployed ruleset
 
 test-logstash: ## Run fixture events through the real Logstash filters (PII masking, dead letters, logs); needs Docker
 	@scripts/test-logstash.sh
+
+lint-api: ## Spectral lint of docs/api/*.yaml (needs node; skipped without npx)
+	@if command -v npx >/dev/null; then npx --yes @stoplight/spectral-cli@6.15.0 lint docs/api/*.yaml --fail-severity=error; else echo "SKIP  npx not found: OpenAPI lint not run"; fi
+
+api-docs: ## Regenerate docs/api/*.yaml from the code (springdoc); mvn verify and CI fail when they drift
+	@mvn -B -ntp -q -pl services/application-api,services/decision-query-api -am test -Dopenapi.write=true -Dsurefire.failIfNoSpecifiedTests=false -Dtest=OpenApiContractTest
+	@git diff --stat -- docs/api || true
+
+test-api-docs: ## Run every curl example of docs/api/README.md against the running stack (make up PROFILE=core,analytics,edge)
+	@scripts/run-api-docs.sh
 
 lint-rules: ## Prohibited-grounds lint + scenario spec check (no ODM needed)
 	@scripts/lint-prohibited-grounds.sh
