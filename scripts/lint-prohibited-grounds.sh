@@ -7,7 +7,7 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$ROOT"
 PATTERN='gender|ethnic|marital|religio|(^|[^[:alpha:]])race'
 targets=()
-for t in rules/cc-approval-rules rules/cc-approval-ds rules/tests docs/rules-catalog.md; do
+for t in rules/cc-approval-rules rules/cc-approval-ds rules/dc-export rules/tests docs/rules-catalog.md; do
   [[ -e "$t" ]] && targets+=("$t")
 done
 [[ ${#targets[@]} -gt 0 ]] || { echo "lint-prohibited-grounds: nothing to scan"; exit 0; }

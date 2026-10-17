@@ -140,6 +140,7 @@ services:
       - "127.0.0.1:9443:9453" # https (Liberty listens on 9453 in this image; host keeps 9443)
     environment:
       LICENSE: accept
+      SAMPLE: ${ODM_SAMPLE:-false} # true loads the Loan Validation sample (format template for scripts/gen_dc_project.py)
       # Liberty HTTPS uses our CA-signed cert. Client-cert enforcement is switched on later
       # (ENABLE_MTLS=true) once the orchestrator and MCP server present certificates.
     volumes:
