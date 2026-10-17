@@ -154,7 +154,7 @@ services:
 
   # ----------------------------------------------------------- analytics
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.19.23
+    image: docker.elastic.co/kibana/kibana:9.5.5
     profiles: [analytics]
     env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
     mem_limit: 900m
