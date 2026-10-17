@@ -4,6 +4,7 @@ updates:
   - package-ecosystem: maven
     directory: /
     schedule: { interval: weekly }
+    open-pull-requests-limit: 0 # PAUSED - remove limit to re-enable
     groups:
       maven-minor-patch:
         update-types: [minor, patch]
@@ -17,12 +18,14 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
+    open-pull-requests-limit: 0 # PAUSED - remove limit to re-enable
     groups:
       actions:
         patterns: ["*"]
   - package-ecosystem: docker-compose
     directory: /deploy/compose
     schedule: { interval: weekly }
+    open-pull-requests-limit: 0 # PAUSED - remove limit to re-enable
     ignore:
       - dependency-name: "*"
         update-types: [version-update:semver-major]
