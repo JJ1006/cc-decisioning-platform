@@ -116,7 +116,6 @@ services:
     restart: "no"
     depends_on:
       elasticsearch: { condition: service_healthy }
-    environment:
     entrypoint:
       - /bin/bash
       - -c
@@ -203,10 +202,8 @@ services:
       KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SSL
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_TYPE: PKCS12
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_LOCATION: /pki/kafka-ui.p12
-      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_PASSWORD: ${PKI_PASSWORD:-changeit}
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_TYPE: PKCS12
       KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_LOCATION: /pki/truststore.p12
-      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_PASSWORD: ${PKI_PASSWORD:-changeit}
       DYNAMIC_CONFIG_ENABLED: "false"
     volumes:
       - ${PKI_DIR:-../../security/pki/out}/kafka-ui/kafka-ui.p12:/pki/kafka-ui.p12:ro
