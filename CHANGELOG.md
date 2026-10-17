@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.1](https://github.com/JJ1006/cc-decisioning-platform/compare/v0.1.0...v0.1.1) (2026-10-17)
+
+
+### Features
+
+* **api:** application-api and decision-query-api with OpenAPI and Spectral (P5) ([#32](https://github.com/JJ1006/cc-decisioning-platform/issues/32)) ([fd3122c](https://github.com/JJ1006/cc-decisioning-platform/commit/fd3122c86f020c4fd205496b20c73aa7decdf8c0))
+* **elk:** Logstash and Filebeat replace es-indexer, Loki dropped (P4b) ([#30](https://github.com/JJ1006/cc-decisioning-platform/issues/30)) ([663bdd1](https://github.com/JJ1006/cc-decisioning-platform/commit/663bdd17a88c64036adc988e015549743237dd92))
+* **services:** event services, ES indexing with PII masking and make demo (P4) ([#27](https://github.com/JJ1006/cc-decisioning-platform/issues/27)) ([4007e06](https://github.com/JJ1006/cc-decisioning-platform/commit/4007e064529dcf20d98a44defc2481796b992fb7))
+
 ## 0.1.0 (2026-10-17)
 
 
