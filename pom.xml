@@ -41,9 +41,9 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Override Boot's managed Jackson: fixes CVE-2026-68497/91776/91777 (needs >= 2.21.7) -->
     <jackson-bom.version>2.21.7</jackson-bom.version>
-    <datafaker.version>2.4.2</datafaker.version>
-    <resilience4j.version>2.2.0</resilience4j.version>
-    <wiremock.version>3.13.1</wiremock.version>
+    <datafaker.version>2.7.0</datafaker.version>
+    <resilience4j.version>2.4.0</resilience4j.version>
+    <wiremock.version>3.13.2</wiremock.version>
     <spotless.version>2.46.1</spotless.version>
     <jacoco.version>0.8.15</jacoco.version>
     <google-java-format.version>1.25.2</google-java-format.version>
