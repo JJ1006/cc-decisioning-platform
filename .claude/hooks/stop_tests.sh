@@ -10,7 +10,7 @@ mods=$( { git diff --name-only HEAD 2>/dev/null; git ls-files --others --exclude
       d=$(dirname "$f"); while [[ "$d" != "." && ! -f "$d/pom.xml" ]]; do d=$(dirname "$d"); done
       [[ "$d" != "." ]] && echo "$d"; done | sort -u | paste -sd, -)
 [[ -z "$mods" ]] && exit 0
-export JAVA_HOME=${JAVA_HOME:-$(/usr/libexec/java_home -v 21 2>/dev/null)}
+export JAVA_HOME=/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home
 if ! out=$(mvn -q -B -o test -pl "$mods" -DskipITs 2>&1); then
   echo "Unit tests failed in: $mods" >&2
   echo "$out" | tail -40 >&2
