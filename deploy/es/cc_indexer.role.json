@@ -1,0 +1,15 @@
+{
+  "cluster": [],
+  "indices": [
+    {
+      "names": [
+        "cc-decisions-write",
+        "cc-audit-write",
+        "cc-notifications-write"
+      ],
+      "privileges": [
+        "create_doc"
+      ]
+    }
+  ]
+}

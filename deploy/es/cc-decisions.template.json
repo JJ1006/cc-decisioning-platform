@@ -1,0 +1,110 @@
+{
+  "index_patterns": [
+    "cc-decisions-*"
+  ],
+  "priority": 100,
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "dynamic": "strict",
+      "properties": {
+        "eventId": {
+          "type": "keyword"
+        },
+        "correlationId": {
+          "type": "keyword"
+        },
+        "eventType": {
+          "type": "keyword"
+        },
+        "schemaVersion": {
+          "type": "integer"
+        },
+        "occurredAt": {
+          "type": "date"
+        },
+        "producer": {
+          "type": "keyword"
+        },
+        "topic": {
+          "type": "keyword"
+        },
+        "payload": {
+          "type": "object",
+          "dynamic": "strict",
+          "properties": {
+            "applicationId": {
+              "type": "keyword"
+            },
+            "outcome": {
+              "type": "keyword"
+            },
+            "creditLimit": {
+              "type": "double"
+            },
+            "product": {
+              "type": "keyword"
+            },
+            "aprTier": {
+              "type": "keyword"
+            },
+            "reasonCodes": {
+              "type": "keyword"
+            },
+            "firedRules": {
+              "type": "keyword"
+            },
+            "rulesetVersion": {
+              "type": "keyword"
+            },
+            "decidedAt": {
+              "type": "date"
+            },
+            "processingMillis": {
+              "type": "long"
+            },
+            "applicantSummary": {
+              "type": "object",
+              "dynamic": "strict",
+              "properties": {
+                "province": {
+                  "type": "keyword"
+                },
+                "ageBand": {
+                  "type": "keyword"
+                },
+                "bureauScore": {
+                  "type": "integer"
+                },
+                "tdsRatio": {
+                  "type": "double"
+                },
+                "annualIncome": {
+                  "type": "double"
+                }
+              }
+            },
+            "underwriterId": {
+              "type": "keyword"
+            },
+            "note": {
+              "type": "text"
+            },
+            "originalDecisionEventId": {
+              "type": "keyword"
+            }
+          }
+        }
+      }
+    },
+    "aliases": {
+      "cc-decisions": {}
+    }
+  },
+  "_meta": {
+    "description": "cc-decisions: written by es-indexer through the cc-decisions-write alias"
+  }
+}

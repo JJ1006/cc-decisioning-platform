@@ -1,0 +1,71 @@
+{
+  "index_patterns": [
+    "cc-notifications-*"
+  ],
+  "priority": 100,
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "dynamic": "strict",
+      "properties": {
+        "eventId": {
+          "type": "keyword"
+        },
+        "correlationId": {
+          "type": "keyword"
+        },
+        "eventType": {
+          "type": "keyword"
+        },
+        "schemaVersion": {
+          "type": "integer"
+        },
+        "occurredAt": {
+          "type": "date"
+        },
+        "producer": {
+          "type": "keyword"
+        },
+        "topic": {
+          "type": "keyword"
+        },
+        "payload": {
+          "type": "object",
+          "dynamic": "strict",
+          "properties": {
+            "applicationId": {
+              "type": "keyword"
+            },
+            "noticeType": {
+              "type": "keyword"
+            },
+            "channel": {
+              "type": "keyword"
+            },
+            "recipientRef": {
+              "type": "keyword"
+            },
+            "subject": {
+              "type": "text"
+            },
+            "body": {
+              "type": "text"
+            },
+            "reasonTexts": {
+              "type": "text"
+            }
+          }
+        }
+      }
+    },
+    "aliases": {
+      "cc-notifications": {}
+    }
+  },
+  "_meta": {
+    "description": "cc-notifications: written by es-indexer through the cc-notifications-write alias"
+  }
+}
