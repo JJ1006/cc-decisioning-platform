@@ -3,16 +3,17 @@
 #   1. set the kibana_system password
 #   2. create the least-privilege role and user logstash_writer: create_doc on the five write aliases plus cluster
 #      monitor (the Logstash output reads GET / at start-up), nothing else
+#      and role / user query_reader / decision-query-api: read-only on the five read aliases (cc-decisions ...)
 #   3. install the ILM policies (logs 7d, dlq 30d) and the index templates
 #   4. make sure every type has a current index behind its <type>-write alias:
 #        cc-decisions / cc-audit / cc-notifications  date-suffixed (cc-decisions-2026.10.17), rolled by re-running this script
 #        cc-logs / cc-dlq                            cc-logs-000001, rolled and deleted by ILM
-# Env: ELASTIC_PASSWORD, KIBANA_PASSWORD, LOGSTASH_WRITER_PASSWORD (required); ES_URL, ES_CACERT, ES_DIR (optional).
+# Env: ELASTIC_PASSWORD, KIBANA_PASSWORD, LOGSTASH_WRITER_PASSWORD, QUERY_API_PASSWORD (required); ES_URL, ES_CACERT, ES_DIR (optional).
 set -euo pipefail
 ES_URL=${ES_URL:-https://elasticsearch:9200}
 ES_CACERT=${ES_CACERT:-/pki/ca.crt}
 ES_DIR=${ES_DIR:-/es}
-: "${ELASTIC_PASSWORD:?}" "${KIBANA_PASSWORD:?}" "${LOGSTASH_WRITER_PASSWORD:?}"
+: "${ELASTIC_PASSWORD:?}" "${KIBANA_PASSWORD:?}" "${LOGSTASH_WRITER_PASSWORD:?}" "${QUERY_API_PASSWORD:?}"
 
 es() { # es METHOD PATH [curl args...]; credentials via a curl config, never on the command line
   local method=$1 path=$2
@@ -33,6 +34,11 @@ must PUT /_security/role/logstash_writer "@$ES_DIR/logstash_writer.role.json"
 must PUT /_security/user/logstash_writer \
   "{\"password\":\"$LOGSTASH_WRITER_PASSWORD\",\"roles\":[\"logstash_writer\"],\"full_name\":\"Logstash writer (service)\"}"
 echo "role and user logstash_writer ready"
+
+must PUT /_security/role/query_reader "@$ES_DIR/query_reader.role.json"
+must PUT /_security/user/decision-query-api \
+  "{\"password\":\"$QUERY_API_PASSWORD\",\"roles\":[\"query_reader\"],\"full_name\":\"decision-query-api (read only)\"}"
+echo "role query_reader and user decision-query-api ready"
 
 must PUT /_ilm/policy/cc-logs-7d "@$ES_DIR/cc-logs-7d.ilm.json"
 must PUT /_ilm/policy/cc-dlq-30d "@$ES_DIR/cc-dlq-30d.ilm.json"

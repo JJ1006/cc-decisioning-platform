@@ -33,7 +33,12 @@ def filter(event)
   rescue StandardError
     nil # keep the ingest time
   end
-  event.set('[@metadata][target_alias]', ALIASES.fetch(topic, 'cc-decisions-write'))
+  target = ALIASES.fetch(topic, 'cc-decisions-write')
+  # decisions carry their source: the rules engine (ODM) or an underwriter (MANUAL)
+  if target == 'cc-decisions-write'
+    event.set('decisionSource', topic == 'cc.decisions.manual.v1' ? 'MANUAL' : 'ODM')
+  end
+  event.set('[@metadata][target_alias]', target)
   [event]
 end
 
