@@ -13,7 +13,7 @@
 
   <artifactId>flow-test</artifactId>
   <name>flow-test</name>
-  <description>End-to-end test: txn-generator, decision-orchestrator (RES stubbed) and es-indexer against real Kafka and Elasticsearch. Nothing is packaged.</description>
+  <description>End-to-end test: txn-generator, decision-orchestrator (RES stubbed) and notification-svc against real Kafka. Elasticsearch ingestion is covered by Logstash pipeline tests and make demo. Nothing is packaged.</description>
 
   <dependencies>
     <dependency>
@@ -35,12 +35,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>ca.maplenorthern.cc</groupId>
-      <artifactId>es-indexer</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-test</artifactId>
       <scope>test</scope>
@@ -53,11 +47,6 @@
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>kafka</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>elasticsearch</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>

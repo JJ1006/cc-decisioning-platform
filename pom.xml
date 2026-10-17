@@ -31,7 +31,6 @@
     <module>services/txn-generator</module>
     <module>services/decision-orchestrator</module>
     <module>services/notification-svc</module>
-    <module>services/es-indexer</module>
     <module>services/flow-test</module>
   </modules>
 

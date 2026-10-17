@@ -12,7 +12,10 @@ image (icr.io/cpopen/odm-k8s/odm) is pulled at runtime and you must accept
 the IBM license terms yourself (LICENSE=accept). Rule projects here are
 authored for ODM and are only useful with an ODM installation.
 
-All other components (Apache Kafka, Strimzi, Elasticsearch/Kibana, Apache
+Elasticsearch, Kibana, Logstash and Filebeat run as the official Elastic images under the Elastic
+licence (free basic tier); they are pulled at runtime, not redistributed.
+
+All other components (Apache Kafka, Strimzi, Apache
 APISIX, Grafana LGTM, Helm, ArgoCD, ...) are used under their own licences.
 
 "Maple Northern Bank" is fictitious. All data is synthetic.

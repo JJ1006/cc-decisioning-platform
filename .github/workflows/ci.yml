@@ -20,6 +20,8 @@ jobs:
       - name: Maven verify (skipped when no modules)
         run: |
           if grep -q '<module>' pom.xml; then mvn -B -ntp verify; else echo "no modules yet"; fi
+      - name: Logstash pipeline tests (PII masking, dead letters, log parsing)
+        run: REQUIRE_DOCKER=1 scripts/test-logstash.sh
       - name: Prohibited-grounds lint
         run: |
           if [ -x scripts/lint-prohibited-grounds.sh ]; then scripts/lint-prohibited-grounds.sh; else echo "lint not added yet"; fi

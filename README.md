@@ -5,7 +5,7 @@
 
 A portfolio-grade, free-to-run demo of a credit-card approval system for a (fictitious) large Canadian bank.
 **IBM ODM** makes the rule decisions, **Kafka** connects every step, decisions land in **Elasticsearch**, and **Kibana** shows business analytics.
-An **APISIX** gateway with mTLS fronts the APIs; **Grafana LGTM** provides observability; **Helm + ArgoCD** deploy to kind or OpenShift; two **MCP servers** let AI agents explain decisions.
+An **APISIX** gateway with mTLS fronts the APIs; **Grafana** (metrics, traces) and the **ELK** stack (Logstash, Filebeat, Elasticsearch, Kibana: events, logs, masking) provide observability; **Helm + ArgoCD** deploy to kind or OpenShift; two **MCP servers** let AI agents explain decisions.
 
 > **Principle:** ODM is the deterministic system of record. An LLM never makes or overrides a credit decision.
 >
@@ -26,12 +26,13 @@ flowchart LR
   ORCH -- mTLS --> RES[ODM RES: ccApproval]
   ORCH --> K2[(approved / declined / referred)]
   K2 --> NOT[notification-svc]
-  K2 --> IDX[es-indexer]
-  IDX --> ES[(Elasticsearch)] --> KIB[Kibana]
+  K2 --> LS[Logstash: mask PII]
+  LS --> ES[(Elasticsearch)] --> KIB[Kibana]
+  FB[Filebeat] --> LS
   QA --> ES
   DC[Decision Center] -. RuleApp .-> RES
   MCP[MCP servers] --> GW
-  OTEL[OTel] --> LGTM[Grafana LGTM]
+  OTEL[OTel] --> LGTM[Grafana: metrics + traces]
 ```
 
 Full plan: [docs/PLAN.md](docs/PLAN.md). Decisions: [docs/adr](docs/adr).
@@ -54,7 +55,7 @@ make demo                # send 1000 synthetic applications
 
 | Profile | Contents | ~RAM |
 |---|---|---|
-| `core` | Kafka, ODM, orchestrator, generator, indexer, ES | 4.5 GB |
+| `core` | Kafka, ODM, orchestrator, generator, notifier, ES, Logstash, Filebeat | 5.5 GB |
 | `analytics` | + Kibana, query-api | +1.0 GB |
 | `edge` | + APISIX, application-api | +0.5 GB |
 | `obs` | + otel-lgtm | +1.0 GB |

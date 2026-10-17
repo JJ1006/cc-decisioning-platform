@@ -7,12 +7,14 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 TIMEOUT=${1:-600}
 ONESHOT=" topic-init es-setup "
 deadline=$((SECONDS + TIMEOUT))
+# only the services of the selected profiles: stopped containers of other profiles are not our business
+WANTED=" $("$ROOT/scripts/compose.sh" config --services 2>/dev/null | tr '\n' ' ') "
 
 while true; do
   pending=()
   failed=()
   while IFS='|' read -r svc state health code; do
-    [[ -z "$svc" ]] && continue
+    [[ -z "$svc" || "$WANTED" != *" $svc "* ]] && continue
     if [[ "$ONESHOT" == *" $svc "* ]]; then
       if [[ "$state" == exited ]]; then
         [[ "$code" == 0 ]] || failed+=("$svc(exit $code)")

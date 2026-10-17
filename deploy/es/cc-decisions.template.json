@@ -97,6 +97,9 @@
               "type": "keyword"
             }
           }
+        },
+        "@timestamp": {
+          "type": "date"
         }
       }
     },
@@ -105,6 +108,6 @@
     }
   },
   "_meta": {
-    "description": "cc-decisions: written by es-indexer through the cc-decisions-write alias"
+    "description": "cc-decisions: written by Logstash (kafka-events pipeline) through the cc-decisions-write alias"
   }
 }

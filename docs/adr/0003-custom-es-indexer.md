@@ -1,6 +1,6 @@
 # ADR-0003: Custom es-indexer instead of Kafka Connect
 
-* Status: accepted
+* Status: superseded by [ADR-0009](0009-elk-ingestion.md)
 * Date: 2026-10-17
 
 ## Context and problem statement

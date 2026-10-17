@@ -1,0 +1,55 @@
+{
+  "index_patterns": [
+    "cc-logs-*"
+  ],
+  "priority": 100,
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index.lifecycle.name": "cc-logs-7d",
+      "index.lifecycle.rollover_alias": "cc-logs-write"
+    },
+    "mappings": {
+      "dynamic": false,
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "message": {
+          "type": "text"
+        },
+        "level": {
+          "type": "keyword"
+        },
+        "service": {
+          "type": "keyword"
+        },
+        "correlationId": {
+          "type": "keyword"
+        },
+        "logger_name": {
+          "type": "keyword"
+        },
+        "thread_name": {
+          "type": "keyword"
+        },
+        "stack_trace": {
+          "type": "text"
+        },
+        "trace_id": {
+          "type": "keyword"
+        },
+        "span_id": {
+          "type": "keyword"
+        }
+      }
+    },
+    "aliases": {
+      "cc-logs": {}
+    }
+  },
+  "_meta": {
+    "description": "container logs of our services, shipped by Filebeat through Logstash"
+  }
+}

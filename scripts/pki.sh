@@ -25,7 +25,8 @@ PASS=${PASS:-changeit}
 # Components that serve TLS and/or present a client certificate (name == compose service name).
 COMPONENTS=(
   kafka elasticsearch kibana odm apisix
-  application-api decision-query-api txn-generator decision-orchestrator es-indexer notification-svc
+  application-api decision-query-api txn-generator decision-orchestrator notification-svc
+  logstash filebeat
   kafka-ui
 )
 # Pure clients: client authentication only.
@@ -87,6 +88,8 @@ issue() {
     san="subjectAltName=DNS:$name,DNS:localhost,IP:127.0.0.1,IP:::1"
   fi
   openssl genrsa -out "$dir/$name.key" 2048 2>/dev/null
+  # PKCS#8 copy for software that rejects traditional RSA keys (Logstash beats input)
+  openssl pkcs8 -topk8 -nocrypt -in "$dir/$name.key" -out "$dir/$name.pk8.key"
   openssl req -new -key "$dir/$name.key" -subj "/O=Maple Northern Bank (demo)/CN=$name" \
     -out "$dir/$name.csr"
   {

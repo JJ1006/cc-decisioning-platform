@@ -1,0 +1,315 @@
+[
+  {
+    "name": "decision passes through unchanged",
+    "input": {
+      "topic": "cc.decisions.approved.v1",
+      "raw": {
+        "eventId": "11111111-1111-1111-1111-111111111111",
+        "correlationId": "c-11",
+        "eventType": "cc.decisions.approved.v1",
+        "schemaVersion": 1,
+        "occurredAt": "2026-10-17T14:30:00Z",
+        "producer": "decision-orchestrator",
+        "payload": {
+          "applicationId": "APP-1",
+          "outcome": "APPROVE",
+          "creditLimit": 8000,
+          "product": "CASHBACK",
+          "aprTier": "TIER_2",
+          "reasonCodes": [
+            "R_APPROVED_STANDARD"
+          ],
+          "firedRules": [
+            "RSN-01"
+          ],
+          "applicantSummary": {
+            "province": "ON",
+            "ageBand": "35-44",
+            "bureauScore": 742,
+            "tdsRatio": 0.35,
+            "annualIncome": 85000
+          }
+        }
+      }
+    },
+    "expected": {
+      "eventId": "11111111-1111-1111-1111-111111111111",
+      "correlationId": "c-11",
+      "eventType": "cc.decisions.approved.v1",
+      "schemaVersion": 1,
+      "occurredAt": "2026-10-17T14:30:00Z",
+      "producer": "decision-orchestrator",
+      "payload": {
+        "applicationId": "APP-1",
+        "outcome": "APPROVE",
+        "creditLimit": 8000,
+        "product": "CASHBACK",
+        "aprTier": "TIER_2",
+        "reasonCodes": [
+          "R_APPROVED_STANDARD"
+        ],
+        "firedRules": [
+          "RSN-01"
+        ],
+        "applicantSummary": {
+          "province": "ON",
+          "ageBand": "35-44",
+          "bureauScore": 742,
+          "tdsRatio": 0.35,
+          "annualIncome": 85000
+        }
+      },
+      "topic": "cc.decisions.approved.v1",
+      "@timestamp": "2026-10-17T14:30:00.000Z",
+      "_alias": "cc-decisions-write"
+    }
+  },
+  {
+    "name": "audit details are masked",
+    "input": {
+      "topic": "cc.audit.v1",
+      "raw": {
+        "eventId": "22222222-2222-2222-2222-222222222222",
+        "correlationId": "c-22",
+        "eventType": "cc.audit.v1",
+        "schemaVersion": 1,
+        "occurredAt": "2026-10-17T14:30:00Z",
+        "producer": "decision-orchestrator",
+        "payload": {
+          "actor": "svc",
+          "action": "TEST",
+          "resourceType": "application",
+          "resourceId": "A1",
+          "result": "SUCCESS",
+          "details": {
+            "sin": "046454286",
+            "postalCode": "m5v 2t6",
+            "firstName": "Avery",
+            "ok": "yes"
+          }
+        }
+      }
+    },
+    "expected": {
+      "eventId": "22222222-2222-2222-2222-222222222222",
+      "correlationId": "c-22",
+      "eventType": "cc.audit.v1",
+      "schemaVersion": 1,
+      "occurredAt": "2026-10-17T14:30:00Z",
+      "producer": "decision-orchestrator",
+      "payload": {
+        "actor": "svc",
+        "action": "TEST",
+        "resourceType": "application",
+        "resourceId": "A1",
+        "result": "SUCCESS",
+        "details": {
+          "fsa": "M5V",
+          "firstInitial": "A.",
+          "ok": "yes"
+        }
+      },
+      "topic": "cc.audit.v1",
+      "@timestamp": "2026-10-17T14:30:00.000Z",
+      "_alias": "cc-audit-write"
+    }
+  },
+  {
+    "name": "notification passes through",
+    "input": {
+      "topic": "cc.notifications.v1",
+      "raw": {
+        "eventId": "33333333-3333-3333-3333-333333333333",
+        "correlationId": "c-33",
+        "eventType": "cc.notifications.v1",
+        "schemaVersion": 1,
+        "occurredAt": "2026-10-17T14:30:00Z",
+        "producer": "notification-svc",
+        "payload": {
+          "applicationId": "A1",
+          "noticeType": "ADVERSE_ACTION",
+          "channel": "MAIL",
+          "recipientRef": "APP:A1",
+          "subject": "s",
+          "body": "b",
+          "reasonTexts": [
+            "r"
+          ]
+        }
+      }
+    },
+    "expected": {
+      "eventId": "33333333-3333-3333-3333-333333333333",
+      "correlationId": "c-33",
+      "eventType": "cc.notifications.v1",
+      "schemaVersion": 1,
+      "occurredAt": "2026-10-17T14:30:00Z",
+      "producer": "notification-svc",
+      "payload": {
+        "applicationId": "A1",
+        "noticeType": "ADVERSE_ACTION",
+        "channel": "MAIL",
+        "recipientRef": "APP:A1",
+        "subject": "s",
+        "body": "b",
+        "reasonTexts": [
+          "r"
+        ]
+      },
+      "topic": "cc.notifications.v1",
+      "@timestamp": "2026-10-17T14:30:00.000Z",
+      "_alias": "cc-notifications-write"
+    }
+  },
+  {
+    "name": "full application: SIN gone, names to initials, postal to FSA, dob to age band",
+    "input": {
+      "topic": "cc.decisions.declined.v1",
+      "raw": {
+        "eventId": "44444444-4444-4444-4444-444444444444",
+        "correlationId": "c-44",
+        "eventType": "cc.decisions.declined.v1",
+        "schemaVersion": 1,
+        "occurredAt": "2026-10-17T14:30:00Z",
+        "producer": "decision-orchestrator",
+        "payload": {
+          "application": {
+            "applicant": {
+              "applicantId": "CUS-1",
+              "firstName": "Avery",
+              "lastName": "tremblay",
+              "dateOfBirth": "1990-05-14",
+              "sin": "046454286"
+            },
+            "address": {
+              "line1": "100 Queen St W",
+              "city": "Toronto",
+              "province": "ON",
+              "postalCode": "k1a 0b1"
+            },
+            "employment": {
+              "employer": "Example Corp",
+              "annualIncome": 85000
+            }
+          }
+        }
+      }
+    },
+    "expected": {
+      "eventId": "44444444-4444-4444-4444-444444444444",
+      "correlationId": "c-44",
+      "eventType": "cc.decisions.declined.v1",
+      "schemaVersion": 1,
+      "occurredAt": "2026-10-17T14:30:00Z",
+      "producer": "decision-orchestrator",
+      "payload": {
+        "application": {
+          "applicant": {
+            "applicantId": "CUS-1",
+            "firstInitial": "A.",
+            "lastInitial": "T.",
+            "ageBand": "35-44"
+          },
+          "address": {
+            "city": "Toronto",
+            "province": "ON",
+            "fsa": "K1A"
+          },
+          "employment": {
+            "annualIncome": 85000
+          }
+        }
+      },
+      "topic": "cc.decisions.declined.v1",
+      "@timestamp": "2026-10-17T14:30:00.000Z",
+      "_alias": "cc-decisions-write"
+    }
+  },
+  {
+    "name": "blank names, short postal code and bad birth date",
+    "input": {
+      "topic": "cc.decisions.declined.v1",
+      "raw": {
+        "eventId": "55555555-5555-5555-5555-555555555555",
+        "correlationId": "c-55",
+        "eventType": "cc.decisions.declined.v1",
+        "schemaVersion": 1,
+        "occurredAt": "2026-10-17T14:30:00Z",
+        "producer": "decision-orchestrator",
+        "payload": {
+          "p": {
+            "firstName": "  ",
+            "lastName": "",
+            "postalCode": "k1",
+            "dateOfBirth": "not-a-date"
+          }
+        }
+      }
+    },
+    "expected": {
+      "eventId": "55555555-5555-5555-5555-555555555555",
+      "correlationId": "c-55",
+      "eventType": "cc.decisions.declined.v1",
+      "schemaVersion": 1,
+      "occurredAt": "2026-10-17T14:30:00Z",
+      "producer": "decision-orchestrator",
+      "payload": {
+        "p": {
+          "firstInitial": "",
+          "lastInitial": "",
+          "fsa": "",
+          "ageBand": "unknown"
+        }
+      },
+      "topic": "cc.decisions.declined.v1",
+      "@timestamp": "2026-10-17T14:30:00.000Z",
+      "_alias": "cc-decisions-write"
+    }
+  },
+  {
+    "name": "invalid JSON becomes a redacted cc-dlq document",
+    "deadLetter": true,
+    "input": {
+      "topic": "cc.decisions.declined.v1",
+      "message": "{\"sin\":\"046454286\", broken"
+    },
+    "ignore": [
+      "@timestamp",
+      "errorMessage",
+      "failedAt",
+      "eventId"
+    ],
+    "expected": {
+      "source": "logstash-parse",
+      "originalTopic": "cc.decisions.declined.v1",
+      "originalValue": "{\"sin\":\"***\", broken",
+      "errorClass": "JSON::ParserError",
+      "_alias": "cc-dlq-write"
+    }
+  },
+  {
+    "name": "JSON that is not an event envelope becomes a cc-dlq document",
+    "deadLetter": true,
+    "input": {
+      "topic": "cc.audit.v1",
+      "raw": {
+        "payload": {
+          "x": 1
+        }
+      }
+    },
+    "ignore": [
+      "@timestamp",
+      "errorMessage",
+      "failedAt",
+      "eventId"
+    ],
+    "expected": {
+      "source": "logstash-parse",
+      "originalTopic": "cc.audit.v1",
+      "originalValue": "{\"payload\":{\"x\":1}}",
+      "errorClass": "ArgumentError",
+      "_alias": "cc-dlq-write"
+    }
+  }
+]

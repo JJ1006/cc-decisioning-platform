@@ -55,6 +55,9 @@
               "type": "flattened"
             }
           }
+        },
+        "@timestamp": {
+          "type": "date"
         }
       }
     },
@@ -63,6 +66,6 @@
     }
   },
   "_meta": {
-    "description": "cc-audit: written by es-indexer through the cc-audit-write alias"
+    "description": "cc-audit: written by Logstash (kafka-events pipeline) through the cc-audit-write alias"
   }
 }
