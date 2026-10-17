@@ -1,0 +1,12 @@
+title = "cc-decisioning-platform gitleaks config"
+
+[extend]
+useDefault = true
+
+# Compose healthchecks/jobs pass credentials as container env-var references
+# (curl -u elastic:$$ELASTIC_PASSWORD), never as literals.
+[[allowlists]]
+description = "curl -u with an environment-variable reference"
+targetRules = ["curl-auth-user"]
+regexTarget = "match"
+regexes = ['''-u\s+"?[A-Za-z_]+:\$\$?\{?[A-Z][A-Z_]+''']
