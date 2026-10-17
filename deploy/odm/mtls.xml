@@ -1,0 +1,5 @@
+<!-- Liberty override (mounted into /config/configDropins/overrides): the HTTPS port REQUIRES a client certificate signed by
+     the CA in the truststore (our private CA, scripts/pki.sh). Same ssl id as the image's tlsSecurity.xml, so this merges. -->
+<server>
+  <ssl id="odmDefaultSSLConfig" clientAuthentication="true"/>
+</server>

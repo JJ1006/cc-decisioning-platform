@@ -9,7 +9,7 @@ cd "$ROOT"
 TOTAL=${1:-1000}
 TPS=${2:-50}
 POISON=${3:-0.01}
-GEN=${GEN_URL:-http://localhost:8081}
+gen() { scripts/api-call.sh ops-admin -f "$@"; } # the generator admin API is reached through the gateway (ops-admin certificate)
 source scripts/res-env.sh
 export PROFILE=core
 
@@ -47,9 +47,9 @@ printf 'CANARY|%s\n' "$canary" | scripts/compose.sh exec -T -e KAFKA_HEAP_OPTS=-
   --property parse.key=true --property key.separator='|' >/dev/null 2>&1 || echo "WARN could not send the masking canary"
 
 echo "starting generator: total=$TOTAL tps=$TPS poisonRate=$POISON"
-curl -sf -X POST "$GEN/admin/start?total=$TOTAL&tps=$TPS&poisonRate=$POISON" | jq -c .
-while [[ $(curl -sf "$GEN/admin/status" | jq -r .running) == true ]]; do sleep 2; done
-status=$(curl -sf "$GEN/admin/status")
+gen -X POST "/admin/generator/start?total=$TOTAL&tps=$TPS&poisonRate=$POISON" | jq -c .
+while [[ $(gen /admin/generator/status | jq -r .running) == true ]]; do sleep 2; done
+status=$(gen /admin/generator/status)
 poison=$(jq -r .poison <<<"$status")
 sent=$(jq -r .sent <<<"$status")
 good=$((sent - poison))

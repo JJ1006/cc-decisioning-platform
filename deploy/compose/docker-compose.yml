@@ -1,7 +1,8 @@
 # Local stack. Run via `make up PROFILE=core,analytics` (needs `make pki` first).
 #   core       kafka (mTLS), topic-init, elasticsearch (TLS), es-setup, odm, the event services, logstash, filebeat
 #   analytics  kibana, kafka-ui, decision-query-api   (requires core)
-#   edge       application-api   (requires core; status and manual decisions also need decision-query-api from analytics)
+#   edge       apisix gateway (:8443, mutual TLS) and application-api   (requires core; status, decisions and statistics also need
+#              decision-query-api from analytics). Service ports are not published: see compose.debug.yml.
 # All images are multi-arch; ODM and the rest run natively on Apple Silicon.
 # Dev only: passwords come from ../../.env (see .env.example); keys live in security/pki/out.
 name: ${COMPOSE_PROJECT_NAME:-ccplatform}
@@ -133,18 +134,18 @@ services:
     mem_limit: ${ODM_MEM:-2560m}
     hostname: odm
     ports:
-      - "127.0.0.1:9060:9060" # http (dev console)
       - "127.0.0.1:9443:9453" # https (Liberty listens on 9453 in this image; host keeps 9443)
     environment:
       LICENSE: accept
       SAMPLE: ${ODM_SAMPLE:-false} # true loads the Loan Validation sample (format template for scripts/gen_dc_project.py)
-      # Liberty HTTPS uses our CA-signed cert. Client-cert enforcement is switched on later
-      # (ENABLE_MTLS=true) once the orchestrator and MCP server present certificates.
+      # Liberty HTTPS uses our CA-signed cert and REQUIRES a client certificate signed by our CA (deploy/odm/mtls.xml).
+      # The plain http port 9060 is not published: Decision Center reaches RES on it inside the container.
     volumes:
+      - ../odm/mtls.xml:/config/configDropins/overrides/mtls.xml:ro
       - ${PKI_DIR:-../../security/pki/out}/odm/odm.jks:/config/security/volume/keystore.jks:ro
       - ${PKI_DIR:-../../security/pki/out}/truststore.jks:/config/security/volume/truststore.jks:ro
     healthcheck:
-      test: ["CMD-SHELL", "curl -sk -o /dev/null -f https://localhost:9453/res/"]
+      test: ["CMD-SHELL", "curl -s -o /dev/null -f http://localhost:9060/res/"]
       interval: 20s
       timeout: 10s
       retries: 15
@@ -162,12 +163,14 @@ services:
     env_file: [.env.derived]
     mem_limit: 256m
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:8081:8080"
     depends_on:
       kafka: { condition: service_healthy }
       topic-init: { condition: service_completed_successfully }
     environment:
+      SERVER_SSL_ENABLED: "true" # mutual TLS on the service port; only the listed client CNs may call (apisix)
+      SERVER_KEYSTORE: /pki/keystore.p12
+      SERVER_TRUSTSTORE: /pki/truststore.p12
+      MANAGEMENT_PORT: "9090" # plain http for probes and metrics, never published
       KAFKA_BOOTSTRAP: kafka:9093
       KAFKA_KEYSTORE: /pki/keystore.p12
       KAFKA_TRUSTSTORE: /pki/truststore.p12
@@ -175,7 +178,7 @@ services:
       - ${PKI_DIR:-../../security/pki/out}/txn-generator/txn-generator.p12:/pki/keystore.p12:ro
       - ${PKI_DIR:-../../security/pki/out}/truststore.p12:/pki/truststore.p12:ro
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health/readiness >/dev/null"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:9090/actuator/health/readiness >/dev/null"]
       interval: 15s
       timeout: 5s
       retries: 10
@@ -193,8 +196,6 @@ services:
     env_file: [.env.derived]
     mem_limit: 320m
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:8082:8080"
     depends_on:
       kafka: { condition: service_healthy }
       topic-init: { condition: service_completed_successfully }
@@ -205,6 +206,7 @@ services:
       KAFKA_TRUSTSTORE: /pki/truststore.p12
       RES_BASE_URL: https://odm:9453
       RES_TRUSTSTORE: /pki/truststore.p12
+      RES_KEYSTORE: /pki/keystore.p12 # client certificate for ODM (mutual TLS)
     volumes:
       - ${PKI_DIR:-../../security/pki/out}/decision-orchestrator/decision-orchestrator.p12:/pki/keystore.p12:ro
       - ${PKI_DIR:-../../security/pki/out}/truststore.p12:/pki/truststore.p12:ro
@@ -227,8 +229,6 @@ services:
     env_file: [.env.derived]
     mem_limit: 256m
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:8083:8080"
     depends_on:
       kafka: { condition: service_healthy }
       topic-init: { condition: service_completed_successfully }
@@ -374,18 +374,22 @@ services:
     env_file: [.env.derived] # QUERY_API_PASSWORD: the read-only Elasticsearch user decision-query-api
     mem_limit: 320m
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:8085:8080"
     depends_on:
       elasticsearch: { condition: service_healthy }
       es-setup: { condition: service_completed_successfully }
     environment:
+      SERVER_SSL_ENABLED: "true" # mutual TLS on the service port; only the listed client CNs may call (apisix, application-api)
+      SERVER_KEYSTORE: /pki/keystore.p12
+      SERVER_TRUSTSTORE: /pki/truststore.p12
+      MANAGEMENT_PORT: "9090" # plain http for probes and metrics, never published
       ES_URL: https://elasticsearch:9200
       ES_CA: /pki/ca.crt
     volumes:
+      - ${PKI_DIR:-../../security/pki/out}/decision-query-api/decision-query-api.p12:/pki/keystore.p12:ro
+      - ${PKI_DIR:-../../security/pki/out}/truststore.p12:/pki/truststore.p12:ro
       - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health/readiness >/dev/null"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:9090/actuator/health/readiness >/dev/null"]
       interval: 15s
       timeout: 5s
       retries: 10
@@ -404,26 +408,63 @@ services:
     env_file: [.env.derived]
     mem_limit: 320m
     restart: unless-stopped
-    ports:
-      - "127.0.0.1:8084:8080"
     depends_on:
       kafka: { condition: service_healthy }
       topic-init: { condition: service_completed_successfully }
       decision-query-api: { condition: service_healthy, required: false } # analytics profile
     environment:
+      SERVER_SSL_ENABLED: "true" # mutual TLS on the service port; only the listed client CNs may call (apisix)
+      SERVER_KEYSTORE: /pki/keystore.p12
+      SERVER_TRUSTSTORE: /pki/truststore.p12
+      MANAGEMENT_PORT: "9090" # plain http for probes and metrics, never published
       KAFKA_BOOTSTRAP: kafka:9093
       KAFKA_KEYSTORE: /pki/keystore.p12
       KAFKA_TRUSTSTORE: /pki/truststore.p12
-      QUERY_API_URL: http://decision-query-api:8080
+      QUERY_API_URL: https://decision-query-api:8080
     volumes:
       - ${PKI_DIR:-../../security/pki/out}/application-api/application-api.p12:/pki/keystore.p12:ro
       - ${PKI_DIR:-../../security/pki/out}/truststore.p12:/pki/truststore.p12:ro
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health/readiness >/dev/null"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:9090/actuator/health/readiness >/dev/null"]
       interval: 15s
       timeout: 5s
       retries: 10
       start_period: 40s
+
+  # ----------------------------------------------------------- edge: the gateway
+  apisix:
+    # Apache APISIX 3.x, standalone (declarative gateway/apisix/apisix.yaml.tmpl, no etcd). The only published port of the
+    # APIs: 8443, mutual TLS, client certificate required. Replaces Apigee (docs/apigee-mapping.md).
+    image: apache/apisix:3.13.0-debian
+    profiles: [edge]
+    labels:
+      co.elastic.logs/enabled: "true" # Filebeat ships this container's logs
+    logging: # Docker Desktop defaults to the "local" driver, which Filebeat cannot read
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
+    mem_limit: 256m
+    restart: unless-stopped
+    hostname: apisix
+    entrypoint: ["/bin/sh", "/gateway/entrypoint.sh"]
+    ports:
+      - "127.0.0.1:8443:9443"
+    depends_on:
+      application-api: { condition: service_healthy }
+      decision-query-api: { condition: service_healthy, required: false } # analytics profile
+      txn-generator: { condition: service_healthy }
+    volumes:
+      - ../../gateway/apisix/entrypoint.sh:/gateway/entrypoint.sh:ro
+      - ../../gateway/apisix/apisix.yaml.tmpl:/gateway/apisix.yaml.tmpl:ro
+      - ../../gateway/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+      - ${PKI_DIR:-../../security/pki/out}/apisix/apisix.crt:/pki/apisix.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/apisix/apisix.key:/pki/apisix.key:ro
+      - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
+    healthcheck: # the Prometheus exporter listens on 9091 inside the container
+      test: ["CMD-SHELL", "curl -sf http://localhost:9091/apisix/prometheus/metrics >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
 volumes:
   kafka-data:

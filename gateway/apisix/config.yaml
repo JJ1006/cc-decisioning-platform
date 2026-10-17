@@ -1,0 +1,38 @@
+# APISIX 3.x, standalone (data plane only, routes from apisix.yaml, no etcd, no Admin API).
+# Mounted at /usr/local/apisix/conf/config.yaml by deploy/compose/docker-compose.yml.
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+
+apisix:
+  enable_admin: false
+  enable_server_tokens: false # "Server: APISIX" without the version
+  # no plain HTTP for clients: loopback only (nothing publishes it)
+  node_listen:
+    - ip: 127.0.0.1
+      port: 9080
+  ssl:
+    enable: true
+    listen:
+      - port: 9443
+    ssl_protocols: TLSv1.2 TLSv1.3
+    # the CA that signed the services' certificates: upstream (gateway to service) TLS is verified against it
+    ssl_trusted_certificate: /pki/ca.crt
+
+nginx_config:
+  worker_processes: 1 # demo sizing (mem_limit 256m)
+  error_log_level: warn
+
+plugin_attr:
+  prometheus:
+    # internal only: not published on the host; Prometheus scrapes apisix:9091 in P8
+    export_addr:
+      ip: 0.0.0.0
+      port: 9091
+  opentelemetry:
+    resource:
+      service.name: apisix
+    collector:
+      address: otel-collector:4318 # arrives with the observability phase (P8)
+      request_timeout: 3

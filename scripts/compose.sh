@@ -47,5 +47,8 @@ EOV
 profiles=()
 IFS=, read -ra wanted <<<"${PROFILE:-core}"
 for p in "${wanted[@]}"; do profiles+=(--profile "$p"); done
-exec docker compose -f "$ROOT/deploy/compose/docker-compose.yml" --env-file "$ROOT/.env" \
+files=(-f "$ROOT/deploy/compose/docker-compose.yml")
+# COMPOSE_DEBUG=1 publishes the service ports on 127.0.0.1 (deploy/compose/compose.debug.yml); off by default
+[[ -n "${COMPOSE_DEBUG:-}" ]] && files+=(-f "$ROOT/deploy/compose/compose.debug.yml")
+exec docker compose "${files[@]}" --env-file "$ROOT/.env" \
   "${profiles[@]}" "$@"

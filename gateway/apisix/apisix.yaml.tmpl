@@ -1,0 +1,206 @@
+# APISIX declarative configuration (standalone mode). entrypoint.sh renders this file into apisix.yaml, replacing the
+# three @...@ lines with the PEM certificates from scripts/pki.sh. Nothing secret is committed.
+#
+# Identity: the client certificate is REQUIRED (ssl "client" below: verified against our CA, depth 2). Its CN is the
+# consumer. The global rule maps the CN to a role, checks it against the route's `labels.roles`, and sets X-Consumer and
+# X-Role for the upstream, replacing whatever the client sent. The services trust those two headers only on a connection
+# that presents the gateway's own certificate (CN=apisix), see docs/security-mtls.md.
+
+ssls:
+  - id: gateway-server
+    snis: ["localhost", "apisix"]
+    cert: |
+@SERVER_CERT@
+    key: |
+@SERVER_KEY@
+    client:
+      ca: |
+@CLIENT_CA@
+      depth: 2
+  # the gateway's client certificate towards the services (the same certificate: it has serverAuth and clientAuth)
+  - id: upstream-client
+    type: client
+    cert: |
+@SERVER_CERT@
+    key: |
+@SERVER_KEY@
+
+upstreams:
+  - id: application-api
+    type: roundrobin
+    scheme: https
+    pass_host: node # SNI and Host = application-api, which is in the service certificate's SAN
+    nodes: { "application-api:8080": 1 }
+    tls: { client_cert_id: upstream-client, verify: true }
+    timeout: { connect: 3, send: 10, read: 30 }
+  - id: decision-query-api
+    type: roundrobin
+    scheme: https
+    pass_host: node
+    nodes: { "decision-query-api:8080": 1 }
+    tls: { client_cert_id: upstream-client, verify: true }
+    timeout: { connect: 3, send: 10, read: 30 }
+  - id: txn-generator
+    type: roundrobin
+    scheme: https
+    pass_host: node
+    nodes: { "txn-generator:8080": 1 }
+    tls: { client_cert_id: upstream-client, verify: true }
+    timeout: { connect: 3, send: 10, read: 30 }
+
+# one quota per consumer, shared by all routes (group): 100 requests per minute, then 429
+plugin_configs:
+  - id: quota
+    plugins:
+      limit-count:
+        count: 100
+        time_window: 60
+        key_type: var
+        key: ssl_client_s_dn
+        rejected_code: 429
+        rejected_msg: "quota exceeded for this consumer"
+        group: per-consumer
+        show_limit_headers: true
+        policy: local
+
+global_rules:
+  - id: identity-and-hardening
+    plugins:
+      serverless-pre-function:
+        phase: rewrite
+        functions:
+          - |
+            return function(conf, ctx)
+              local core = require("apisix.core")
+              local roles = {
+                ["demo-partner"] = "PARTNER",
+                ["underwriter-portal"] = "UNDERWRITER",
+                ["analyst"] = "ANALYST",
+                ["load-test"] = "ANALYST",
+                ["ops-admin"] = "OPS",
+              }
+              -- never trust what the client sends
+              core.request.set_header(ctx, "X-Consumer", nil)
+              core.request.set_header(ctx, "X-Role", nil)
+              local route = ctx.matched_route and ctx.matched_route.value
+              if not route then
+                return -- no route: APISIX answers 404
+              end
+              local dn = ngx.var.ssl_client_s_dn or ""
+              local cn = dn:match("CN=([^,/]+)")
+              local role = cn and roles[cn]
+              local allowed = route.labels and route.labels.roles
+              local denied
+              if not role then
+                denied = "this client certificate is not a known consumer"
+              elseif not allowed or not string.find("," .. allowed .. ",", "," .. role .. ",", 1, true) then
+                denied = "role " .. role .. " may not call this route"
+              end
+              if denied then
+                core.response.set_header("Content-Type", "application/problem+json")
+                return 403, { type = "about:blank", title = "Forbidden", status = 403, detail = denied }
+              end
+              core.request.set_header(ctx, "X-Consumer", cn)
+              core.request.set_header(ctx, "X-Role", role)
+            end
+      request-id:
+        header_name: X-Correlation-Id # kept when the client sends one, created otherwise
+        include_in_response: true
+      cors:
+        allow_origins: "https://localhost:8443"
+        allow_methods: "GET,POST,OPTIONS"
+        allow_headers: "Content-Type,Idempotency-Key,X-Correlation-Id"
+        expose_headers: "X-Correlation-Id,Location,Idempotent-Replayed"
+        max_age: 600
+      response-rewrite:
+        headers:
+          set:
+            Strict-Transport-Security: "max-age=31536000; includeSubDomains"
+            X-Content-Type-Options: "nosniff"
+            X-Frame-Options: "DENY"
+            Cache-Control: "no-store"
+          remove: ["Server"]
+      prometheus:
+        prefer_name: true
+      opentelemetry:
+        sampler: { name: always_off } # P8 switches it to parent_base / trace_id_ratio with the collector
+
+routes:
+  # ---- applications (application-api): partner submits and follows, underwriter decides
+  - id: applications-submit
+    uri: /v1/applications
+    methods: [POST]
+    labels: { roles: PARTNER }
+    upstream_id: application-api
+    plugin_config_id: quota
+    plugins:
+      limit-req: # spike arrest: 5 requests per second per consumer, burst 5, beyond that 429
+        rate: 5
+        burst: 5
+        key_type: var
+        key: ssl_client_s_dn
+        rejected_code: 429
+        rejected_msg: "spike arrest: slow down"
+        nodelay: true
+  - id: applications-status
+    uri: /v1/applications/:id/status
+    methods: [GET]
+    labels: { roles: "PARTNER,UNDERWRITER" }
+    upstream_id: application-api
+    plugin_config_id: quota
+  - id: applications-manual-decision
+    uri: /v1/applications/:id/manual-decision
+    methods: [POST]
+    labels: { roles: UNDERWRITER }
+    upstream_id: application-api
+    plugin_config_id: quota
+
+  # ---- decisions and statistics (decision-query-api)
+  - id: decisions-search
+    uri: /v1/decisions
+    methods: [GET]
+    labels: { roles: ANALYST }
+    upstream_id: decision-query-api
+    plugin_config_id: quota
+  - id: decisions-item
+    uri: /v1/decisions/*
+    methods: [GET]
+    labels: { roles: "ANALYST,UNDERWRITER" }
+    upstream_id: decision-query-api
+    plugin_config_id: quota
+  - id: stats
+    uri: /v1/stats/*
+    methods: [GET]
+    labels: { roles: ANALYST }
+    upstream_id: decision-query-api
+    plugin_config_id: quota
+
+  # ---- operations
+  - id: ops
+    uri: /v1/ops/*
+    methods: [GET]
+    labels: { roles: OPS }
+    upstream_id: decision-query-api
+    plugin_config_id: quota
+  - id: generator-admin # /admin/generator/start -> txn-generator /admin/start
+    uri: /admin/generator/*
+    methods: [GET, POST]
+    labels: { roles: OPS }
+    upstream_id: txn-generator
+    plugin_config_id: quota
+    plugins:
+      proxy-rewrite:
+        regex_uri: ["^/admin/generator/(.*)", "/admin/$1"]
+
+  # ---- MCP servers arrive in P9: the route and its roles exist, the answer is a placeholder
+  - id: mcp-placeholder
+    uri: /mcp/*
+    labels: { roles: "PARTNER,UNDERWRITER,ANALYST,OPS" }
+    plugin_config_id: quota
+    plugins:
+      fault-injection:
+        abort:
+          http_status: 501
+          body: '{"type":"about:blank","title":"Not implemented","status":501,"detail":"MCP servers are added in phase 9"}'
+          headers: { Content-Type: application/problem+json }
+#END
