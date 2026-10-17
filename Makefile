@@ -4,7 +4,7 @@ JAVA_HOME := $(shell [ -d /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Conte
 export JAVA_HOME
 
 .DEFAULT_GOAL := help
-.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules demo kind-up ocp-render eval-rules eval-agent what-if
+.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules test-logstash demo kind-up ocp-render eval-rules eval-agent what-if
 
 help: ## Show targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -29,6 +29,7 @@ ps: ## Compose status
 verify: ## Full local verification (build + tests + format check)
 	@uv run --quiet --with jsonschema python scripts/validate-contracts.py
 	@if grep -q '<module>' pom.xml; then mvn -B -ntp -q verify; else echo "no Maven modules yet"; fi
+	@scripts/test-logstash.sh
 
 test: ## Unit tests
 	@if grep -q '<module>' pom.xml; then mvn -q test; else echo "no Maven modules yet"; fi
@@ -51,6 +52,9 @@ dc-export: ## Export the decision service from Decision Center into rules/dc-exp
 test-rules: ## Run the 30 scenarios in rules/tests against the deployed ruleset
 	@python3 rules/tests/check_scenarios.py
 	@scripts/test-ruleset.sh
+
+test-logstash: ## Run fixture events through the real Logstash filters (PII masking, dead letters, logs); needs Docker
+	@scripts/test-logstash.sh
 
 lint-rules: ## Prohibited-grounds lint + scenario spec check (no ODM needed)
 	@scripts/lint-prohibited-grounds.sh

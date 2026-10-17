@@ -6,14 +6,14 @@ Every business topic also has `<topic>.retry` (non-blocking retries) and `<topic
 | Topic | Key | Partitions | Retention | Producer | Consumers |
 |---|---|---|---|---|---|
 | `cc.applications.submitted.v1` | applicationId | 3 | 7d | txn-generator, application-api | decision-orchestrator |
-| `cc.decisions.approved.v1` | applicationId | 3 | 7d | decision-orchestrator | notification-svc, es-indexer |
-| `cc.decisions.declined.v1` | applicationId | 3 | 7d | decision-orchestrator | notification-svc, es-indexer |
-| `cc.decisions.referred.v1` | applicationId | 3 | 7d | decision-orchestrator | notification-svc, es-indexer |
-| `cc.decisions.manual.v1` | applicationId | 1 | 30d | application-api | es-indexer, notification-svc |
-| `cc.notifications.v1` | applicationId | 3 | 7d | notification-svc | es-indexer |
-| `cc.audit.v1` | resourceId | 3 | 30d | every service, MCP servers | es-indexer |
+| `cc.decisions.approved.v1` | applicationId | 3 | 7d | decision-orchestrator | notification-svc, logstash |
+| `cc.decisions.declined.v1` | applicationId | 3 | 7d | decision-orchestrator | notification-svc, logstash |
+| `cc.decisions.referred.v1` | applicationId | 3 | 7d | decision-orchestrator | notification-svc, logstash |
+| `cc.decisions.manual.v1` | applicationId | 1 | 30d | application-api | logstash, notification-svc |
+| `cc.notifications.v1` | applicationId | 3 | 7d | notification-svc | logstash |
+| `cc.audit.v1` | resourceId | 3 | 30d | every service, MCP servers | logstash |
 | `<topic>.retry` | same as source | 3 | 1d | the consuming service | the consuming service |
-| `<topic>.dlq` | same as source | 1 | 30d | the consuming service | operators (kafka-ui), es-indexer (DLQ count panel) |
+| `<topic>.dlq` | same as source | 1 | 30d | the consuming service | operators (kafka-ui), logstash (cc-dlq index, DLQ count panel) |
 
 Topic names are constants in `ca.maplenorthern.cc.common.Topics`.
 
