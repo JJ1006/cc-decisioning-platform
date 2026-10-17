@@ -33,6 +33,12 @@ es() { scripts/es-curl.sh "$@"; }
 es_count() { es "/$1/_count" | jq -r '.count // 0'; }
 refresh() { es -X POST "/cc-*/_refresh" >/dev/null 2>&1 || true; }
 
+# baselines, taken before this run sends anything (earlier runs stay in the indexes)
+base_dec=$(es_count cc-decisions)
+base_not=$(es_count cc-notifications)
+base_aud=$(es_count cc-audit)
+base_dlq=$(es_count cc-dlq)
+
 # 2. masking canary: personal data in an audit event; it must reach Elasticsearch masked
 canary_id=$(uuidgen | tr 'A-Z' 'a-z') # unique per run: the same eventId would be (correctly) deduplicated by Elasticsearch
 canary='{"eventId":"'"$canary_id"'","correlationId":"canary","eventType":"cc.audit.v1","schemaVersion":1,"occurredAt":"2026-01-01T00:00:00Z","producer":"demo","payload":{"actor":"demo","action":"MASK_CANARY","resourceType":"application","resourceId":"CANARY","result":"SUCCESS","details":{"firstName":"Avery","lastName":"Tremblay","sin":"046454286","postalCode":"M5V 2T6","dateOfBirth":"1990-05-14","line1":"100 Queen St W"}}}'
@@ -40,10 +46,6 @@ printf 'CANARY|%s\n' "$canary" | scripts/compose.sh exec -T -e KAFKA_HEAP_OPTS=-
   --bootstrap-server kafka:9093 --producer.config /pki/kafka-client.properties --topic cc.audit.v1 \
   --property parse.key=true --property key.separator='|' >/dev/null 2>&1 || echo "WARN could not send the masking canary"
 
-base_dec=$(es_count cc-decisions)
-base_not=$(es_count cc-notifications)
-base_aud=$(es_count cc-audit)
-base_dlq=$(es_count cc-dlq)
 echo "starting generator: total=$TOTAL tps=$TPS poisonRate=$POISON"
 curl -sf -X POST "$GEN/admin/start?total=$TOTAL&tps=$TPS&poisonRate=$POISON" | jq -c .
 while [[ $(curl -sf "$GEN/admin/status" | jq -r .running) == true ]]; do sleep 2; done
