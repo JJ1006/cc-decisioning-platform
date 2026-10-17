@@ -1,14 +1,12 @@
 version: 2
+# pip/docker ecosystems are added in the phases that introduce manifests.
 updates:
   - package-ecosystem: maven
     directory: /
     schedule: { interval: weekly }
-  - package-ecosystem: pip
-    directory: /mcp/odm-dc-mcp-server
-    schedule: { interval: weekly }
-  - package-ecosystem: docker
-    directory: /
-    schedule: { interval: weekly }
+    ignore:
+      - dependency-name: org.springframework.boot:spring-boot-starter-parent
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
