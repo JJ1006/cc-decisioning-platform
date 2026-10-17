@@ -459,8 +459,8 @@ services:
       - ${PKI_DIR:-../../security/pki/out}/apisix/apisix.crt:/pki/apisix.crt:ro
       - ${PKI_DIR:-../../security/pki/out}/apisix/apisix.key:/pki/apisix.key:ro
       - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
-    healthcheck: # the Prometheus exporter listens on 9091 inside the container
-      test: ["CMD-SHELL", "curl -sf http://localhost:9091/apisix/prometheus/metrics >/dev/null"]
+    healthcheck: # the image has no curl: a raw HTTP request to the Prometheus exporter (9091, inside the container)
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/9091 && printf 'GET /apisix/prometheus/metrics HTTP/1.0\\r\\n\\r\\n' >&3 && head -1 <&3 | grep -q ' 200 '"]
       interval: 15s
       timeout: 5s
       retries: 10

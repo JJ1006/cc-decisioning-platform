@@ -5,16 +5,16 @@ set -eu
 TEMPLATE=${APISIX_TEMPLATE:-/gateway/apisix.yaml.tmpl}
 OUT=${APISIX_CONFIG_OUT:-/usr/local/apisix/conf/apisix.yaml}
 
-pem() { # pem FILE: the file indented to sit under a "cert: |" block (6 spaces)
-  sed 's/^/      /' "$1"
+pem() { # pem FILE INDENT: the file indented to sit under a "cert: |" block (6 spaces) or a "ca: |" block one level deeper (8)
+  sed "s/^/$2/" "$1"
 }
 
 : >"$OUT"
 while IFS= read -r line; do
   case "$line" in
-    '@SERVER_CERT@') pem /pki/apisix.crt >>"$OUT" ;;
-    '@SERVER_KEY@') pem /pki/apisix.key >>"$OUT" ;;
-    '@CLIENT_CA@') pem /pki/ca.crt >>"$OUT" ;;
+    '@SERVER_CERT@') pem /pki/apisix.crt '      ' >>"$OUT" ;;
+    '@SERVER_KEY@') pem /pki/apisix.key '      ' >>"$OUT" ;;
+    '@CLIENT_CA@') pem /pki/ca.crt '        ' >>"$OUT" ;;
     *) printf '%s\n' "$line" >>"$OUT" ;;
   esac
 done <"$TEMPLATE"

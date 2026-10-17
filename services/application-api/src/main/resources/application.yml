@@ -20,6 +20,8 @@ server:
 management:
   server:
     port: ${MANAGEMENT_PORT:} # compose sets 9090: plain http for probes and metrics, never published
+    ssl:
+      enabled: false # the management port does not inherit the mutual TLS of the service port
   endpoints:
     web:
       exposure:

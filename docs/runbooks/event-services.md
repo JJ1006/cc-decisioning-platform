@@ -10,11 +10,11 @@ every <topic>.dlq --> Logstash --> cc-dlq          container logs --> Filebeat -
 
 | Service | Port (host) | Does |
 |---|---|---|
-| `txn-generator` | 8081 | Datafaker en-CA applications; `POST /admin/start?tps=&total=&poisonRate=&seed=`, `POST /admin/stop`, `GET /admin/status` |
-| `decision-orchestrator` | 8082 | consume submitted, call RES, route by outcome, audit; transactional consume-produce |
-| `notification-svc` | 8083 | approval, adverse-action and referral notices (never sent anywhere) |
-| `application-api` | 8084 (profile `edge`) | HTTP: submit applications, status, underwriter decisions: [docs/api](../api/README.md) |
-| `decision-query-api` | 8085 (profile `analytics`) | HTTP: decisions, explanations, statistics, dead letters, logs from Elasticsearch: [docs/api](../api/README.md) |
+| `txn-generator` | via the gateway as `/admin/generator/*` (role OPS) | Datafaker en-CA applications; `POST /admin/generator/start?tps=&total=&poisonRate=&seed=`, `POST /admin/generator/stop`, `GET /admin/generator/status` |
+| `decision-orchestrator` | none | consume submitted, call RES, route by outcome, audit; transactional consume-produce |
+| `notification-svc` | none | approval, adverse-action and referral notices (never sent anywhere) |
+| `application-api` | via the gateway (profile `edge`) | HTTP: submit applications, status, underwriter decisions: [docs/api](../api/README.md) |
+| `decision-query-api` | via the gateway (profile `analytics`) | HTTP: decisions, explanations, statistics, dead letters, logs from Elasticsearch: [docs/api](../api/README.md) |
 | `logstash` | 9600 (monitoring API) | four pipelines, below |
 | `filebeat` | none | ships the logs of containers labelled `co.elastic.logs/enabled=true` |
 

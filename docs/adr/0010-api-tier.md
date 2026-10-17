@@ -19,7 +19,7 @@ mTLS and the gateway arrive in P6, JWT/OIDC later, so P5 has to be safe to repla
 * **Manual decisions** go on `cc.decisions.manual.v1` and `cc.audit.v1`, reach `cc-decisions` through the same Logstash pipeline and carry
   `decisionSource=MANUAL` (automated decisions carry `ODM`). Statistics count automated (`ODM`) decisions: they hold the applicant summary
   and measure the rules; a manual decision answers a REFER, it does not change the rule outcome.
-* **Role placeholder.** Until P6 (mTLS client certificate to role at the gateway) and the later JWT work, the caller role is the `X-Role` header
+* **Role placeholder (superseded by [ADR-0011](0011-gateway-identity.md): the role now comes from the client certificate through the gateway).** Until P6 (mTLS client certificate to role at the gateway) and the later JWT work, the caller role is the `X-Role` header
   and the underwriter id comes in the body. The header is trusted only because the gateway will strip and set it. Documented as a placeholder
   in `docs/api/README.md`; a missing role is 401, a wrong role is 403 plus an audit event with result DENIED.
 * **Idempotency.** `Idempotency-Key` is kept in an in-memory cache (24 h, bounded): same key and same body replays the first response, same

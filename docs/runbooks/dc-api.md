@@ -3,7 +3,7 @@
 Taken from the live OpenAPI document of the local container, not from memory:
 `https://localhost:9443/decisioncenter-api/v3/api-docs` (Swagger UI: `/decisioncenter-api/swagger-ui/index.html`).
 Base URL `https://localhost:9443/decisioncenter-api`, HTTP basic auth with the ODM for Developers demo user `odmAdmin`,
-TLS verified against the project CA from `make pki`. `scripts/dc.sh <curl args> <path>` wraps all of that.
+Mutual TLS since P6: verified against the project CA from `make pki`, and ODM requires a client certificate (`scripts/dc.sh` presents the `admin` one). `scripts/dc.sh <curl args> <path>` wraps all of that.
 
 ## Endpoints we use
 

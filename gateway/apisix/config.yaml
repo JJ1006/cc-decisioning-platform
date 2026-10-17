@@ -8,6 +8,8 @@ deployment:
 apisix:
   enable_admin: false
   enable_server_tokens: false # "Server: APISIX" without the version
+  router:
+    http: radixtree_uri_with_parameter # routes like /v1/applications/:id/status
   # no plain HTTP for clients: loopback only (nothing publishes it)
   node_listen:
     - ip: 127.0.0.1

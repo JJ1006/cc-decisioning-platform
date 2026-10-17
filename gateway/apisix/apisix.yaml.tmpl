@@ -32,21 +32,24 @@ upstreams:
     pass_host: node # SNI and Host = application-api, which is in the service certificate's SAN
     nodes: { "application-api:8080": 1 }
     tls: { client_cert_id: upstream-client, verify: true }
-    timeout: { connect: 3, send: 10, read: 30 }
+    timeout: { connect: 15, send: 10, read: 30 } # connect includes the TLS handshake: the JVMs' first handshakes are slow on a busy laptop
+    keepalive_pool: { size: 32, idle_timeout: 300, requests: 10000 } # reuse the mutual TLS connections
   - id: decision-query-api
     type: roundrobin
     scheme: https
     pass_host: node
     nodes: { "decision-query-api:8080": 1 }
     tls: { client_cert_id: upstream-client, verify: true }
-    timeout: { connect: 3, send: 10, read: 30 }
+    timeout: { connect: 15, send: 10, read: 30 } # connect includes the TLS handshake: the JVMs' first handshakes are slow on a busy laptop
+    keepalive_pool: { size: 32, idle_timeout: 300, requests: 10000 } # reuse the mutual TLS connections
   - id: txn-generator
     type: roundrobin
     scheme: https
     pass_host: node
     nodes: { "txn-generator:8080": 1 }
     tls: { client_cert_id: upstream-client, verify: true }
-    timeout: { connect: 3, send: 10, read: 30 }
+    timeout: { connect: 15, send: 10, read: 30 } # connect includes the TLS handshake: the JVMs' first handshakes are slow on a busy laptop
+    keepalive_pool: { size: 32, idle_timeout: 300, requests: 10000 } # reuse the mutual TLS connections
 
 # one quota per consumer, shared by all routes (group): 100 requests per minute, then 429
 plugin_configs:
