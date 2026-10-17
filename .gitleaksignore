@@ -1,0 +1,3 @@
+# curl -u user:$$ENV_VAR references in compose healthchecks, not literals
+af70abe81d9e25848457767508feb5b376c61fdd:deploy/compose/docker-compose.yml:curl-auth-user:107
+af70abe81d9e25848457767508feb5b376c61fdd:deploy/compose/docker-compose.yml:curl-auth-user:127
