@@ -1,0 +1,6 @@
+if
+    the requested product of 'the application' is null
+    or the requested product of 'the application' is NO_FEE
+then
+    set the product of 'the decision' to NO_FEE ;
+    record that rule "PROD-01" fired in 'the decision' ;

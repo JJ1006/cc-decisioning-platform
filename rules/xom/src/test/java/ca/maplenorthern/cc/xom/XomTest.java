@@ -65,6 +65,17 @@ class XomTest {
   }
 
   @Test
+  void escalateOnlyRaisesSeverity() {
+    Decision d = new Decision();
+    d.escalate(Outcome.APPROVE);
+    assertThat(d.getOutcome()).isEqualTo(Outcome.APPROVE);
+    d.escalate(Outcome.DECLINE);
+    d.escalate(Outcome.REFER);
+    d.escalate(Outcome.APPROVE);
+    assertThat(d.getOutcome()).isEqualTo(Outcome.DECLINE);
+  }
+
+  @Test
   void noPropertyReferencesAProhibitedGround() throws Exception {
     for (Class<?> c :
         List.of(

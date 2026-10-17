@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ilog.rules.studio.model.brl:ActionRule xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ilog.rules.studio.model.brl="http://ilog.rules.studio/model/brl.ecore">
+  <name>APR-01-Tier1</name>
+  <uuid>5b7d1d8f-64be-5e92-b029-aec04aac09bf</uuid>
+  <locale>en_US</locale>
+  <definition><![CDATA[if
+    the bureau score of the bureau report of 'the application' is at least 740
+then
+    set the APR tier of 'the decision' to TIER_1 ;
+    record that rule "APR-01" fired in 'the decision' ;]]></definition>
+</ilog.rules.studio.model.brl:ActionRule>

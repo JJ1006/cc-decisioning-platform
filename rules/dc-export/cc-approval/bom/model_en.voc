@@ -1,0 +1,175 @@
+# Vocabulary Properties
+uuid = 24f5d840-c738-594d-bf32-702b03573a57
+
+# ca.maplenorthern.cc.xom.Address
+ca.maplenorthern.cc.xom.Address#concept.label = address
+ca.maplenorthern.cc.xom.Address.line1#phrase.action = set the line1 of {this} to {line1}
+ca.maplenorthern.cc.xom.Address.line1#phrase.navigation = {line1} of {this}
+ca.maplenorthern.cc.xom.Address.city#phrase.action = set the city of {this} to {city}
+ca.maplenorthern.cc.xom.Address.city#phrase.navigation = {city} of {this}
+ca.maplenorthern.cc.xom.Address.province#phrase.action = set the province of {this} to {province}
+ca.maplenorthern.cc.xom.Address.province#phrase.navigation = {province} of {this}
+ca.maplenorthern.cc.xom.Address.postalCode#phrase.action = set the postal code of {this} to {postal code}
+ca.maplenorthern.cc.xom.Address.postalCode#phrase.navigation = {postal code} of {this}
+ca.maplenorthern.cc.xom.Address.Address()#phrase.action = a blank address
+
+# ca.maplenorthern.cc.xom.Applicant
+ca.maplenorthern.cc.xom.Applicant#concept.label = applicant
+ca.maplenorthern.cc.xom.Applicant.applicantId#phrase.action = set the applicant id of {this} to {applicant id}
+ca.maplenorthern.cc.xom.Applicant.applicantId#phrase.navigation = {applicant id} of {this}
+ca.maplenorthern.cc.xom.Applicant.firstName#phrase.action = set the first name of {this} to {first name}
+ca.maplenorthern.cc.xom.Applicant.firstName#phrase.navigation = {first name} of {this}
+ca.maplenorthern.cc.xom.Applicant.lastName#phrase.action = set the last name of {this} to {last name}
+ca.maplenorthern.cc.xom.Applicant.lastName#phrase.navigation = {last name} of {this}
+ca.maplenorthern.cc.xom.Applicant.ageYears#phrase.action = set the age in years of {this} to {age in years}
+ca.maplenorthern.cc.xom.Applicant.ageYears#phrase.navigation = {age in years} of {this}
+ca.maplenorthern.cc.xom.Applicant.residencyStatus#phrase.action = set the residency status of {this} to {residency status}
+ca.maplenorthern.cc.xom.Applicant.residencyStatus#phrase.navigation = {residency status} of {this}
+ca.maplenorthern.cc.xom.Applicant.Applicant()#phrase.action = a blank applicant
+
+# ca.maplenorthern.cc.xom.Application
+ca.maplenorthern.cc.xom.Application#concept.label = application
+ca.maplenorthern.cc.xom.Application.applicationId#phrase.action = set the application id of {this} to {application id}
+ca.maplenorthern.cc.xom.Application.applicationId#phrase.navigation = {application id} of {this}
+ca.maplenorthern.cc.xom.Application.requestedProduct#phrase.action = set the requested product of {this} to {requested product}
+ca.maplenorthern.cc.xom.Application.requestedProduct#phrase.navigation = {requested product} of {this}
+ca.maplenorthern.cc.xom.Application.requestedLimit#phrase.action = set the requested limit of {this} to {requested limit}
+ca.maplenorthern.cc.xom.Application.requestedLimit#phrase.navigation = {requested limit} of {this}
+ca.maplenorthern.cc.xom.Application.monthlyHousingCost#phrase.action = set the monthly housing cost of {this} to {monthly housing cost}
+ca.maplenorthern.cc.xom.Application.monthlyHousingCost#phrase.navigation = {monthly housing cost} of {this}
+ca.maplenorthern.cc.xom.Application.channel#phrase.action = set the channel of {this} to {channel}
+ca.maplenorthern.cc.xom.Application.channel#phrase.navigation = {channel} of {this}
+ca.maplenorthern.cc.xom.Application.applicant#phrase.action = set the applicant of {this} to {applicant}
+ca.maplenorthern.cc.xom.Application.applicant#phrase.navigation = {applicant} of {this}
+ca.maplenorthern.cc.xom.Application.address#phrase.action = set the address of {this} to {address}
+ca.maplenorthern.cc.xom.Application.address#phrase.navigation = {address} of {this}
+ca.maplenorthern.cc.xom.Application.employment#phrase.action = set the employment of {this} to {employment}
+ca.maplenorthern.cc.xom.Application.employment#phrase.navigation = {employment} of {this}
+ca.maplenorthern.cc.xom.Application.bureau#phrase.action = set the bureau report of {this} to {bureau report}
+ca.maplenorthern.cc.xom.Application.bureau#phrase.navigation = {bureau report} of {this}
+ca.maplenorthern.cc.xom.Application.Application()#phrase.action = a blank application
+ca.maplenorthern.cc.xom.Application.tdsRatio()#phrase.navigation = {total debt service ratio} of {this}
+
+# ca.maplenorthern.cc.xom.CreditBureauReport
+ca.maplenorthern.cc.xom.CreditBureauReport#concept.label = bureau report
+ca.maplenorthern.cc.xom.CreditBureauReport.score#phrase.action = set the bureau score of {this} to {bureau score}
+ca.maplenorthern.cc.xom.CreditBureauReport.score#phrase.navigation = {bureau score} of {this}
+ca.maplenorthern.cc.xom.CreditBureauReport.monthlyDebtPayments#phrase.action = set the monthly debt payments of {this} to {monthly debt payments}
+ca.maplenorthern.cc.xom.CreditBureauReport.monthlyDebtPayments#phrase.navigation = {monthly debt payments} of {this}
+ca.maplenorthern.cc.xom.CreditBureauReport.existingCreditLimit#phrase.action = set the existing credit limit of {this} to {existing credit limit}
+ca.maplenorthern.cc.xom.CreditBureauReport.existingCreditLimit#phrase.navigation = {existing credit limit} of {this}
+ca.maplenorthern.cc.xom.CreditBureauReport.delinquencies#phrase.action = set the delinquencies of {this} to {delinquencies}
+ca.maplenorthern.cc.xom.CreditBureauReport.delinquencies#phrase.navigation = {delinquencies} of {this}
+ca.maplenorthern.cc.xom.CreditBureauReport.inquiriesLast6Months#phrase.action = set the inquiries in the last 6 months of {this} to {inquiries in the last 6 months}
+ca.maplenorthern.cc.xom.CreditBureauReport.inquiriesLast6Months#phrase.navigation = {inquiries in the last 6 months} of {this}
+ca.maplenorthern.cc.xom.CreditBureauReport.activeBankruptcy#phrase.action = set the active bankruptcy of {this} to {active bankruptcy}
+ca.maplenorthern.cc.xom.CreditBureauReport.activeBankruptcy#phrase.navigation = {active bankruptcy} of {this}
+ca.maplenorthern.cc.xom.CreditBureauReport.fileAgeMonths#phrase.action = set the file age in months of {this} to {file age in months}
+ca.maplenorthern.cc.xom.CreditBureauReport.fileAgeMonths#phrase.navigation = {file age in months} of {this}
+ca.maplenorthern.cc.xom.CreditBureauReport.CreditBureauReport()#phrase.action = a blank bureau report
+
+# ca.maplenorthern.cc.xom.Decision
+ca.maplenorthern.cc.xom.Decision#concept.label = decision
+ca.maplenorthern.cc.xom.Decision.outcome#phrase.action = set the outcome of {this} to {outcome}
+ca.maplenorthern.cc.xom.Decision.outcome#phrase.navigation = {outcome} of {this}
+ca.maplenorthern.cc.xom.Decision.creditLimit#phrase.action = set the credit limit of {this} to {credit limit}
+ca.maplenorthern.cc.xom.Decision.creditLimit#phrase.navigation = {credit limit} of {this}
+ca.maplenorthern.cc.xom.Decision.product#phrase.action = set the product of {this} to {product}
+ca.maplenorthern.cc.xom.Decision.product#phrase.navigation = {product} of {this}
+ca.maplenorthern.cc.xom.Decision.aprTier#phrase.action = set the APR tier of {this} to {APR tier}
+ca.maplenorthern.cc.xom.Decision.aprTier#phrase.navigation = {APR tier} of {this}
+ca.maplenorthern.cc.xom.Decision.reasonCodes#phrase.action = set the reason codes of {this} to {reason codes}
+ca.maplenorthern.cc.xom.Decision.reasonCodes#phrase.navigation = {reason codes} of {this}
+ca.maplenorthern.cc.xom.Decision.firedRules#phrase.action = set the fired rules of {this} to {fired rules}
+ca.maplenorthern.cc.xom.Decision.firedRules#phrase.navigation = {fired rules} of {this}
+ca.maplenorthern.cc.xom.Decision.Decision()#phrase.action = a blank decision
+ca.maplenorthern.cc.xom.Decision.addReasonCode(ca.maplenorthern.cc.xom.ReasonCode)#phrase.action = add reason code {0} to {this}
+ca.maplenorthern.cc.xom.Decision.escalate(ca.maplenorthern.cc.xom.Outcome)#phrase.action = escalate {this} to {0}
+ca.maplenorthern.cc.xom.Decision.addFiredRule(java.lang.String)#phrase.action = record that rule {0} fired in {this}
+
+# ca.maplenorthern.cc.xom.Employment
+ca.maplenorthern.cc.xom.Employment#concept.label = employment
+ca.maplenorthern.cc.xom.Employment.status#phrase.action = set the employment status of {this} to {employment status}
+ca.maplenorthern.cc.xom.Employment.status#phrase.navigation = {employment status} of {this}
+ca.maplenorthern.cc.xom.Employment.employer#phrase.action = set the employer of {this} to {employer}
+ca.maplenorthern.cc.xom.Employment.employer#phrase.navigation = {employer} of {this}
+ca.maplenorthern.cc.xom.Employment.annualIncome#phrase.action = set the annual income of {this} to {annual income}
+ca.maplenorthern.cc.xom.Employment.annualIncome#phrase.navigation = {annual income} of {this}
+ca.maplenorthern.cc.xom.Employment.monthsAtEmployer#phrase.action = set the months at employer of {this} to {months at employer}
+ca.maplenorthern.cc.xom.Employment.monthsAtEmployer#phrase.navigation = {months at employer} of {this}
+ca.maplenorthern.cc.xom.Employment.Employment()#phrase.action = a blank employment
+
+# ca.maplenorthern.cc.xom.AprTier
+ca.maplenorthern.cc.xom.AprTier#concept.label = APR tier
+ca.maplenorthern.cc.xom.AprTier.TIER_1#instance.label = TIER_1
+ca.maplenorthern.cc.xom.AprTier.TIER_2#instance.label = TIER_2
+ca.maplenorthern.cc.xom.AprTier.TIER_3#instance.label = TIER_3
+ca.maplenorthern.cc.xom.AprTier.TIER_4#instance.label = TIER_4
+
+# ca.maplenorthern.cc.xom.Channel
+ca.maplenorthern.cc.xom.Channel#concept.label = channel
+ca.maplenorthern.cc.xom.Channel.WEB#instance.label = WEB
+ca.maplenorthern.cc.xom.Channel.MOBILE#instance.label = MOBILE
+ca.maplenorthern.cc.xom.Channel.BRANCH#instance.label = BRANCH
+ca.maplenorthern.cc.xom.Channel.PARTNER#instance.label = PARTNER
+
+# ca.maplenorthern.cc.xom.EmploymentStatus
+ca.maplenorthern.cc.xom.EmploymentStatus#concept.label = employment status
+ca.maplenorthern.cc.xom.EmploymentStatus.EMPLOYED#instance.label = EMPLOYED
+ca.maplenorthern.cc.xom.EmploymentStatus.SELF_EMPLOYED#instance.label = SELF_EMPLOYED
+ca.maplenorthern.cc.xom.EmploymentStatus.RETIRED#instance.label = RETIRED
+ca.maplenorthern.cc.xom.EmploymentStatus.STUDENT#instance.label = STUDENT
+ca.maplenorthern.cc.xom.EmploymentStatus.UNEMPLOYED#instance.label = UNEMPLOYED
+
+# ca.maplenorthern.cc.xom.Outcome
+ca.maplenorthern.cc.xom.Outcome#concept.label = outcome
+ca.maplenorthern.cc.xom.Outcome.APPROVE#instance.label = APPROVE
+ca.maplenorthern.cc.xom.Outcome.DECLINE#instance.label = DECLINE
+ca.maplenorthern.cc.xom.Outcome.REFER#instance.label = REFER
+
+# ca.maplenorthern.cc.xom.Product
+ca.maplenorthern.cc.xom.Product#concept.label = product
+ca.maplenorthern.cc.xom.Product.NO_FEE#instance.label = NO_FEE
+ca.maplenorthern.cc.xom.Product.CASHBACK#instance.label = CASHBACK
+ca.maplenorthern.cc.xom.Product.TRAVEL_INFINITE#instance.label = TRAVEL_INFINITE
+
+# ca.maplenorthern.cc.xom.Province
+ca.maplenorthern.cc.xom.Province#concept.label = province
+ca.maplenorthern.cc.xom.Province.AB#instance.label = AB
+ca.maplenorthern.cc.xom.Province.BC#instance.label = BC
+ca.maplenorthern.cc.xom.Province.MB#instance.label = MB
+ca.maplenorthern.cc.xom.Province.NB#instance.label = NB
+ca.maplenorthern.cc.xom.Province.NL#instance.label = NL
+ca.maplenorthern.cc.xom.Province.NS#instance.label = NS
+ca.maplenorthern.cc.xom.Province.NT#instance.label = NT
+ca.maplenorthern.cc.xom.Province.NU#instance.label = NU
+ca.maplenorthern.cc.xom.Province.ON#instance.label = ON
+ca.maplenorthern.cc.xom.Province.PE#instance.label = PE
+ca.maplenorthern.cc.xom.Province.QC#instance.label = QC
+ca.maplenorthern.cc.xom.Province.SK#instance.label = SK
+ca.maplenorthern.cc.xom.Province.YT#instance.label = YT
+ca.maplenorthern.cc.xom.Province.ageOfMajority#phrase.navigation = {age of majority} of {this}
+
+# ca.maplenorthern.cc.xom.ReasonCode
+ca.maplenorthern.cc.xom.ReasonCode#concept.label = reason code
+ca.maplenorthern.cc.xom.ReasonCode.R_AGE_BELOW_MAJORITY#instance.label = R_AGE_BELOW_MAJORITY
+ca.maplenorthern.cc.xom.ReasonCode.R_NON_RESIDENT#instance.label = R_NON_RESIDENT
+ca.maplenorthern.cc.xom.ReasonCode.R_ACTIVE_BANKRUPTCY#instance.label = R_ACTIVE_BANKRUPTCY
+ca.maplenorthern.cc.xom.ReasonCode.R_LOW_SCORE#instance.label = R_LOW_SCORE
+ca.maplenorthern.cc.xom.ReasonCode.R_HIGH_TDS#instance.label = R_HIGH_TDS
+ca.maplenorthern.cc.xom.ReasonCode.R_INSUFFICIENT_INCOME#instance.label = R_INSUFFICIENT_INCOME
+ca.maplenorthern.cc.xom.ReasonCode.R_DELINQUENCIES#instance.label = R_DELINQUENCIES
+ca.maplenorthern.cc.xom.ReasonCode.R_EXCESSIVE_INQUIRIES#instance.label = R_EXCESSIVE_INQUIRIES
+ca.maplenorthern.cc.xom.ReasonCode.R_THIN_FILE#instance.label = R_THIN_FILE
+ca.maplenorthern.cc.xom.ReasonCode.R_BORDERLINE_SCORE#instance.label = R_BORDERLINE_SCORE
+ca.maplenorthern.cc.xom.ReasonCode.R_BORDERLINE_TDS#instance.label = R_BORDERLINE_TDS
+ca.maplenorthern.cc.xom.ReasonCode.R_APPROVED_STANDARD#instance.label = R_APPROVED_STANDARD
+ca.maplenorthern.cc.xom.ReasonCode.description#phrase.navigation = {description} of {this}
+
+# ca.maplenorthern.cc.xom.ResidencyStatus
+ca.maplenorthern.cc.xom.ResidencyStatus#concept.label = residency status
+ca.maplenorthern.cc.xom.ResidencyStatus.CITIZEN#instance.label = CITIZEN
+ca.maplenorthern.cc.xom.ResidencyStatus.PERMANENT_RESIDENT#instance.label = PERMANENT_RESIDENT
+ca.maplenorthern.cc.xom.ResidencyStatus.WORK_PERMIT_VALID#instance.label = WORK_PERMIT_VALID
+ca.maplenorthern.cc.xom.ResidencyStatus.WORK_PERMIT_EXPIRED#instance.label = WORK_PERMIT_EXPIRED
+ca.maplenorthern.cc.xom.ResidencyStatus.NON_RESIDENT#instance.label = NON_RESIDENT

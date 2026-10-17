@@ -1,0 +1,6 @@
+if
+    the residency status of the applicant of 'the application' is one of { NON_RESIDENT , WORK_PERMIT_EXPIRED }
+then
+    add reason code R_NON_RESIDENT to 'the decision' ;
+    escalate 'the decision' to DECLINE ;
+    record that rule "ELIG-02" fired in 'the decision' ;

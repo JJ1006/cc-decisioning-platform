@@ -1,0 +1,6 @@
+if
+    the file age in months of the bureau report of 'the application' is less than 6
+then
+    add reason code R_THIN_FILE to 'the decision' ;
+    escalate 'the decision' to REFER ;
+    record that rule "RISK-04" fired in 'the decision' ;

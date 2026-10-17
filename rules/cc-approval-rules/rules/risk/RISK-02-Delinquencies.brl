@@ -1,0 +1,6 @@
+if
+    the delinquencies of the bureau report of 'the application' is at least 3
+then
+    add reason code R_DELINQUENCIES to 'the decision' ;
+    escalate 'the decision' to DECLINE ;
+    record that rule "RISK-02" fired in 'the decision' ;

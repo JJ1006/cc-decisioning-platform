@@ -1,0 +1,167 @@
+
+#loadGetterSetterAsProperties
+property origin "xom:/cc-approval/cc-xom"
+property uuid "af744709-6991-5537-9d3e-00c477d86416"
+package ca.maplenorthern.cc.xom;
+
+
+class Address
+{
+    string city;
+    string line1;
+    string postalCode;
+    ca.maplenorthern.cc.xom.Province province;
+    Address();
+}
+
+class Applicant
+{
+    int ageYears;
+    string applicantId;
+    string firstName;
+    string lastName;
+    ca.maplenorthern.cc.xom.ResidencyStatus residencyStatus;
+    Applicant();
+}
+
+class Application
+{
+    ca.maplenorthern.cc.xom.Address address;
+    ca.maplenorthern.cc.xom.Applicant applicant;
+    string applicationId;
+    ca.maplenorthern.cc.xom.CreditBureauReport bureau;
+    ca.maplenorthern.cc.xom.Channel channel;
+    ca.maplenorthern.cc.xom.Employment employment;
+    java.math.BigDecimal monthlyHousingCost;
+    java.math.BigDecimal requestedLimit;
+    ca.maplenorthern.cc.xom.Product requestedProduct;
+    Application();
+    double tdsRatio();
+}
+
+class AprTier
+        extends java.lang.Enum
+{
+    static final readonly ca.maplenorthern.cc.xom.AprTier TIER_1;
+    static final readonly ca.maplenorthern.cc.xom.AprTier TIER_2;
+    static final readonly ca.maplenorthern.cc.xom.AprTier TIER_3;
+    static final readonly ca.maplenorthern.cc.xom.AprTier TIER_4;
+}
+
+class Channel
+        extends java.lang.Enum
+{
+    static final readonly ca.maplenorthern.cc.xom.Channel BRANCH;
+    static final readonly ca.maplenorthern.cc.xom.Channel MOBILE;
+    static final readonly ca.maplenorthern.cc.xom.Channel PARTNER;
+    static final readonly ca.maplenorthern.cc.xom.Channel WEB;
+}
+
+class CreditBureauReport
+{
+    boolean activeBankruptcy;
+    int delinquencies;
+    java.math.BigDecimal existingCreditLimit;
+    int fileAgeMonths;
+    int inquiriesLast6Months;
+    java.math.BigDecimal monthlyDebtPayments;
+    int score;
+    CreditBureauReport();
+}
+
+class Decision
+{
+    ca.maplenorthern.cc.xom.AprTier aprTier;
+    java.math.BigDecimal creditLimit;
+    java.util.List firedRules domain 0,* class string;
+    ca.maplenorthern.cc.xom.Outcome outcome;
+    ca.maplenorthern.cc.xom.Product product;
+    java.util.List reasonCodes domain 0,* class ca.maplenorthern.cc.xom.ReasonCode;
+    Decision();
+    void addFiredRule(string arg1);
+    void addReasonCode(ca.maplenorthern.cc.xom.ReasonCode arg1);
+    void escalate(ca.maplenorthern.cc.xom.Outcome arg1);
+}
+
+class Employment
+{
+    java.math.BigDecimal annualIncome;
+    string employer;
+    int monthsAtEmployer;
+    ca.maplenorthern.cc.xom.EmploymentStatus status;
+    Employment();
+}
+
+class EmploymentStatus
+        extends java.lang.Enum
+{
+    static final readonly ca.maplenorthern.cc.xom.EmploymentStatus EMPLOYED;
+    static final readonly ca.maplenorthern.cc.xom.EmploymentStatus RETIRED;
+    static final readonly ca.maplenorthern.cc.xom.EmploymentStatus SELF_EMPLOYED;
+    static final readonly ca.maplenorthern.cc.xom.EmploymentStatus STUDENT;
+    static final readonly ca.maplenorthern.cc.xom.EmploymentStatus UNEMPLOYED;
+}
+
+class Outcome
+        extends java.lang.Enum
+{
+    static final readonly ca.maplenorthern.cc.xom.Outcome APPROVE;
+    static final readonly ca.maplenorthern.cc.xom.Outcome DECLINE;
+    static final readonly ca.maplenorthern.cc.xom.Outcome REFER;
+}
+
+class Product
+        extends java.lang.Enum
+{
+    static final readonly ca.maplenorthern.cc.xom.Product CASHBACK;
+    static final readonly ca.maplenorthern.cc.xom.Product NO_FEE;
+    static final readonly ca.maplenorthern.cc.xom.Product TRAVEL_INFINITE;
+}
+
+class Province
+        extends java.lang.Enum
+{
+    static final readonly ca.maplenorthern.cc.xom.Province AB;
+    static final readonly ca.maplenorthern.cc.xom.Province BC;
+    static final readonly ca.maplenorthern.cc.xom.Province MB;
+    static final readonly ca.maplenorthern.cc.xom.Province NB;
+    static final readonly ca.maplenorthern.cc.xom.Province NL;
+    static final readonly ca.maplenorthern.cc.xom.Province NS;
+    static final readonly ca.maplenorthern.cc.xom.Province NT;
+    static final readonly ca.maplenorthern.cc.xom.Province NU;
+    static final readonly ca.maplenorthern.cc.xom.Province ON;
+    static final readonly ca.maplenorthern.cc.xom.Province PE;
+    static final readonly ca.maplenorthern.cc.xom.Province QC;
+    static final readonly ca.maplenorthern.cc.xom.Province SK;
+    static final readonly ca.maplenorthern.cc.xom.Province YT;
+    readonly int ageOfMajority;
+}
+
+class ReasonCode
+        extends java.lang.Enum
+{
+    static final readonly ca.maplenorthern.cc.xom.ReasonCode R_ACTIVE_BANKRUPTCY;
+    static final readonly ca.maplenorthern.cc.xom.ReasonCode R_AGE_BELOW_MAJORITY;
+    static final readonly ca.maplenorthern.cc.xom.ReasonCode R_APPROVED_STANDARD;
+    static final readonly ca.maplenorthern.cc.xom.ReasonCode R_BORDERLINE_SCORE;
+    static final readonly ca.maplenorthern.cc.xom.ReasonCode R_BORDERLINE_TDS;
+    static final readonly ca.maplenorthern.cc.xom.ReasonCode R_DELINQUENCIES;
+    static final readonly ca.maplenorthern.cc.xom.ReasonCode R_EXCESSIVE_INQUIRIES;
+    static final readonly ca.maplenorthern.cc.xom.ReasonCode R_HIGH_TDS;
+    static final readonly ca.maplenorthern.cc.xom.ReasonCode R_INSUFFICIENT_INCOME;
+    static final readonly ca.maplenorthern.cc.xom.ReasonCode R_LOW_SCORE;
+    static final readonly ca.maplenorthern.cc.xom.ReasonCode R_NON_RESIDENT;
+    static final readonly ca.maplenorthern.cc.xom.ReasonCode R_THIN_FILE;
+    readonly string description;
+}
+
+class ResidencyStatus
+        extends java.lang.Enum
+{
+    static final readonly ca.maplenorthern.cc.xom.ResidencyStatus CITIZEN;
+    static final readonly ca.maplenorthern.cc.xom.ResidencyStatus NON_RESIDENT;
+    static final readonly ca.maplenorthern.cc.xom.ResidencyStatus PERMANENT_RESIDENT;
+    static final readonly ca.maplenorthern.cc.xom.ResidencyStatus WORK_PERMIT_EXPIRED;
+    static final readonly ca.maplenorthern.cc.xom.ResidencyStatus WORK_PERMIT_VALID;
+}
+

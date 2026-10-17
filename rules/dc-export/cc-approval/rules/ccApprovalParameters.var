@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ilog.rules.studio.model.base:VariableSet xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ilog.rules.studio.model.base="http://ilog.rules.studio/model/base.ecore">
+  <name>ccApprovalParameters</name>
+  <uuid>c4debfd9-ab92-5582-8982-56659fb7887d</uuid>
+  <variables name="application" type="ca.maplenorthern.cc.xom.Application" initialValue="" verbalization="the application"/>
+  <variables name="decision" type="ca.maplenorthern.cc.xom.Decision" initialValue="new ca.maplenorthern.cc.xom.Decision()" verbalization="the decision"/>
+</ilog.rules.studio.model.base:VariableSet>

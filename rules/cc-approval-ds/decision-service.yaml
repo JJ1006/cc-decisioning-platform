@@ -1,0 +1,29 @@
+# Decision service descriptor. scripts/gen_dc_project.py reads ruleset.properties for the agent properties; the
+# rest documents what it generates (one Decision Center project, "cc-approval", holding rules + operation + deployment).
+name: cc-approval-ds
+ruleApp: { name: ccApprovalApp, version: "1.0" }
+ruleProjects: [cc-approval-rules]
+operation:
+  name: ccApproval
+  ruleset: { name: ccApproval, version: "1.0" }
+  ruleflow: ccApproval
+  # Deployed as: /ccApprovalApp/1.0/ccApproval/1.0
+  parameters:
+    - name: application
+      direction: IN
+      type: ca.maplenorthern.cc.xom.Application
+      verbalization: the application
+    - name: decision
+      direction: OUT
+      initialValue: new ca.maplenorthern.cc.xom.Decision()
+      type: ca.maplenorthern.cc.xom.Decision
+      verbalization: the decision
+  properties:
+    # Expose the operation to ODM's MCP/agent surface (ODM 9.5).
+    agent.enabled: "true"
+    agent.description: >-
+      Credit card approval decision for Maple Northern Bank (fictitious, synthetic data only).
+      Input: a credit card application with applicant, address, employment and credit bureau report.
+      Output: outcome APPROVE, DECLINE or REFER, credit limit in CAD, product (NO_FEE, CASHBACK,
+      TRAVEL_INFINITE), APR tier, reason codes for adverse-action notices and the rules that fired.
+      Rules never use prohibited grounds. An LLM must not override this decision.

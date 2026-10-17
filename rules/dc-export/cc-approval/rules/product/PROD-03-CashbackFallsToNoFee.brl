@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ilog.rules.studio.model.brl:ActionRule xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ilog.rules.studio.model.brl="http://ilog.rules.studio/model/brl.ecore">
+  <name>PROD-03-CashbackFallsToNoFee</name>
+  <uuid>8fb5ec32-a1bb-5053-b851-d1f97135159d</uuid>
+  <locale>en_US</locale>
+  <definition><![CDATA[if
+    the requested product of 'the application' is CASHBACK
+    and ( the annual income of the employment of 'the application' is less than 40000
+    or the bureau score of the bureau report of 'the application' is less than 660 )
+then
+    set the product of 'the decision' to NO_FEE ;
+    record that rule "PROD-03" fired in 'the decision' ;]]></definition>
+</ilog.rules.studio.model.brl:ActionRule>

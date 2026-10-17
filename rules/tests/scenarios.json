@@ -1,0 +1,1507 @@
+[
+  {
+    "id": "TC01",
+    "name": "approve travel, capped at requested limit",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC01",
+        "requestedProduct": "TRAVEL_INFINITE",
+        "monthlyHousingCost": 1600,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC01",
+          "firstName": "Test",
+          "lastName": "Case01",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 90000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 760,
+          "monthlyDebtPayments": 400,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 15000
+      }
+    },
+    "expected": {
+      "outcome": "APPROVE",
+      "creditLimit": 15000,
+      "product": "TRAVEL_INFINITE",
+      "aprTier": "TIER_1",
+      "reasonCodes": [
+        "R_APPROVED_STANDARD"
+      ]
+    }
+  },
+  {
+    "id": "TC02",
+    "name": "approve cashback, capped at requested limit",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC02",
+        "requestedProduct": "CASHBACK",
+        "monthlyHousingCost": 1200,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC02",
+          "firstName": "Test",
+          "lastName": "Case02",
+          "ageYears": 40,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "BC",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 65000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 700,
+          "monthlyDebtPayments": 300,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 10000
+      }
+    },
+    "expected": {
+      "outcome": "APPROVE",
+      "creditLimit": 10000,
+      "product": "CASHBACK",
+      "aprTier": "TIER_2",
+      "reasonCodes": [
+        "R_APPROVED_STANDARD"
+      ]
+    }
+  },
+  {
+    "id": "TC03",
+    "name": "approve no-fee, limit capped by income and score table",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC03",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 700,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC03",
+          "firstName": "Test",
+          "lastName": "Case03",
+          "ageYears": 22,
+          "residencyStatus": "PERMANENT_RESIDENT"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "AB",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 28000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 640,
+          "monthlyDebtPayments": 150,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "APPROVE",
+      "creditLimit": 1500,
+      "product": "NO_FEE",
+      "aprTier": "TIER_4",
+      "reasonCodes": [
+        "R_APPROVED_STANDARD"
+      ]
+    }
+  },
+  {
+    "id": "TC04",
+    "name": "approve at table limit (request above table), boundaries delinq 2 inq 6",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC04",
+        "requestedProduct": "TRAVEL_INFINITE",
+        "monthlyHousingCost": 2000,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC04",
+          "firstName": "Test",
+          "lastName": "Case04",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 120000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 800,
+          "monthlyDebtPayments": 500,
+          "existingCreditLimit": 2000,
+          "delinquencies": 2,
+          "inquiriesLast6Months": 6,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 50000
+      }
+    },
+    "expected": {
+      "outcome": "APPROVE",
+      "creditLimit": 35000,
+      "product": "TRAVEL_INFINITE",
+      "aprTier": "TIER_1",
+      "reasonCodes": [
+        "R_APPROVED_STANDARD"
+      ]
+    }
+  },
+  {
+    "id": "TC05",
+    "name": "travel requested, income too low, downgraded to cashback",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC05",
+        "requestedProduct": "TRAVEL_INFINITE",
+        "monthlyHousingCost": 1000,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC05",
+          "firstName": "Test",
+          "lastName": "Case05",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 60000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 700,
+          "monthlyDebtPayments": 200,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 8000
+      }
+    },
+    "expected": {
+      "outcome": "APPROVE",
+      "creditLimit": 8000,
+      "product": "CASHBACK",
+      "aprTier": "TIER_2",
+      "reasonCodes": [
+        "R_APPROVED_STANDARD"
+      ]
+    }
+  },
+  {
+    "id": "TC06",
+    "name": "travel requested, downgraded to no-fee",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC06",
+        "requestedProduct": "TRAVEL_INFINITE",
+        "monthlyHousingCost": 800,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC06",
+          "firstName": "Test",
+          "lastName": "Case06",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 35000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 650,
+          "monthlyDebtPayments": 200,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 4000
+      }
+    },
+    "expected": {
+      "outcome": "APPROVE",
+      "creditLimit": 3000,
+      "product": "NO_FEE",
+      "aprTier": "TIER_3",
+      "reasonCodes": [
+        "R_APPROVED_STANDARD"
+      ]
+    }
+  },
+  {
+    "id": "TC07",
+    "name": "cashback requested, score 650 below 660, no-fee",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC07",
+        "requestedProduct": "CASHBACK",
+        "monthlyHousingCost": 1400,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC07",
+          "firstName": "Test",
+          "lastName": "Case07",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 70000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 650,
+          "monthlyDebtPayments": 300,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 6000
+      }
+    },
+    "expected": {
+      "outcome": "APPROVE",
+      "creditLimit": 6000,
+      "product": "NO_FEE",
+      "aprTier": "TIER_3",
+      "reasonCodes": [
+        "R_APPROVED_STANDARD"
+      ]
+    }
+  },
+  {
+    "id": "TC08",
+    "name": "decline: 18 in BC (majority 19)",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC08",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1200,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC08",
+          "firstName": "Test",
+          "lastName": "Case08",
+          "ageYears": 18,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "BC",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 50000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 700,
+          "monthlyDebtPayments": 300,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "DECLINE",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_AGE_BELOW_MAJORITY"
+      ]
+    }
+  },
+  {
+    "id": "TC09",
+    "name": "approve: 18 in ON (majority 18)",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC09",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 500,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC09",
+          "firstName": "Test",
+          "lastName": "Case09",
+          "ageYears": 18,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 24000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 660,
+          "monthlyDebtPayments": 100,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 2000
+      }
+    },
+    "expected": {
+      "outcome": "APPROVE",
+      "creditLimit": 1500,
+      "product": "NO_FEE",
+      "aprTier": "TIER_3",
+      "reasonCodes": [
+        "R_APPROVED_STANDARD"
+      ]
+    }
+  },
+  {
+    "id": "TC10",
+    "name": "approve: 19 in BC (majority 19)",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC10",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 900,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC10",
+          "firstName": "Test",
+          "lastName": "Case10",
+          "ageYears": 19,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "BC",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 52000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 690,
+          "monthlyDebtPayments": 200,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "APPROVE",
+      "creditLimit": 5000,
+      "product": "NO_FEE",
+      "aprTier": "TIER_2",
+      "reasonCodes": [
+        "R_APPROVED_STANDARD"
+      ]
+    }
+  },
+  {
+    "id": "TC11",
+    "name": "decline: 17 in ON",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC11",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1200,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC11",
+          "firstName": "Test",
+          "lastName": "Case11",
+          "ageYears": 17,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 50000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 700,
+          "monthlyDebtPayments": 300,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "DECLINE",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_AGE_BELOW_MAJORITY"
+      ]
+    }
+  },
+  {
+    "id": "TC12",
+    "name": "decline: non-resident",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC12",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1200,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC12",
+          "firstName": "Test",
+          "lastName": "Case12",
+          "ageYears": 35,
+          "residencyStatus": "NON_RESIDENT"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 80000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 750,
+          "monthlyDebtPayments": 300,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "DECLINE",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_NON_RESIDENT"
+      ]
+    }
+  },
+  {
+    "id": "TC13",
+    "name": "decline: expired work permit",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC13",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1200,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC13",
+          "firstName": "Test",
+          "lastName": "Case13",
+          "ageYears": 35,
+          "residencyStatus": "WORK_PERMIT_EXPIRED"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 80000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 750,
+          "monthlyDebtPayments": 300,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "DECLINE",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_NON_RESIDENT"
+      ]
+    }
+  },
+  {
+    "id": "TC14",
+    "name": "approve: valid work permit, cashback",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC14",
+        "requestedProduct": "CASHBACK",
+        "monthlyHousingCost": 1000,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC14",
+          "firstName": "Test",
+          "lastName": "Case14",
+          "ageYears": 35,
+          "residencyStatus": "WORK_PERMIT_VALID"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 48000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 670,
+          "monthlyDebtPayments": 200,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 6000
+      }
+    },
+    "expected": {
+      "outcome": "APPROVE",
+      "creditLimit": 3000,
+      "product": "CASHBACK",
+      "aprTier": "TIER_3",
+      "reasonCodes": [
+        "R_APPROVED_STANDARD"
+      ]
+    }
+  },
+  {
+    "id": "TC15",
+    "name": "decline: active bankruptcy",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC15",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1200,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC15",
+          "firstName": "Test",
+          "lastName": "Case15",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 80000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 700,
+          "monthlyDebtPayments": 300,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": true,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "DECLINE",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_ACTIVE_BANKRUPTCY"
+      ]
+    }
+  },
+  {
+    "id": "TC16",
+    "name": "decline: three eligibility failures give three reasons",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC16",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1200,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC16",
+          "firstName": "Test",
+          "lastName": "Case16",
+          "ageYears": 17,
+          "residencyStatus": "NON_RESIDENT"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "AB",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 60000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 700,
+          "monthlyDebtPayments": 300,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": true,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "DECLINE",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_AGE_BELOW_MAJORITY",
+        "R_NON_RESIDENT",
+        "R_ACTIVE_BANKRUPTCY"
+      ]
+    }
+  },
+  {
+    "id": "TC17",
+    "name": "decline: score 540",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC17",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1000,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC17",
+          "firstName": "Test",
+          "lastName": "Case17",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 60000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 540,
+          "monthlyDebtPayments": 200,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "DECLINE",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_LOW_SCORE"
+      ]
+    }
+  },
+  {
+    "id": "TC18",
+    "name": "decline: score 559 (boundary)",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC18",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1000,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC18",
+          "firstName": "Test",
+          "lastName": "Case18",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 60000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 559,
+          "monthlyDebtPayments": 200,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "DECLINE",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_LOW_SCORE"
+      ]
+    }
+  },
+  {
+    "id": "TC19",
+    "name": "refer: score 560 (boundary), low TDS",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC19",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1000,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC19",
+          "firstName": "Test",
+          "lastName": "Case19",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 60000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 560,
+          "monthlyDebtPayments": 200,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "REFER",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_BORDERLINE_SCORE"
+      ]
+    }
+  },
+  {
+    "id": "TC20",
+    "name": "decline: score 600, TDS 0.40",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC20",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1400,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC20",
+          "firstName": "Test",
+          "lastName": "Case20",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 60000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 600,
+          "monthlyDebtPayments": 600,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "DECLINE",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_HIGH_TDS"
+      ]
+    }
+  },
+  {
+    "id": "TC21",
+    "name": "refer: score 619 (boundary), low TDS",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC21",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1000,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC21",
+          "firstName": "Test",
+          "lastName": "Case21",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 60000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 619,
+          "monthlyDebtPayments": 200,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "REFER",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_BORDERLINE_SCORE"
+      ]
+    }
+  },
+  {
+    "id": "TC22",
+    "name": "refer: score 620, TDS 0.45",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC22",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1450,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC22",
+          "firstName": "Test",
+          "lastName": "Case22",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 60000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 620,
+          "monthlyDebtPayments": 800,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "REFER",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_BORDERLINE_TDS"
+      ]
+    }
+  },
+  {
+    "id": "TC23",
+    "name": "decline: score 650, TDS 0.55",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC23",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1500,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC23",
+          "firstName": "Test",
+          "lastName": "Case23",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 60000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 650,
+          "monthlyDebtPayments": 1250,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "DECLINE",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_HIGH_TDS"
+      ]
+    }
+  },
+  {
+    "id": "TC24",
+    "name": "refer: score 700, TDS 0.55",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC24",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1500,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC24",
+          "firstName": "Test",
+          "lastName": "Case24",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 60000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 700,
+          "monthlyDebtPayments": 1250,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "REFER",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_BORDERLINE_TDS"
+      ]
+    }
+  },
+  {
+    "id": "TC25",
+    "name": "decline: score 750, TDS 0.65",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC25",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1500,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC25",
+          "firstName": "Test",
+          "lastName": "Case25",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 60000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 750,
+          "monthlyDebtPayments": 1750,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "DECLINE",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_HIGH_TDS"
+      ]
+    }
+  },
+  {
+    "id": "TC26",
+    "name": "decline: income 12000 below minimum",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC26",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 300,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC26",
+          "firstName": "Test",
+          "lastName": "Case26",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 12000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 700,
+          "monthlyDebtPayments": 100,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "DECLINE",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_INSUFFICIENT_INCOME"
+      ]
+    }
+  },
+  {
+    "id": "TC27",
+    "name": "decline: three delinquencies",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC27",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1000,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC27",
+          "firstName": "Test",
+          "lastName": "Case27",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 70000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 720,
+          "monthlyDebtPayments": 200,
+          "existingCreditLimit": 2000,
+          "delinquencies": 3,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "DECLINE",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_DELINQUENCIES"
+      ]
+    }
+  },
+  {
+    "id": "TC28",
+    "name": "decline: seven inquiries",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC28",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1000,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC28",
+          "firstName": "Test",
+          "lastName": "Case28",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 70000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 700,
+          "monthlyDebtPayments": 200,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 7,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "DECLINE",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_EXCESSIVE_INQUIRIES"
+      ]
+    }
+  },
+  {
+    "id": "TC29",
+    "name": "refer: thin file (4 months)",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC29",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1000,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC29",
+          "firstName": "Test",
+          "lastName": "Case29",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 70000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 700,
+          "monthlyDebtPayments": 200,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 4
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "REFER",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_THIN_FILE"
+      ]
+    }
+  },
+  {
+    "id": "TC30",
+    "name": "decline: stacked risk reasons are all reported",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC30",
+        "requestedProduct": "NO_FEE",
+        "monthlyHousingCost": 1400,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC30",
+          "firstName": "Test",
+          "lastName": "Case30",
+          "ageYears": 35,
+          "residencyStatus": "CITIZEN"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "ON",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 60000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 600,
+          "monthlyDebtPayments": 600,
+          "existingCreditLimit": 2000,
+          "delinquencies": 4,
+          "inquiriesLast6Months": 8,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 3
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "DECLINE",
+      "creditLimit": 0,
+      "product": null,
+      "aprTier": null,
+      "reasonCodes": [
+        "R_HIGH_TDS",
+        "R_DELINQUENCIES",
+        "R_EXCESSIVE_INQUIRIES",
+        "R_THIN_FILE"
+      ]
+    }
+  }
+]

@@ -2,7 +2,6 @@
 target/
 *.class
 *.jar
-!rules/ruleapps/*.jar
 .mvn/wrapper/maven-wrapper.jar
 # Python
 __pycache__/
@@ -35,3 +34,4 @@ out/
 .metadata/
 # Claude local
 .claude/settings.local.json
+tmp/

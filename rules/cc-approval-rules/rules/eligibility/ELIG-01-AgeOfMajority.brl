@@ -1,0 +1,6 @@
+if
+    the age in years of the applicant of 'the application' is less than the age of majority of the province of the address of 'the application'
+then
+    add reason code R_AGE_BELOW_MAJORITY to 'the decision' ;
+    escalate 'the decision' to DECLINE ;
+    record that rule "ELIG-01" fired in 'the decision' ;

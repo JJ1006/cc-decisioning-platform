@@ -23,3 +23,5 @@ jobs:
       - name: Prohibited-grounds lint
         run: |
           if [ -x scripts/lint-prohibited-grounds.sh ]; then scripts/lint-prohibited-grounds.sh; else echo "lint not added yet"; fi
+      - name: Rules scenarios match the written spec
+        run: python3 rules/tests/check_scenarios.py

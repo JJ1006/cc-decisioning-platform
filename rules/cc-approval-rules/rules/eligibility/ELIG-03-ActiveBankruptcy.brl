@@ -1,0 +1,6 @@
+if
+    the active bankruptcy of the bureau report of 'the application' is true
+then
+    add reason code R_ACTIVE_BANKRUPTCY to 'the decision' ;
+    escalate 'the decision' to DECLINE ;
+    record that rule "ELIG-03" fired in 'the decision' ;

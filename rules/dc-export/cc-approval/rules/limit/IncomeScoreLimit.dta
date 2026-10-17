@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ilog.rules.studio.model.dt:DecisionTable xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ilog.rules.studio.model.dt="http://ilog.rules.studio/model/dt.ecore">
+  <name>IncomeScoreLimit</name>
+  <uuid>8bd40884-b447-5f3e-ad21-b402580e64f6</uuid>
+  <locale>en_US</locale>
+  <definition>
+<DT xmlns="http://schemas.ilog.com/Rules/7.0/DecisionTable" Version="7.0">
+  <Body xmlns="http://schemas.ilog.com/Rules/7.0/DecisionTable">
+    <Properties>
+      <Property Name="Lock.ApplyLocking" Type="xs:boolean"><![CDATA[false]]></Property>
+      <Property Name="UI.RenderBoolean" Type="xs:boolean"><![CDATA[true]]></Property>
+      <Property Name="UI.ShowLockIcon" Type="xs:boolean"><![CDATA[false]]></Property>
+      <Property Name="UI.ShowRuleView" Type="xs:boolean"><![CDATA[false]]></Property>
+    </Properties>
+    <Structure>
+            <ConditionDefinitions>
+                <ConditionDefinition Id="C0">
+                    <ExpressionDefinition>
+                        <Text><![CDATA[the annual income of the employment of 'the application' is at least <min> and less than <max>]]></Text>
+                    </ExpressionDefinition>
+                </ConditionDefinition>
+                <ConditionDefinition Id="C1">
+                    <ExpressionDefinition>
+                        <Text><![CDATA[the bureau score of the bureau report of 'the application' is at least <min> and less than <max>]]></Text>
+                    </ExpressionDefinition>
+                </ConditionDefinition>
+            </ConditionDefinitions>
+            <ActionDefinitions>
+                <ActionDefinition Id="A0">
+                    <ExpressionDefinition>
+                        <Text><![CDATA[set the credit limit of 'the decision' to <a number>]]></Text>
+                    </ExpressionDefinition>
+                </ActionDefinition>
+                <ActionDefinition Id="A1">
+                    <ExpressionDefinition>
+                        <Text><![CDATA[record that rule <a string> fired in 'the decision']]></Text>
+                    </ExpressionDefinition>
+                </ActionDefinition>
+            </ActionDefinitions>
+        </Structure>
+    <Contents>
+            <Partition DefId="C0">
+                <Condition>
+                    <Expression>
+                        <Param><![CDATA[0]]></Param>
+                        <Param><![CDATA[30000]]></Param>
+                    </Expression>
+                    <Partition DefId="C1">
+                        <Condition>
+                            <Expression>
+                                <Param><![CDATA[620]]></Param>
+                                <Param><![CDATA[680]]></Param>
+                            </Expression>
+                            <ActionSet>
+                                <Action DefId="A0">
+                                    <Expression>
+                                        <Param><![CDATA[1500]]></Param>
+                                    </Expression>
+                                </Action>
+                                <Action DefId="A1">
+                                    <Expression>
+                                        <Param><![CDATA["LIM-DT-01"]]></Param>
+                                    </Expression>
+                                </Action>
+                            </ActionSet>
+                        </Condition>
+                        <Condition>
+                            <Expression>
+                                <Param><![CDATA[680]]></Param>
+                                <Param><![CDATA[740]]></Param>
+                            </Expression>
+                            <ActionSet>
+                                <Action DefId="A0">
+                                    <Expression>
+                                        <Param><![CDATA[3000]]></Param>
+                                    </Expression>
+                                </Action>
+                                <Action DefId="A1">
+                                    <Expression>
+                                        <Param><![CDATA["LIM-DT-01"]]></Param>
+                                    </Expression>
+                                </Action>
+                            </ActionSet>
+                        </Condition>
+                        <Condition>
+                            <Expression>
+                                <Param><![CDATA[740]]></Param>
+                                <Param><![CDATA[901]]></Param>
+                            </Expression>
+                            <ActionSet>
+                                <Action DefId="A0">
+                                    <Expression>
+                                        <Param><![CDATA[5000]]></Param>
+                                    </Expression>
+                                </Action>
+                                <Action DefId="A1">
+                                    <Expression>
+                                        <Param><![CDATA["LIM-DT-01"]]></Param>
+                                    </Expression>
+                                </Action>
+                            </ActionSet>
+                        </Condition>
+                    </Partition>
+                </Condition>
+                <Condition>
+                    <Expression>
+                        <Param><![CDATA[30000]]></Param>
+                        <Param><![CDATA[60000]]></Param>
+                    </Expression>
+                    <Partition DefId="C1">
+                        <Condition>
+                            <Expression>
+                                <Param><![CDATA[620]]></Param>
+                                <Param><![CDATA[680]]></Param>
+                            </Expression>
+                            <ActionSet>
+                                <Action DefId="A0">
+                                    <Expression>
+                                        <Param><![CDATA[3000]]></Param>
+                                    </Expression>
+                                </Action>
+                                <Action DefId="A1">
+                                    <Expression>
+                                        <Param><![CDATA["LIM-DT-01"]]></Param>
+                                    </Expression>
+                                </Action>
+                            </ActionSet>
+                        </Condition>
+                        <Condition>
+                            <Expression>
+                                <Param><![CDATA[680]]></Param>
+                                <Param><![CDATA[740]]></Param>
+                            </Expression>
+                            <ActionSet>
+                                <Action DefId="A0">
+                                    <Expression>
+                                        <Param><![CDATA[6000]]></Param>
+                                    </Expression>
+                                </Action>
+                                <Action DefId="A1">
+                                    <Expression>
+                                        <Param><![CDATA["LIM-DT-01"]]></Param>
+                                    </Expression>
+                                </Action>
+                            </ActionSet>
+                        </Condition>
+                        <Condition>
+                            <Expression>
+                                <Param><![CDATA[740]]></Param>
+                                <Param><![CDATA[901]]></Param>
+                            </Expression>
+                            <ActionSet>
+                                <Action DefId="A0">
+                                    <Expression>
+                                        <Param><![CDATA[10000]]></Param>
+                                    </Expression>
+                                </Action>
+                                <Action DefId="A1">
+                                    <Expression>
+                                        <Param><![CDATA["LIM-DT-01"]]></Param>
+                                    </Expression>
+                                </Action>
+                            </ActionSet>
+                        </Condition>
+                    </Partition>
+                </Condition>
+                <Condition>
+                    <Expression>
+                        <Param><![CDATA[60000]]></Param>
+                        <Param><![CDATA[100000]]></Param>
+                    </Expression>
+                    <Partition DefId="C1">
+                        <Condition>
+                            <Expression>
+                                <Param><![CDATA[620]]></Param>
+                                <Param><![CDATA[680]]></Param>
+                            </Expression>
+                            <ActionSet>
+                                <Action DefId="A0">
+                                    <Expression>
+                                        <Param><![CDATA[6000]]></Param>
+                                    </Expression>
+                                </Action>
+                                <Action DefId="A1">
+                                    <Expression>
+                                        <Param><![CDATA["LIM-DT-01"]]></Param>
+                                    </Expression>
+                                </Action>
+                            </ActionSet>
+                        </Condition>
+                        <Condition>
+                            <Expression>
+                                <Param><![CDATA[680]]></Param>
+                                <Param><![CDATA[740]]></Param>
+                            </Expression>
+                            <ActionSet>
+                                <Action DefId="A0">
+                                    <Expression>
+                                        <Param><![CDATA[12000]]></Param>
+                                    </Expression>
+                                </Action>
+                                <Action DefId="A1">
+                                    <Expression>
+                                        <Param><![CDATA["LIM-DT-01"]]></Param>
+                                    </Expression>
+                                </Action>
+                            </ActionSet>
+                        </Condition>
+                        <Condition>
+                            <Expression>
+                                <Param><![CDATA[740]]></Param>
+                                <Param><![CDATA[901]]></Param>
+                            </Expression>
+                            <ActionSet>
+                                <Action DefId="A0">
+                                    <Expression>
+                                        <Param><![CDATA[20000]]></Param>
+                                    </Expression>
+                                </Action>
+                                <Action DefId="A1">
+                                    <Expression>
+                                        <Param><![CDATA["LIM-DT-01"]]></Param>
+                                    </Expression>
+                                </Action>
+                            </ActionSet>
+                        </Condition>
+                    </Partition>
+                </Condition>
+                <Condition>
+                    <Expression>
+                        <Param><![CDATA[100000]]></Param>
+                        <Param><![CDATA[1000000000]]></Param>
+                    </Expression>
+                    <Partition DefId="C1">
+                        <Condition>
+                            <Expression>
+                                <Param><![CDATA[620]]></Param>
+                                <Param><![CDATA[680]]></Param>
+                            </Expression>
+                            <ActionSet>
+                                <Action DefId="A0">
+                                    <Expression>
+                                        <Param><![CDATA[10000]]></Param>
+                                    </Expression>
+                                </Action>
+                                <Action DefId="A1">
+                                    <Expression>
+                                        <Param><![CDATA["LIM-DT-01"]]></Param>
+                                    </Expression>
+                                </Action>
+                            </ActionSet>
+                        </Condition>
+                        <Condition>
+                            <Expression>
+                                <Param><![CDATA[680]]></Param>
+                                <Param><![CDATA[740]]></Param>
+                            </Expression>
+                            <ActionSet>
+                                <Action DefId="A0">
+                                    <Expression>
+                                        <Param><![CDATA[20000]]></Param>
+                                    </Expression>
+                                </Action>
+                                <Action DefId="A1">
+                                    <Expression>
+                                        <Param><![CDATA["LIM-DT-01"]]></Param>
+                                    </Expression>
+                                </Action>
+                            </ActionSet>
+                        </Condition>
+                        <Condition>
+                            <Expression>
+                                <Param><![CDATA[740]]></Param>
+                                <Param><![CDATA[901]]></Param>
+                            </Expression>
+                            <ActionSet>
+                                <Action DefId="A0">
+                                    <Expression>
+                                        <Param><![CDATA[35000]]></Param>
+                                    </Expression>
+                                </Action>
+                                <Action DefId="A1">
+                                    <Expression>
+                                        <Param><![CDATA["LIM-DT-01"]]></Param>
+                                    </Expression>
+                                </Action>
+                            </ActionSet>
+                        </Condition>
+                    </Partition>
+                </Condition>
+            </Partition>
+        </Contents>
+  </Body>
+  <Resources DefaultLocale="en_US" xmlns="http://schemas.ilog.com/Rules/7.0/DecisionTable">
+        <ResourceSet Locale="en_US">
+            <Data Name="Definitions(C0)#HeaderText"><![CDATA[annual income]]></Data>
+            <Data Name="Definitions(C0)[0]#HeaderText"><![CDATA[min]]></Data>
+            <Data Name="Definitions(C0)[1]#HeaderText"><![CDATA[max]]></Data>
+            <Data Name="Definitions(C1)#HeaderText"><![CDATA[bureau score]]></Data>
+            <Data Name="Definitions(C1)[0]#HeaderText"><![CDATA[min]]></Data>
+            <Data Name="Definitions(C1)[1]#HeaderText"><![CDATA[max]]></Data>
+            <Data Name="Definitions(A0)#HeaderText"><![CDATA[credit limit]]></Data>
+            <Data Name="Definitions(A1)#HeaderText"><![CDATA[rule]]></Data>
+        </ResourceSet>
+    </Resources>
+</DT>
+</definition>
+</ilog.rules.studio.model.dt:DecisionTable>

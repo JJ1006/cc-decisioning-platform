@@ -1,0 +1,6 @@
+if
+    the inquiries in the last 6 months of the bureau report of 'the application' is more than 6
+then
+    add reason code R_EXCESSIVE_INQUIRIES to 'the decision' ;
+    escalate 'the decision' to DECLINE ;
+    record that rule "RISK-03" fired in 'the decision' ;

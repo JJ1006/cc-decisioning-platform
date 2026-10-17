@@ -109,6 +109,29 @@ public class Decision {
   }
 
   /**
+   * Raises the outcome to the given one when it is more severe (DECLINE over REFER over APPROVE).
+   * Rules call this instead of setting the outcome, so the result does not depend on rule order.
+   *
+   * @param candidate the outcome a rule asks for
+   */
+  public void escalate(Outcome candidate) {
+    if (severity(candidate) > severity(outcome)) {
+      outcome = candidate;
+    }
+  }
+
+  private static int severity(Outcome o) {
+    if (o == null) {
+      return -1;
+    }
+    return switch (o) {
+      case APPROVE -> 0;
+      case REFER -> 1;
+      case DECLINE -> 2;
+    };
+  }
+
+  /**
    * Records that a rule fired.
    *
    * @param ruleName the rule name
