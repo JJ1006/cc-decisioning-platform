@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maplenorthern.ca/schemas/dlq.schema.json",
+  "title": "Dead-letter envelope",
+  "allOf": [{ "$ref": "envelope.schema.json" }],
+  "type": "object",
+  "unevaluatedProperties": false,
+  "properties": {
+    "eventType": { "const": "cc.dlq.v1" },
+    "payload": {
+      "type": "object",
+      "required": ["originalTopic", "originalPartition", "originalOffset", "originalValue", "errorClass", "errorMessage", "failedAt", "attempts"],
+      "additionalProperties": false,
+      "properties": {
+        "originalTopic": { "type": "string" },
+        "originalPartition": { "type": "integer", "minimum": 0 },
+        "originalOffset": { "type": "integer", "minimum": 0 },
+        "originalKey": { "type": ["string", "null"] },
+        "originalValue": { "type": "string" },
+        "errorClass": { "type": "string" },
+        "errorMessage": { "type": "string" },
+        "failedAt": { "type": "string", "format": "date-time" },
+        "attempts": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

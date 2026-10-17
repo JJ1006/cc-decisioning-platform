@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 PROFILE ?= core
-JAVA_HOME ?= $(shell /usr/libexec/java_home -v 21 2>/dev/null || echo /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home)
+JAVA_HOME := $(shell [ -d /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home ] && echo /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home || /usr/libexec/java_home -v 21 2>/dev/null)
 export JAVA_HOME
 
 .DEFAULT_GOAL := help
@@ -19,7 +19,8 @@ logs: ## Tail logs
 	@echo "TODO(P2): docker compose logs -f"; exit 0
 
 verify: ## Full local verification (build + tests + format check)
-	@if grep -q '<module>' pom.xml; then mvn -q verify; else echo "no Maven modules yet"; fi
+	@uv run --quiet --with jsonschema python scripts/validate-contracts.py
+	@if grep -q '<module>' pom.xml; then mvn -B -ntp -q verify; else echo "no Maven modules yet"; fi
 
 test: ## Unit tests
 	@if grep -q '<module>' pom.xml; then mvn -q test; else echo "no Maven modules yet"; fi

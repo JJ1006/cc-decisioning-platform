@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maplenorthern.ca/schemas/decision-manual.schema.json",
+  "title": "Manual underwriter decision",
+  "allOf": [{ "$ref": "envelope.schema.json" }],
+  "type": "object",
+  "unevaluatedProperties": false,
+  "properties": {
+    "eventType": { "const": "cc.decisions.manual.v1" },
+    "payload": {
+      "type": "object",
+      "required": ["applicationId", "underwriterId", "outcome", "creditLimit", "note", "originalDecisionEventId"],
+      "additionalProperties": false,
+      "properties": {
+        "applicationId": { "type": "string", "minLength": 1 },
+        "underwriterId": { "type": "string", "minLength": 1 },
+        "outcome": { "enum": ["APPROVE", "DECLINE"] },
+        "creditLimit": { "$ref": "defs.schema.json#/$defs/money" },
+        "product": { "$ref": "defs.schema.json#/$defs/product" },
+        "note": { "type": "string" },
+        "originalDecisionEventId": { "type": "string", "format": "uuid" }
+      }
+    }
+  }
+}

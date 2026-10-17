@@ -1,0 +1,19 @@
+{
+  "eventId": "7b0f4c1e-5d52-4a53-9d2f-2f6f0d8e9a11",
+  "correlationId": "corr-0001",
+  "eventType": "cc.dlq.v1",
+  "schemaVersion": 1,
+  "occurredAt": "2026-10-17T14:30:00Z",
+  "producer": "decision-orchestrator",
+  "payload": {
+    "originalTopic": "cc.applications.submitted.v1",
+    "originalPartition": 0,
+    "originalOffset": 17,
+    "originalKey": "APP-0001",
+    "originalValue": "{not json",
+    "errorClass": "com.fasterxml.jackson.core.JsonParseException",
+    "errorMessage": "Unexpected character",
+    "failedAt": "2026-10-17T14:30:02Z",
+    "attempts": 3
+  }
+}

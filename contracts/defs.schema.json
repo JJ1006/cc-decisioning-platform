@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maplenorthern.ca/schemas/defs.schema.json",
+  "title": "Shared definitions (mirror rules/xom enums)",
+  "$defs": {
+    "province": { "enum": ["AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT"] },
+    "product": { "enum": ["NO_FEE", "CASHBACK", "TRAVEL_INFINITE"] },
+    "outcome": { "enum": ["APPROVE", "DECLINE", "REFER"] },
+    "aprTier": { "enum": ["TIER_1", "TIER_2", "TIER_3", "TIER_4"] },
+    "residencyStatus": { "enum": ["CITIZEN", "PERMANENT_RESIDENT", "WORK_PERMIT_VALID", "WORK_PERMIT_EXPIRED", "NON_RESIDENT"] },
+    "employmentStatus": { "enum": ["EMPLOYED", "SELF_EMPLOYED", "RETIRED", "STUDENT", "UNEMPLOYED"] },
+    "reasonCode": {
+      "enum": [
+        "R_AGE_BELOW_MAJORITY", "R_NON_RESIDENT", "R_ACTIVE_BANKRUPTCY", "R_LOW_SCORE", "R_HIGH_TDS",
+        "R_INSUFFICIENT_INCOME", "R_DELINQUENCIES", "R_EXCESSIVE_INQUIRIES", "R_THIN_FILE",
+        "R_BORDERLINE_SCORE", "R_BORDERLINE_TDS", "R_APPROVED_STANDARD"
+      ]
+    },
+    "money": { "type": "number", "minimum": 0 },
+    "postalCode": { "type": "string", "pattern": "^[A-Z][0-9][A-Z] ?[0-9][A-Z][0-9]$" },
+    "application": {
+      "type": "object",
+      "required": ["applicationId", "requestedProduct", "requestedLimit", "applicant", "address", "employment", "bureau", "monthlyHousingCost", "channel"],
+      "additionalProperties": false,
+      "properties": {
+        "applicationId": { "type": "string", "minLength": 1 },
+        "requestedProduct": { "$ref": "#/$defs/product" },
+        "requestedLimit": { "$ref": "#/$defs/money" },
+        "monthlyHousingCost": { "$ref": "#/$defs/money" },
+        "channel": { "enum": ["WEB", "MOBILE", "BRANCH", "PARTNER"] },
+        "applicant": {
+          "type": "object",
+          "required": ["applicantId", "firstName", "lastName", "dateOfBirth", "sin", "residencyStatus"],
+          "additionalProperties": false,
+          "properties": {
+            "applicantId": { "type": "string", "minLength": 1 },
+            "firstName": { "type": "string", "minLength": 1 },
+            "lastName": { "type": "string", "minLength": 1 },
+            "dateOfBirth": { "type": "string", "format": "date" },
+            "ageYears": { "type": "integer", "minimum": 0, "description": "Derived by orchestrator before calling ODM" },
+            "sin": { "type": "string", "pattern": "^[0-9]{9}$", "description": "Synthetic SIN only; masked before indexing" },
+            "residencyStatus": { "$ref": "#/$defs/residencyStatus" }
+          }
+        },
+        "address": {
+          "type": "object",
+          "required": ["line1", "city", "province", "postalCode"],
+          "additionalProperties": false,
+          "properties": {
+            "line1": { "type": "string", "minLength": 1 },
+            "city": { "type": "string", "minLength": 1 },
+            "province": { "$ref": "#/$defs/province" },
+            "postalCode": { "$ref": "#/$defs/postalCode" }
+          }
+        },
+        "employment": {
+          "type": "object",
+          "required": ["status", "annualIncome", "monthsAtEmployer"],
+          "additionalProperties": false,
+          "properties": {
+            "status": { "$ref": "#/$defs/employmentStatus" },
+            "employer": { "type": ["string", "null"] },
+            "annualIncome": { "$ref": "#/$defs/money" },
+            "monthsAtEmployer": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "bureau": {
+          "type": "object",
+          "required": ["score", "monthlyDebtPayments", "existingCreditLimit", "delinquencies", "inquiriesLast6Months", "activeBankruptcy", "fileAgeMonths"],
+          "additionalProperties": false,
+          "properties": {
+            "score": { "type": "integer", "minimum": 300, "maximum": 900 },
+            "monthlyDebtPayments": { "$ref": "#/$defs/money" },
+            "existingCreditLimit": { "$ref": "#/$defs/money" },
+            "delinquencies": { "type": "integer", "minimum": 0 },
+            "inquiriesLast6Months": { "type": "integer", "minimum": 0 },
+            "activeBankruptcy": { "type": "boolean" },
+            "fileAgeMonths": { "type": "integer", "minimum": 0 }
+          }
+        }
+      }
+    },
+    "decisionPayload": {
+      "type": "object",
+      "required": ["applicationId", "outcome", "creditLimit", "aprTier", "reasonCodes", "firedRules", "rulesetVersion", "decidedAt", "processingMillis", "applicantSummary"],
+      "additionalProperties": false,
+      "properties": {
+        "applicationId": { "type": "string", "minLength": 1 },
+        "outcome": { "$ref": "#/$defs/outcome" },
+        "creditLimit": { "$ref": "#/$defs/money" },
+        "product": { "oneOf": [{ "$ref": "#/$defs/product" }, { "type": "null" }] },
+        "aprTier": { "oneOf": [{ "$ref": "#/$defs/aprTier" }, { "type": "null" }] },
+        "reasonCodes": { "type": "array", "items": { "$ref": "#/$defs/reasonCode" } },
+        "firedRules": { "type": "array", "items": { "type": "string" } },
+        "rulesetVersion": { "type": "string" },
+        "decidedAt": { "type": "string", "format": "date-time" },
+        "processingMillis": { "type": "integer", "minimum": 0 },
+        "applicantSummary": {
+          "type": "object",
+          "required": ["province", "ageBand", "bureauScore", "tdsRatio", "annualIncome"],
+          "additionalProperties": false,
+          "properties": {
+            "province": { "$ref": "#/$defs/province" },
+            "ageBand": { "enum": ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"] },
+            "bureauScore": { "type": "integer", "minimum": 300, "maximum": 900 },
+            "tdsRatio": { "type": "number", "minimum": 0 },
+            "annualIncome": { "$ref": "#/$defs/money" }
+          }
+        }
+      }
+    }
+  }
+}
