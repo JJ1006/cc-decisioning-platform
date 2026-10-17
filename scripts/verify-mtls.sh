@@ -20,6 +20,7 @@ skip() { printf 'SKIP  %s\n' "$1"; }
 want() { [[ "$only" == all || "$only" == "$1" ]]; }
 running() { [[ -n "$("$DC" ps --status running --services 2>/dev/null | grep -x "$1")" ]]; }
 envval() { grep -E "^$1=" "$ROOT/.env" | tail -1 | cut -d= -f2-; }
+source "$ROOT/scripts/res-env.sh" # RES_USER, RES_PASS: the ODM for Developers demo user
 gw() { "$ROOT/scripts/api-call.sh" "$@"; } # gw CLIENT [curl args] /path : through the gateway with that consumer's certificate
 
 WORK=$(mktemp -d)
@@ -112,7 +113,7 @@ if want odm && running odm; then
   fi
   # the REST API of RES: the orchestrator's certificate plus basic auth (what the orchestrator does)
   code=$(curl -s --cacert "$CA" --cert "$PKI/decision-orchestrator/decision-orchestrator.crt" --key "$PKI/decision-orchestrator/decision-orchestrator.key" \
-    -K <(printf 'user = "%s:%s"\n' "${RES_USERNAME:-resAdmin}" "${RES_PASSWORD:-resAdmin}") -o /dev/null -w '%{http_code}' \
+    -K <(printf 'user = "%s:%s"\n' "$RES_USER" "$RES_PASS") -o /dev/null -w '%{http_code}' \
     https://localhost:9443/res/apiauth/v1/ruleapps)
   [[ "$code" == 200 ]] && pass "ODM RES REST with the orchestrator certificate and basic auth -> 200" \
     || fail "ODM RES REST with the orchestrator certificate -> HTTP $code"
