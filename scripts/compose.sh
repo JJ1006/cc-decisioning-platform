@@ -10,6 +10,14 @@ fi
 # env_file (deploy/compose/.env.derived) instead of putting *_PASSWORD keys in the compose file.
 set -a; . "$ROOT/.env"; set +a
 : "${PKI_PASSWORD:?set PKI_PASSWORD in .env}" "${ELASTIC_PASSWORD:?set ELASTIC_PASSWORD in .env}" "${KIBANA_PASSWORD:?set KIBANA_PASSWORD in .env}"
+if [[ -z "${ES_INDEXER_PASSWORD:-}" ]]; then # password of the least-privilege es-indexer user, generated once
+  ES_INDEXER_PASSWORD=$(openssl rand -hex 16)
+  printf '\nES_INDEXER_PASSWORD=%s\n' "$ES_INDEXER_PASSWORD" >>"$ROOT/.env"
+  echo "generated ES_INDEXER_PASSWORD in .env" >&2
+fi
+# ODM for Developers demo users (not secrets); override in .env for a different server
+RES_USERNAME=${RES_USERNAME:-resAdmin}
+RES_PASSWORD=${RES_PASSWORD:-$RES_USERNAME}
 umask 077
 cat >"$ROOT/deploy/compose/.env.derived" <<EOV
 KAFKA_SSL_KEYSTORE_PASSWORD=$PKI_PASSWORD
@@ -22,6 +30,12 @@ KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_PASSWORD=$PKI_PASSWORD
 ELASTIC_PASSWORD=$ELASTIC_PASSWORD
 KIBANA_PASSWORD=$KIBANA_PASSWORD
 ELASTICSEARCH_PASSWORD=$KIBANA_PASSWORD
+KAFKA_STORE_PASSWORD=$PKI_PASSWORD
+RES_TRUSTSTORE_PASSWORD=$PKI_PASSWORD
+ES_TRUSTSTORE_PASSWORD=$PKI_PASSWORD
+ES_INDEXER_PASSWORD=$ES_INDEXER_PASSWORD
+RES_USERNAME=$RES_USERNAME
+RES_PASSWORD=$RES_PASSWORD
 EOV
 profiles=()
 IFS=, read -ra wanted <<<"${PROFILE:-core}"
