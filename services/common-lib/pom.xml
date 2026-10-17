@@ -16,7 +16,7 @@
   <description>Shared event DTOs, Kafka configuration, correlation-id and JSON logging support.</description>
 
   <properties>
-    <logstash-logback-encoder.version>8.1</logstash-logback-encoder.version>
+    <logstash-logback-encoder.version>9.0</logstash-logback-encoder.version>
     <json-schema-validator.version>1.5.9</json-schema-validator.version>
   </properties>
 
