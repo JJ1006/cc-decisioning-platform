@@ -1,5 +1,5 @@
 version: 2
-# pip (mcp/odm-dc-mcp-server) is added in P9; docker (deploy/compose) is added in P2.
+# pip (mcp/odm-dc-mcp-server) is added in P9.
 updates:
   - package-ecosystem: maven
     directory: /
@@ -20,3 +20,6 @@ updates:
     groups:
       actions:
         patterns: ["*"]
+  - package-ecosystem: docker-compose
+    directory: /deploy/compose
+    schedule: { interval: weekly }

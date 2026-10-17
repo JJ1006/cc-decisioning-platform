@@ -4,19 +4,27 @@ JAVA_HOME := $(shell [ -d /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Conte
 export JAVA_HOME
 
 .DEFAULT_GOAL := help
-.PHONY: help up down logs verify test pki demo kind-up ocp-render eval-rules eval-agent what-if
+.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls demo kind-up ocp-render eval-rules eval-agent what-if
 
 help: ## Show targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
 
-up: ## Start compose profiles: make up PROFILE=core,analytics
-	@echo "TODO(P2): docker compose --profile $(PROFILE) up -d"; exit 0
+bootstrap: ## Preflight: tools, Docker memory, Rosetta
+	@scripts/bootstrap.sh
 
-down: ## Stop compose stack
-	@echo "TODO(P2): docker compose down"; exit 0
+up: ## Start compose profiles: make up PROFILE=core,analytics (run make pki first)
+	@scripts/bootstrap.sh || echo "bootstrap reported problems (continuing)"
+	@PROFILE=$(PROFILE) scripts/compose.sh up -d
+	@PROFILE=$(PROFILE) scripts/wait-healthy.sh
 
-logs: ## Tail logs
-	@echo "TODO(P2): docker compose logs -f"; exit 0
+down: ## Stop all compose profiles (make down V=1 also deletes volumes)
+	@PROFILE=core,analytics,edge,obs,mcp scripts/compose.sh down $(if $(V),-v,)
+
+logs: ## Tail logs: make logs S=kafka
+	@PROFILE=core,analytics,edge,obs,mcp scripts/compose.sh logs -f --tail=100 $(S)
+
+ps: ## Compose status
+	@PROFILE=core,analytics,edge,obs,mcp scripts/compose.sh ps
 
 verify: ## Full local verification (build + tests + format check)
 	@uv run --quiet --with jsonschema python scripts/validate-contracts.py
@@ -25,8 +33,14 @@ verify: ## Full local verification (build + tests + format check)
 test: ## Unit tests
 	@if grep -q '<module>' pom.xml; then mvn -q test; else echo "no Maven modules yet"; fi
 
-pki: ## Generate private CA and certs
-	@echo "TODO(P2): scripts/pki.sh"; exit 0
+pki: ## Generate private CA and certs (idempotent; make pki FORCE=1 regenerates)
+	@JAVA_HOME=$(JAVA_HOME) scripts/pki.sh $(if $(FORCE),--force,)
+
+verify-mtls: ## Check TLS/mTLS endpoints and rejection of clients without certs
+	@PROFILE=$(PROFILE) scripts/verify-mtls.sh
+
+kafka-topics-mtls: ## List Kafka topics over mTLS (admin client cert)
+	@PROFILE=core scripts/compose.sh exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9093 --command-config /pki/kafka-client.properties --list
 
 demo: ## Send 1000 synthetic applications
 	@echo "TODO(P4): txn-generator demo"; exit 0

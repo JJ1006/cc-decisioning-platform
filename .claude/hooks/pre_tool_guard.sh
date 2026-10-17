@@ -9,7 +9,7 @@ block() { echo "BLOCKED by pre_tool_guard: $1" >&2; exit 2; }
 
 secret_path() {
   case "$1" in
-    *.pub.pem|*.env.example) return 1 ;;
+    *.pub.pem|*.env.example|*.crt) return 1 ;; # public certs only; keys/p12/jks stay blocked
     *.key|*.p12|*.jks|*.pfx|*.pem) return 0 ;;
     */.env|.env|*/.env.*|.env.*) return 0 ;;
     */security/pki/out/*|security/pki/out/*) return 0 ;;

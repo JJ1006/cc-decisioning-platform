@@ -1,0 +1,220 @@
+# Local stack. Run via `make up PROFILE=core,analytics` (needs `make pki` first).
+#   core       kafka (mTLS), topic-init, elasticsearch (TLS), es-setup, odm
+#   analytics  kibana, kafka-ui   (requires core)
+# All images are multi-arch; ODM and the rest run natively on Apple Silicon.
+# Dev only: passwords come from ../../.env (see .env.example); keys live in security/pki/out.
+name: ${COMPOSE_PROJECT_NAME:-ccplatform}
+
+services:
+  # ---------------------------------------------------------------- core
+  kafka:
+    image: apache/kafka:3.9.2
+    profiles: [core]
+    env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
+    mem_limit: 768m
+    hostname: kafka
+    ports:
+      - "127.0.0.1:9093:9094" # host listener (mTLS); containers use kafka:9093
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9095
+      KAFKA_LISTENERS: INTERNAL://:9093,EXTERNAL://:9094,CONTROLLER://:9095
+      # listener names must not end in "SSL": the image's SSL helper would then demand file-based secrets
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9093,EXTERNAL://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:SSL,EXTERNAL:SSL,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER # internal, not published
+      KAFKA_SSL_CLIENT_AUTH: required
+      KAFKA_SSL_KEYSTORE_TYPE: PKCS12
+      KAFKA_SSL_KEYSTORE_LOCATION: /pki/kafka.p12
+      KAFKA_SSL_TRUSTSTORE_TYPE: PKCS12
+      KAFKA_SSL_TRUSTSTORE_LOCATION: /pki/truststore.p12
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_HEAP_OPTS: -Xms384m -Xmx384m
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+      - ${PKI_DIR:-../../security/pki/out}/kafka/kafka.p12:/pki/kafka.p12:ro
+      - ${PKI_DIR:-../../security/pki/out}/truststore.p12:/pki/truststore.p12:ro
+      - ${PKI_DIR:-../../security/pki/out}/admin/admin.p12:/pki/admin/admin.p12:ro
+      - ${PKI_DIR:-../../security/pki/out}/kafka-client.properties:/pki/kafka-client.properties:ro
+    healthcheck:
+      test: ["CMD-SHELL", "KAFKA_HEAP_OPTS=-Xmx128m /opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server kafka:9093 --command-config /pki/kafka-client.properties >/dev/null 2>&1"]
+      interval: 15s
+      timeout: 20s
+      retries: 10
+      start_period: 30s
+
+  topic-init:
+    image: apache/kafka:3.9.2
+    profiles: [core]
+    mem_limit: 256m
+    restart: "no"
+    depends_on:
+      kafka: { condition: service_healthy }
+    entrypoint: ["/bin/bash", "/scripts/create-topics.sh"]
+    environment:
+      KAFKA_HEAP_OPTS: -Xmx128m
+      BOOTSTRAP: kafka:9093
+      COMMAND_CONFIG: /pki/kafka-client.properties
+      TOPICS_DOC: /docs/kafka-topics.md
+    volumes:
+      - ../../scripts/create-topics.sh:/scripts/create-topics.sh:ro
+      - ../../docs/kafka-topics.md:/docs/kafka-topics.md:ro
+      - ${PKI_DIR:-../../security/pki/out}/truststore.p12:/pki/truststore.p12:ro
+      - ${PKI_DIR:-../../security/pki/out}/admin/admin.p12:/pki/admin/admin.p12:ro
+      - ${PKI_DIR:-../../security/pki/out}/kafka-client.properties:/pki/kafka-client.properties:ro
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.23
+    profiles: [core]
+    env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
+    mem_limit: 1g
+    hostname: elasticsearch
+    ports:
+      - "127.0.0.1:9200:9200"
+    # ES only reads SSL files from inside its config dir
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      xpack.security.enabled: "true"
+      xpack.ml.enabled: "false"
+      cluster.routing.allocation.disk.threshold_enabled: "false"
+      xpack.security.http.ssl.enabled: "true"
+      xpack.security.http.ssl.key: /usr/share/elasticsearch/config/certs/elasticsearch.key
+      xpack.security.http.ssl.certificate: /usr/share/elasticsearch/config/certs/elasticsearch.crt
+      xpack.security.http.ssl.certificate_authorities: /usr/share/elasticsearch/config/certs/ca.crt
+      xpack.security.http.ssl.client_authentication: optional # services may present client certs
+      xpack.security.transport.ssl.enabled: "true"
+      xpack.security.transport.ssl.key: /usr/share/elasticsearch/config/certs/elasticsearch.key
+      xpack.security.transport.ssl.certificate: /usr/share/elasticsearch/config/certs/elasticsearch.crt
+      xpack.security.transport.ssl.certificate_authorities: /usr/share/elasticsearch/config/certs/ca.crt
+      xpack.security.transport.ssl.verification_mode: certificate
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+      - ${PKI_DIR:-../../security/pki/out}/elasticsearch/elasticsearch.key:/usr/share/elasticsearch/config/certs/elasticsearch.key:ro
+      - ${PKI_DIR:-../../security/pki/out}/elasticsearch/elasticsearch.crt:/usr/share/elasticsearch/config/certs/elasticsearch.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/usr/share/elasticsearch/config/certs/ca.crt:ro
+    ulimits:
+      memlock: { soft: -1, hard: -1 }
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf --cacert /usr/share/elasticsearch/config/certs/ca.crt -u elastic:$$ELASTIC_PASSWORD 'https://localhost:9200/_cluster/health?wait_for_status=yellow&timeout=5s' >/dev/null"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+
+  es-setup:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.23
+    profiles: [core]
+    env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
+    mem_limit: 64m
+    restart: "no"
+    depends_on:
+      elasticsearch: { condition: service_healthy }
+    entrypoint:
+      - /bin/bash
+      - -c
+      - >
+        curl -sf --cacert /pki/ca.crt -u "elastic:$$ELASTIC_PASSWORD"
+        -X POST -H 'Content-Type: application/json'
+        https://elasticsearch:9200/_security/user/kibana_system/_password
+        -d "{\"password\":\"$$KIBANA_PASSWORD\"}" && echo "kibana_system password set"
+    volumes:
+      - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
+
+  odm:
+    # ODM for Developers 9.5.x all-in-one (Decision Center + RES + Decision Runner). NOT open
+    # source, dev/eval only: you accept the IBM licence by running it. Pulled, never redistributed.
+    image: icr.io/cpopen/odm-k8s/odm:9.5.0.1-IF019_25.1.0
+    profiles: [core]
+    env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
+    mem_limit: ${ODM_MEM:-2560m}
+    hostname: odm
+    ports:
+      - "127.0.0.1:9060:9060" # http (dev console)
+      - "127.0.0.1:9443:9453" # https (Liberty listens on 9453 in this image; host keeps 9443)
+    environment:
+      LICENSE: accept
+      # Liberty HTTPS uses our CA-signed cert. Client-cert enforcement is switched on later
+      # (ENABLE_MTLS=true) once the orchestrator and MCP server present certificates.
+    volumes:
+      - ${PKI_DIR:-../../security/pki/out}/odm/odm.jks:/config/security/volume/keystore.jks:ro
+      - ${PKI_DIR:-../../security/pki/out}/truststore.jks:/config/security/volume/truststore.jks:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sk -o /dev/null -f https://localhost:9453/res/"]
+      interval: 20s
+      timeout: 10s
+      retries: 15
+      start_period: 120s
+
+  # ----------------------------------------------------------- analytics
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.19.23
+    profiles: [analytics]
+    env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
+    mem_limit: 900m
+    hostname: kibana
+    ports:
+      - "127.0.0.1:5601:5601"
+    depends_on:
+      elasticsearch: { condition: service_healthy }
+      es-setup: { condition: service_completed_successfully }
+    environment:
+      NODE_OPTIONS: --max-old-space-size=512
+      ELASTICSEARCH_HOSTS: https://elasticsearch:9200
+      ELASTICSEARCH_USERNAME: kibana_system
+      ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES: /pki/ca.crt
+      SERVER_SSL_ENABLED: "true"
+      SERVER_SSL_CERTIFICATE: /pki/kibana.crt
+      SERVER_SSL_KEY: /pki/kibana.key
+      SERVER_PUBLICBASEURL: https://localhost:5601
+      TELEMETRY_OPTIN: "false"
+    volumes:
+      - ${PKI_DIR:-../../security/pki/out}/kibana/kibana.crt:/pki/kibana.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/kibana/kibana.key:/pki/kibana.key:ro
+      - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf --cacert /pki/ca.crt https://localhost:5601/api/status >/dev/null"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+
+  kafka-ui:
+    image: kafbat/kafka-ui:v1.5.0
+    profiles: [analytics]
+    env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
+    mem_limit: 512m
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      kafka: { condition: service_healthy }
+      topic-init: { condition: service_completed_successfully }
+    environment:
+      JAVA_OPTS: -Xms128m -Xmx320m
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9093
+      KAFKA_CLUSTERS_0_PROPERTIES_SECURITY_PROTOCOL: SSL
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_TYPE: PKCS12
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_KEYSTORE_LOCATION: /pki/kafka-ui.p12
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_TYPE: PKCS12
+      KAFKA_CLUSTERS_0_PROPERTIES_SSL_TRUSTSTORE_LOCATION: /pki/truststore.p12
+      DYNAMIC_CONFIG_ENABLED: "false"
+    volumes:
+      - ${PKI_DIR:-../../security/pki/out}/kafka-ui/kafka-ui.p12:/pki/kafka-ui.p12:ro
+      - ${PKI_DIR:-../../security/pki/out}/truststore.p12:/pki/truststore.p12:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O- http://localhost:8080/actuator/health | grep -q UP"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+
+volumes:
+  kafka-data:
+  es-data:

@@ -1,0 +1,5 @@
+# compose healthchecks: env-var references, not literals
+af70abe81d9e25848457767508feb5b376c61fdd:deploy/compose/docker-compose.yml:curl-auth-user:107
+af70abe81d9e25848457767508feb5b376c61fdd:deploy/compose/docker-compose.yml:curl-auth-user:127
+# comment line in this file's first revision
+1cadf9fc428495f60fa8fb7722c2c2e2afdd9581:.gitleaksignore:curl-auth-user:1
