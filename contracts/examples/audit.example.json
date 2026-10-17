@@ -1,0 +1,18 @@
+{
+  "eventId": "7b0f4c1e-5d52-4a53-9d2f-2f6f0d8e9a11",
+  "correlationId": "corr-0001",
+  "eventType": "cc.audit.v1",
+  "schemaVersion": 1,
+  "occurredAt": "2026-10-17T14:30:00Z",
+  "producer": "decision-orchestrator",
+  "payload": {
+    "actor": "decision-orchestrator",
+    "action": "ODM_EXECUTE",
+    "resourceType": "application",
+    "resourceId": "APP-0001",
+    "result": "SUCCESS",
+    "details": {
+      "rulesetPath": "/ccApprovalApp/1.0/ccApproval/1.0"
+    }
+  }
+}

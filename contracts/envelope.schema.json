@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maplenorthern.ca/schemas/envelope.schema.json",
+  "title": "Event envelope",
+  "type": "object",
+  "required": ["eventId", "correlationId", "eventType", "schemaVersion", "occurredAt", "producer", "payload"],
+  "properties": {
+    "eventId": { "type": "string", "format": "uuid" },
+    "correlationId": { "type": "string", "minLength": 1 },
+    "eventType": { "type": "string", "pattern": "^cc\\.[a-z.]+\\.v[0-9]+$" },
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "producer": { "type": "string", "minLength": 1 },
+    "payload": { "type": "object" }
+  }
+}

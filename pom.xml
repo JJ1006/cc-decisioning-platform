@@ -25,7 +25,10 @@
   </licenses>
 
   <!-- Add modules as phases land: rules/xom, services/common-lib, services/* -->
-  <modules/>
+  <modules>
+    <module>rules/xom</module>
+    <module>services/common-lib</module>
+  </modules>
 
   <properties>
     <java.version>21</java.version>
