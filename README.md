@@ -42,16 +42,16 @@ Full plan: [docs/PLAN.md](docs/PLAN.md). Decisions: [docs/adr](docs/adr).
 Prerequisites: Docker Desktop (6.5 GB RAM, Rosetta on), JDK 21, Maven, uv, pre-commit, gh.
 
 ```bash
-cp .env.example .env     # edit placeholders
-make help
-make pki                 # private CA + certs (not committed)
-make up PROFILE=core,analytics
-make demo                # send 1000 synthetic applications
-make up PROFILE=core,analytics,edge   # + the two HTTP APIs, see docs/api/README.md
-make test-api-docs       # runs every curl example of docs/api/README.md
+make bootstrap                        # tools, Docker memory (6 GB or more), Rosetta
+make pki                              # private CA and certificates (not committed)
+make up PROFILE=core,analytics,edge   # creates the local env file on first use, waits until healthy
+make demo                             # deploys the rules if missing, sends 1000 synthetic applications, checks counts
+make test-api-docs                    # runs every curl example of docs/api/README.md
+make verify                           # build, tests, contracts, Logstash pipeline tests, OpenAPI lint
 ```
 
-(Targets are stubs until their phase lands; see the plan.)
+`make help` lists every target. `make up` hints `run make down V=1` when it finds Elasticsearch indices with an older mapping.
+Stop with `make down` (`make down V=1` also deletes the volumes).
 
 ## Compose profiles (8 GB Mac — never run everything at once)
 
