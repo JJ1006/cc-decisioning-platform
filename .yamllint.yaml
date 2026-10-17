@@ -1,0 +1,10 @@
+extends: default
+ignore: |
+  deploy/helm/**/templates/
+  .github/workflows/
+rules:
+  line-length: disable
+  braces: { min-spaces-inside: 0, max-spaces-inside: 1 }
+  document-start: disable
+  truthy: { check-keys: false }
+  comments: { min-spaces-from-content: 1 }

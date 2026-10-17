@@ -1,0 +1,37 @@
+# Java
+target/
+*.class
+*.jar
+!rules/ruleapps/*.jar
+.mvn/wrapper/maven-wrapper.jar
+# Python
+__pycache__/
+*.pyc
+.venv/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+# Node
+node_modules/
+# Secrets / certs
+*.key
+*.p12
+*.jks
+*.pfx
+*.pem
+!**/*.pub.pem
+.env
+.env.*
+!.env.example
+security/pki/out/
+# Build output
+out/
+# IDE / OS
+.idea/
+*.iml
+.vscode/
+.DS_Store
+.eclipse/
+.metadata/
+# Claude local
+.claude/settings.local.json

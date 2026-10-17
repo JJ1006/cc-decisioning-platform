@@ -1,0 +1,7 @@
+default: true
+MD013: false   # line length
+MD033: false   # inline html
+MD024: { siblings_only: true }
+MD041: false
+MD036: false
+MD060: false
