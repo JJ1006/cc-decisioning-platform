@@ -1,216 +1,34 @@
 openapi: 3.0.1
 info:
-  title: Maple Northern Bank decision query API
+  contact:
+    email: platform@maplenorthern.example
+    name: Platform team
   description: "Read-only decisions, explanations, statistics, fairness, dead letters\
     \ and logs. Fictitious bank, synthetic data. Errors are RFC 7807 problem+json."
-  contact:
-    name: Platform team
-    email: platform@maplenorthern.example
   license:
     name: Apache-2.0
     url: https://www.apache.org/licenses/LICENSE-2.0
+  title: Maple Northern Bank decision query API
   version: 1.0.0
 servers:
-- url: http://localhost:8085
-  description: local compose stack
+- description: local compose stack
+  url: http://localhost:8085
 tags:
-- name: Decisions
-  description: Decisions and their explanations
-- name: Statistics
-  description: "Approval rates, decline reasons, fairness and latency"
-- name: Operations
-  description: Dead letters and logs for operators
+- description: Decisions and their explanations
+  name: Decisions
+- description: "Approval rates, decline reasons, fairness and latency"
+  name: Statistics
+- description: Dead letters and logs for operators
+  name: Operations
 paths:
-  /v1/stats/latency:
-    get:
-      tags:
-      - Statistics
-      summary: Decision latency percentiles
-      description: "p50, p95 and p99 of the rules call (decisionLatencyMs, from processingMillis)\
-        \ over automated decisions."
-      operationId: decisionLatency
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Latency"
-        default:
-          description: Problem
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-  /v1/stats/fairness:
-    get:
-      tags:
-      - Statistics
-      summary: Disparate impact by province or age band
-      description: "Approval rate per group and the ratio to the overall approval\
-        \ rate; a group is flagged when the ratio is below 0.8 (the four-fifths rule).\
-        \ Small groups give noisy ratios: read total with it."
-      operationId: fairness
-      parameters:
-      - name: by
-        in: query
-        required: false
-        schema:
-          type: string
-          enum:
-          - province
-          - ageBand
-          default: province
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Fairness"
-        default:
-          description: Problem
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-  /v1/stats/decline-reasons:
-    get:
-      tags:
-      - Statistics
-      summary: Most frequent decline reasons
-      description: "Reason codes of automated declines with applicant-facing text,\
-        \ most frequent first; top is 1 to 50."
-      operationId: declineReasons
-      parameters:
-      - name: top
-        in: query
-        required: false
-        schema:
-          type: integer
-          format: int32
-          default: 10
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/DeclineReasons"
-        default:
-          description: Problem
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-  /v1/stats/approval-rate:
-    get:
-      tags:
-      - Statistics
-      summary: "Approval rate by province, age band or day"
-      description: "Approved divided by all automated decisions, overall and per group."
-      operationId: approvalRate
-      parameters:
-      - name: groupBy
-        in: query
-        required: false
-        schema:
-          type: string
-          enum:
-          - province
-          - ageBand
-          - day
-          default: province
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApprovalRates"
-        default:
-          description: Problem
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-  /v1/ops/logs:
-    get:
-      tags:
-      - Operations
-      summary: Log lines of one correlation id across services
-      description: "Oldest first, from the container logs shipped by Filebeat; at\
-        \ most 200 lines."
-      operationId: traceLogs
-      parameters:
-      - name: correlationId
-        in: query
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Logs"
-        default:
-          description: Problem
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
-  /v1/ops/dlq:
-    get:
-      tags:
-      - Operations
-      summary: "Browse dead-lettered events, newest first"
-      description: "Filter by original topic and by failure time (from, ISO-8601).\
-        \ Values are the masked or redacted copies."
-      operationId: browseDeadLetters
-      parameters:
-      - name: topic
-        in: query
-        required: false
-        schema:
-          type: string
-      - name: from
-        in: query
-        required: false
-        schema:
-          type: string
-      - name: size
-        in: query
-        required: false
-        schema:
-          type: integer
-          format: int32
-          default: 20
-      responses:
-        "200":
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/DeadLetters"
-        default:
-          description: Problem
-          content:
-            application/problem+json:
-              schema:
-                $ref: "#/components/schemas/Problem"
   /v1/decisions:
     get:
-      tags:
-      - Decisions
-      summary: "Search decisions, newest first"
       description: Filters are optional. Page with searchAfter (the nextSearchAfter
         of the previous page); size is 1 to 100.
       operationId: listDecisions
       parameters:
-      - name: province
-        in: query
+      - in: query
+        name: province
         required: false
         schema:
           type: string
@@ -228,8 +46,8 @@ paths:
           - QC
           - SK
           - YT
-      - name: outcome
-        in: query
+      - in: query
+        name: outcome
         required: false
         schema:
           type: string
@@ -237,100 +55,451 @@ paths:
           - APPROVE
           - DECLINE
           - REFER
-      - name: minScore
-        in: query
+      - in: query
+        name: minScore
         required: false
         schema:
           type: integer
           format: int32
-      - name: maxScore
-        in: query
+      - in: query
+        name: maxScore
         required: false
         schema:
           type: integer
           format: int32
-      - name: size
-        in: query
+      - in: query
+        name: size
         required: false
         schema:
           type: integer
           format: int32
           default: 20
-      - name: searchAfter
-        in: query
+      - in: query
+        name: searchAfter
         required: false
         schema:
           type: string
       responses:
         "200":
-          description: OK
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/DecisionPage"
+          description: OK
         default:
-          description: Problem
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-  /v1/decisions/{applicationId}:
-    get:
+          description: Problem
+      summary: "Search decisions, newest first"
       tags:
       - Decisions
-      summary: Latest decision of an application
+  /v1/decisions/{applicationId}:
+    get:
       description: "The newest decision, automated (ODM) or manual. 404 until Logstash\
         \ has indexed it."
       operationId: getDecision
       parameters:
-      - name: applicationId
-        in: path
+      - in: path
+        name: applicationId
         required: true
         schema:
           type: string
       responses:
         "200":
-          description: OK
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Decision"
+          description: OK
         default:
-          description: Problem
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
-  /v1/decisions/{applicationId}/explanation:
-    get:
+          description: Problem
+      summary: Latest decision of an application
       tags:
       - Decisions
-      summary: Why the rules decided as they did
+  /v1/decisions/{applicationId}/explanation:
+    get:
       description: "Fired rules, reason codes with applicant-facing text and the ruleset\
         \ version of the automated decision, plus the underwriter's decision when\
         \ there is one."
       operationId: explainDecision
       parameters:
-      - name: applicationId
-        in: path
+      - in: path
+        name: applicationId
         required: true
         schema:
           type: string
       responses:
         "200":
-          description: OK
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Explanation"
+          description: OK
         default:
-          description: Problem
           content:
             application/problem+json:
               schema:
                 $ref: "#/components/schemas/Problem"
+          description: Problem
+      summary: Why the rules decided as they did
+      tags:
+      - Decisions
+  /v1/ops/dlq:
+    get:
+      description: "Filter by original topic and by failure time (from, ISO-8601).\
+        \ Values are the masked or redacted copies."
+      operationId: browseDeadLetters
+      parameters:
+      - in: query
+        name: topic
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: from
+        required: false
+        schema:
+          type: string
+      - in: query
+        name: size
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeadLetters"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Problem
+      summary: "Browse dead-lettered events, newest first"
+      tags:
+      - Operations
+  /v1/ops/logs:
+    get:
+      description: "Oldest first, from the container logs shipped by Filebeat; at\
+        \ most 200 lines."
+      operationId: traceLogs
+      parameters:
+      - in: query
+        name: correlationId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Logs"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Problem
+      summary: Log lines of one correlation id across services
+      tags:
+      - Operations
+  /v1/stats/approval-rate:
+    get:
+      description: "Approved divided by all automated decisions, overall and per group."
+      operationId: approvalRate
+      parameters:
+      - in: query
+        name: groupBy
+        required: false
+        schema:
+          type: string
+          default: province
+          enum:
+          - province
+          - ageBand
+          - day
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApprovalRates"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Problem
+      summary: "Approval rate by province, age band or day"
+      tags:
+      - Statistics
+  /v1/stats/decline-reasons:
+    get:
+      description: "Reason codes of automated declines with applicant-facing text,\
+        \ most frequent first; top is 1 to 50."
+      operationId: declineReasons
+      parameters:
+      - in: query
+        name: top
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 10
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeclineReasons"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Problem
+      summary: Most frequent decline reasons
+      tags:
+      - Statistics
+  /v1/stats/fairness:
+    get:
+      description: "Approval rate per group and the ratio to the overall approval\
+        \ rate; a group is flagged when the ratio is below 0.8 (the four-fifths rule).\
+        \ Small groups give noisy ratios: read total with it."
+      operationId: fairness
+      parameters:
+      - in: query
+        name: by
+        required: false
+        schema:
+          type: string
+          default: province
+          enum:
+          - province
+          - ageBand
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Fairness"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Problem
+      summary: Disparate impact by province or age band
+      tags:
+      - Statistics
+  /v1/stats/latency:
+    get:
+      description: "p50, p95 and p99 of the rules call (decisionLatencyMs, from processingMillis)\
+        \ over automated decisions."
+      operationId: decisionLatency
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Latency"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Problem
+      summary: Decision latency percentiles
+      tags:
+      - Statistics
 components:
   schemas:
+    ApprovalRates:
+      type: object
+      properties:
+        groupBy:
+          type: string
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/Rate"
+        overall:
+          $ref: "#/components/schemas/Rate"
+    DeadLetter:
+      type: object
+      properties:
+        errorClass:
+          type: string
+        errorMessage:
+          type: string
+        eventId:
+          type: string
+        failedAt:
+          type: string
+          format: date-time
+        originalTopic:
+          type: string
+        originalValue:
+          type: string
+          description: "Masked or redacted, cut to 256 characters"
+        source:
+          type: string
+    DeadLetters:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeadLetter"
+        total:
+          type: integer
+          format: int64
+    Decision:
+      type: object
+      description: "A decision on an application, from the rules engine (ODM) or an\
+        \ underwriter (MANUAL)"
+      properties:
+        ageBand:
+          type: string
+        applicationId:
+          type: string
+        aprTier:
+          type: string
+        bureauScore:
+          type: integer
+          format: int32
+        creditLimit:
+          type: number
+        decidedAt:
+          type: string
+          format: date-time
+        decisionId:
+          type: string
+          description: Id of the decision event
+        decisionSource:
+          type: string
+          enum:
+          - ODM
+          - MANUAL
+        note:
+          type: string
+        outcome:
+          type: string
+        product:
+          type: string
+        province:
+          type: string
+        reasonCodes:
+          type: array
+          items:
+            type: string
+        rulesetVersion:
+          type: string
+        underwriterId:
+          type: string
+    DecisionPage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Decision"
+        nextSearchAfter:
+          type: string
+          description: Pass as searchAfter to get the next page; absent on the last
+            page
+    DeclineReason:
+      type: object
+      properties:
+        code:
+          type: string
+        count:
+          type: integer
+          format: int64
+        text:
+          type: string
+    DeclineReasons:
+      type: object
+      properties:
+        declined:
+          type: integer
+          format: int64
+        reasons:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeclineReason"
+    Explanation:
+      type: object
+      properties:
+        applicationId:
+          type: string
+        decidedAt:
+          type: string
+          format: date-time
+        firedRules:
+          type: array
+          items:
+            type: string
+        manualDecision:
+          $ref: "#/components/schemas/Decision"
+        outcome:
+          type: string
+        reasons:
+          type: array
+          items:
+            $ref: "#/components/schemas/Reason"
+        rulesetVersion:
+          type: string
+    Fairness:
+      type: object
+      properties:
+        by:
+          type: string
+        groups:
+          type: array
+          items:
+            $ref: "#/components/schemas/FairnessGroup"
+        overallApprovalRate:
+          type: number
+          format: double
+        threshold:
+          type: number
+          format: double
+    FairnessGroup:
+      type: object
+      properties:
+        approvalRate:
+          type: number
+          format: double
+        disparateImpactRatio:
+          type: number
+          format: double
+          description: Group approval rate divided by the overall approval rate
+        flagged:
+          type: boolean
+          description: True when the ratio is below the 0.8 threshold
+        key:
+          type: string
+        total:
+          type: integer
+          format: int64
     Latency:
       type: object
       properties:
@@ -346,98 +515,20 @@ components:
         p99:
           type: number
           format: double
-    Fairness:
-      type: object
-      properties:
-        by:
-          type: string
-        overallApprovalRate:
-          type: number
-          format: double
-        threshold:
-          type: number
-          format: double
-        groups:
-          type: array
-          items:
-            $ref: "#/components/schemas/FairnessGroup"
-    FairnessGroup:
-      type: object
-      properties:
-        key:
-          type: string
-        total:
-          type: integer
-          format: int64
-        approvalRate:
-          type: number
-          format: double
-        disparateImpactRatio:
-          type: number
-          description: Group approval rate divided by the overall approval rate
-          format: double
-        flagged:
-          type: boolean
-          description: True when the ratio is below the 0.8 threshold
-    DeclineReason:
-      type: object
-      properties:
-        code:
-          type: string
-        text:
-          type: string
-        count:
-          type: integer
-          format: int64
-    DeclineReasons:
-      type: object
-      properties:
-        declined:
-          type: integer
-          format: int64
-        reasons:
-          type: array
-          items:
-            $ref: "#/components/schemas/DeclineReason"
-    ApprovalRates:
-      type: object
-      properties:
-        groupBy:
-          type: string
-        overall:
-          $ref: "#/components/schemas/Rate"
-        groups:
-          type: array
-          items:
-            $ref: "#/components/schemas/Rate"
-    Rate:
-      type: object
-      properties:
-        key:
-          type: string
-        total:
-          type: integer
-          format: int64
-        approved:
-          type: integer
-          format: int64
-        approvalRate:
-          type: number
-          format: double
     LogLine:
       type: object
       properties:
-        timestamp:
-          type: string
-          format: date-time
-        service:
-          type: string
         level:
           type: string
         logger:
           type: string
         message:
           type: string
+        service:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
     Logs:
       type: object
       properties:
@@ -447,144 +538,53 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/LogLine"
-    DeadLetter:
-      type: object
-      properties:
-        eventId:
-          type: string
-        source:
-          type: string
-        originalTopic:
-          type: string
-        errorClass:
-          type: string
-        errorMessage:
-          type: string
-        failedAt:
-          type: string
-          format: date-time
-        originalValue:
-          type: string
-          description: "Masked or redacted, cut to 256 characters"
-    DeadLetters:
-      type: object
-      properties:
-        total:
-          type: integer
-          format: int64
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/DeadLetter"
-    Decision:
-      type: object
-      properties:
-        applicationId:
-          type: string
-        decisionId:
-          type: string
-          description: Id of the decision event
-        outcome:
-          type: string
-        decisionSource:
-          type: string
-          enum:
-          - ODM
-          - MANUAL
-        creditLimit:
-          type: number
-        product:
-          type: string
-        aprTier:
-          type: string
-        reasonCodes:
-          type: array
-          items:
-            type: string
-        rulesetVersion:
-          type: string
-        decidedAt:
-          type: string
-          format: date-time
-        province:
-          type: string
-        ageBand:
-          type: string
-        bureauScore:
-          type: integer
-          format: int32
-        underwriterId:
-          type: string
-        note:
-          type: string
-      description: "A decision on an application, from the rules engine (ODM) or an\
-        \ underwriter (MANUAL)"
-    DecisionPage:
-      type: object
-      properties:
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/Decision"
-        nextSearchAfter:
-          type: string
-          description: Pass as searchAfter to get the next page; absent on the last
-            page
-    Explanation:
-      type: object
-      properties:
-        applicationId:
-          type: string
-        outcome:
-          type: string
-        rulesetVersion:
-          type: string
-        decidedAt:
-          type: string
-          format: date-time
-        firedRules:
-          type: array
-          items:
-            type: string
-        reasons:
-          type: array
-          items:
-            $ref: "#/components/schemas/Reason"
-        manualDecision:
-          $ref: "#/components/schemas/Decision"
-    Reason:
-      type: object
-      properties:
-        code:
-          type: string
-        text:
-          type: string
-      description: A reason code with its applicant-facing text
     Problem:
       type: object
+      description: RFC 7807 problem details
       properties:
-        type:
-          type: string
-          example: about:blank
-        title:
-          type: string
-          example: Invalid parameter
-        status:
-          type: integer
-          format: int32
-          example: 400
-        detail:
-          type: string
-          example: size must be 1 to 100
-        instance:
-          type: string
-          example: /v1/decisions
         correlationId:
           type: string
           description: Quote it when reporting a problem
+        detail:
+          type: string
+          example: size must be 1 to 100
         errors:
           type: array
           description: "Validation messages, when there are several"
           items:
             type: string
-      description: RFC 7807 problem details
+        instance:
+          type: string
+          example: /v1/decisions
+        status:
+          type: integer
+          format: int32
+          example: 400
+        title:
+          type: string
+          example: Invalid parameter
+        type:
+          type: string
+          example: about:blank
+    Rate:
+      type: object
+      properties:
+        approvalRate:
+          type: number
+          format: double
+        approved:
+          type: integer
+          format: int64
+        key:
+          type: string
+        total:
+          type: integer
+          format: int64
+    Reason:
+      type: object
+      description: A reason code with its applicant-facing text
+      properties:
+        code:
+          type: string
+        text:
+          type: string

@@ -25,6 +25,7 @@ management:
     tags:
       application: ${spring.application.name}
 springdoc:
+  writer-with-order-by-keys: true # same output on every JVM and OS: CI compares it with the committed file
   swagger-ui:
     enabled: false
   api-docs:
