@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ilog.rules.studio.model.brl:ActionRule xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ilog.rules.studio.model.brl="http://ilog.rules.studio/model/brl.ecore">
+  <name>ELIG-02-Residency</name>
+  <uuid>9dc3577a-07e4-5e97-a8a7-7ea3b54bacc1</uuid>
+  <locale>en_US</locale>
+  <definition><![CDATA[if
+    the residency status of the applicant of 'the application' is one of { NON_RESIDENT , WORK_PERMIT_EXPIRED }
+then
+    add reason code R_NON_RESIDENT to 'the decision' ;
+    escalate 'the decision' to DECLINE ;
+    record that rule "ELIG-02" fired in 'the decision' ;]]></definition>
+</ilog.rules.studio.model.brl:ActionRule>

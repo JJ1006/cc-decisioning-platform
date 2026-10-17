@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ilog.rules.studio.model.brl:ActionRule xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ilog.rules.studio.model.brl="http://ilog.rules.studio/model/brl.ecore">
+  <name>ELIG-03-ActiveBankruptcy</name>
+  <uuid>6697fa29-6988-5032-9ecc-7c3b36aaf395</uuid>
+  <locale>en_US</locale>
+  <definition><![CDATA[if
+    the active bankruptcy of the bureau report of 'the application' is true
+then
+    add reason code R_ACTIVE_BANKRUPTCY to 'the decision' ;
+    escalate 'the decision' to DECLINE ;
+    record that rule "ELIG-03" fired in 'the decision' ;]]></definition>
+</ilog.rules.studio.model.brl:ActionRule>

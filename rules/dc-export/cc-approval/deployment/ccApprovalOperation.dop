@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<com.ibm.rules.studio.model.decisionservice:Operation xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:com.ibm.rules.studio.model.decisionservice="http://com.ibm.rules.studio/model/decisionservice.ecore" xmlns:ilog.rules.studio.model.query.extractor="http://ilog.rules.studio/model/query/extractor.ecore" rulesetName="ccApproval" usingRuleflow="true" ruleflowName="ccApproval" usingExtractor="true">
+  <name>ccApprovalOperation</name>
+  <uuid>d5bde50f-3e72-583b-8d73-63a7005f8516</uuid>
+  <referencedVariables variableName="application" variableSetName="ccApprovalParameters">
+    <variableSet href="../rules/ccApprovalParameters.var#c4debfd9-ab92-5582-8982-56659fb7887d"/>
+  </referencedVariables>
+  <referencedVariables variableName="decision" variableSetName="ccApprovalParameters" direction="OUT">
+    <variableSet href="../rules/ccApprovalParameters.var#c4debfd9-ab92-5582-8982-56659fb7887d"/>
+  </referencedVariables>
+  <ruleflow href="../rules/ccApproval.rfl#9fa0eda2-f6a0-5e2d-86c6-7bb7d3689c06"/>
+  <extractor xsi:type="ilog.rules.studio.model.query.extractor:QueryExtractor" name="ccApprovalOperation_extractor" validator="Default Validator"/>
+  <targetRuleProject href="../../cc-approval#510efd07-8723-5620-acd4-d30c80b2cc36"/>
+</com.ibm.rules.studio.model.decisionservice:Operation>

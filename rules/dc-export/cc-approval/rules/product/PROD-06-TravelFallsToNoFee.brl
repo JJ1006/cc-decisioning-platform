@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ilog.rules.studio.model.brl:ActionRule xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ilog.rules.studio.model.brl="http://ilog.rules.studio/model/brl.ecore">
+  <name>PROD-06-TravelFallsToNoFee</name>
+  <uuid>d99abad7-3b9b-5797-a6a9-d48125470a02</uuid>
+  <locale>en_US</locale>
+  <definition><![CDATA[if
+    the requested product of 'the application' is TRAVEL_INFINITE
+    and ( the annual income of the employment of 'the application' is less than 80000
+    or the bureau score of the bureau report of 'the application' is less than 720 )
+    and ( the annual income of the employment of 'the application' is less than 40000
+    or the bureau score of the bureau report of 'the application' is less than 660 )
+then
+    set the product of 'the decision' to NO_FEE ;
+    record that rule "PROD-06" fired in 'the decision' ;]]></definition>
+</ilog.rules.studio.model.brl:ActionRule>

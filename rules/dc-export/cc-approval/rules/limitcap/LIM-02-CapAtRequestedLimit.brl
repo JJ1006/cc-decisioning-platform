@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ilog.rules.studio.model.brl:ActionRule xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ilog.rules.studio.model.brl="http://ilog.rules.studio/model/brl.ecore">
+  <name>LIM-02-CapAtRequestedLimit</name>
+  <uuid>57a9dd3e-75b9-59b8-a80f-3f0738f88f40</uuid>
+  <locale>en_US</locale>
+  <definition><![CDATA[if
+    the credit limit of 'the decision' is more than the requested limit of 'the application'
+then
+    set the credit limit of 'the decision' to the requested limit of 'the application' ;
+    record that rule "LIM-02" fired in 'the decision' ;]]></definition>
+</ilog.rules.studio.model.brl:ActionRule>

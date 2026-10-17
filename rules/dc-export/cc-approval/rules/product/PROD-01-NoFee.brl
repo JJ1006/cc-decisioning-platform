@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ilog.rules.studio.model.brl:ActionRule xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:ilog.rules.studio.model.brl="http://ilog.rules.studio/model/brl.ecore">
+  <name>PROD-01-NoFee</name>
+  <uuid>a6c1b863-a8c7-5cfc-aff4-64e92a4484e6</uuid>
+  <locale>en_US</locale>
+  <definition><![CDATA[if
+    the requested product of 'the application' is null
+    or the requested product of 'the application' is NO_FEE
+then
+    set the product of 'the decision' to NO_FEE ;
+    record that rule "PROD-01" fired in 'the decision' ;]]></definition>
+</ilog.rules.studio.model.brl:ActionRule>
