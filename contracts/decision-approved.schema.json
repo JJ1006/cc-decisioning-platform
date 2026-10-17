@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maplenorthern.ca/schemas/decision-approved.schema.json",
+  "title": "Decision approved",
+  "allOf": [{ "$ref": "envelope.schema.json" }],
+  "type": "object",
+  "unevaluatedProperties": false,
+  "properties": {
+    "eventType": { "const": "cc.decisions.approved.v1" },
+    "payload": {
+      "allOf": [
+        { "$ref": "defs.schema.json#/$defs/decisionPayload" },
+        { "properties": { "outcome": { "const": "APPROVE" } } }
+      ]
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maplenorthern.ca/schemas/notification.schema.json",
+  "title": "Applicant notification",
+  "allOf": [{ "$ref": "envelope.schema.json" }],
+  "type": "object",
+  "unevaluatedProperties": false,
+  "properties": {
+    "eventType": { "const": "cc.notifications.v1" },
+    "payload": {
+      "type": "object",
+      "required": ["applicationId", "noticeType", "channel", "recipientRef", "subject", "body", "reasonTexts"],
+      "additionalProperties": false,
+      "properties": {
+        "applicationId": { "type": "string", "minLength": 1 },
+        "noticeType": { "enum": ["APPROVAL", "ADVERSE_ACTION", "REFERRAL"] },
+        "channel": { "enum": ["EMAIL", "MAIL"] },
+        "recipientRef": { "type": "string", "description": "Opaque applicant reference, never an address" },
+        "subject": { "type": "string" },
+        "body": { "type": "string" },
+        "reasonTexts": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

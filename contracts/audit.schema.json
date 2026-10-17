@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maplenorthern.ca/schemas/audit.schema.json",
+  "title": "Audit record",
+  "allOf": [{ "$ref": "envelope.schema.json" }],
+  "type": "object",
+  "unevaluatedProperties": false,
+  "properties": {
+    "eventType": { "const": "cc.audit.v1" },
+    "payload": {
+      "type": "object",
+      "required": ["actor", "action", "resourceType", "resourceId", "result"],
+      "additionalProperties": false,
+      "properties": {
+        "actor": { "type": "string", "minLength": 1 },
+        "action": { "type": "string", "minLength": 1 },
+        "resourceType": { "type": "string", "minLength": 1 },
+        "resourceId": { "type": "string", "minLength": 1 },
+        "result": { "enum": ["SUCCESS", "FAILURE", "DENIED"] },
+        "details": { "type": "object" }
+      }
+    }
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "eventId": "7b0f4c1e-5d52-4a53-9d2f-2f6f0d8e9a11",
+  "correlationId": "corr-0001",
+  "eventType": "cc.applications.submitted.v1",
+  "schemaVersion": 1,
+  "occurredAt": "2026-10-17T14:30:00Z",
+  "producer": "txn-generator",
+  "payload": {
+    "application": {
+      "applicationId": "APP-0001",
+      "requestedProduct": "CASHBACK",
+      "requestedLimit": 8000,
+      "monthlyHousingCost": 1800,
+      "channel": "WEB",
+      "applicant": {
+        "applicantId": "CUST-1001",
+        "firstName": "Avery",
+        "lastName": "Tremblay",
+        "dateOfBirth": "1990-05-14",
+        "ageYears": 36,
+        "sin": "046454286",
+        "residencyStatus": "CITIZEN"
+      },
+      "address": {
+        "line1": "100 Queen St W",
+        "city": "Toronto",
+        "province": "ON",
+        "postalCode": "M5V 2T6"
+      },
+      "employment": {
+        "status": "EMPLOYED",
+        "employer": "Example Corp",
+        "annualIncome": 85000,
+        "monthsAtEmployer": 48
+      },
+      "bureau": {
+        "score": 742,
+        "monthlyDebtPayments": 650,
+        "existingCreditLimit": 12000,
+        "delinquencies": 0,
+        "inquiriesLast6Months": 1,
+        "activeBankruptcy": false,
+        "fileAgeMonths": 120
+      }
+    }
+  }
+}

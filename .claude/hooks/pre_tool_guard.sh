@@ -26,6 +26,8 @@ case "$tool" in
     cmd=$(jq -r '.tool_input.command // empty' <<<"$in")
     # secret files referenced in the command (read/copy/cat etc.)
     for tok in $cmd; do
+      # code-like tokens (record.key(), a.b;) are source text, not file paths
+      [[ "$tok" == *[\(\)\;\<\>=]* ]] && continue
       t=$(printf %s "$tok" | tr -cd "[:alnum:]/._-")
       secret_path "$t" && block "command touches secret/key file: $t"
     done

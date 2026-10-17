@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://maplenorthern.ca/schemas/application-submitted.schema.json",
+  "title": "Application submitted",
+  "allOf": [{ "$ref": "envelope.schema.json" }],
+  "type": "object",
+  "unevaluatedProperties": false,
+  "properties": {
+    "eventType": { "const": "cc.applications.submitted.v1" },
+    "payload": {
+      "type": "object",
+      "required": ["application"],
+      "additionalProperties": false,
+      "properties": { "application": { "$ref": "defs.schema.json#/$defs/application" } }
+    }
+  }
+}
