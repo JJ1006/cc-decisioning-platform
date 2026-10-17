@@ -14,3 +14,7 @@ OpenTelemetry in every service; Prometheus, Tempo, Loki, Grafana, Alertmanager. 
 ## Consequences
 
 No automatic root-cause AI like Dynatrace; dashboards and alerts are authored by us.
+
+## Update (ADR-0009)
+
+Logs are no longer part of the Grafana stack: Loki is dropped. Logs go through Filebeat and Logstash into Elasticsearch and are read in Kibana. Grafana keeps metrics (Prometheus) and traces (Tempo).

@@ -21,7 +21,9 @@ The repo is empty (`ODM_kafka_OCP/`). The machine is an M2 with **8 GB RAM**. do
 | Search / storage | Elasticsearch and Kibana 8.x, **ECK** on k8s | AGPL/basic, free |
 | API gateway (Apigee substitute) | **Apache APISIX** + APISIX Dashboard | Apache-2.0. Has mTLS, rate limits, API keys/JWT, OpenAPI import, and Prometheus metrics, all free. Kong's mTLS is Enterprise-only, and Apigee is paid (60-day eval). `docs/apigee-mapping.md` maps Apigee concepts (proxies, products, quotas, spike arrest) to APISIX. |
 | mTLS / PKI | Private CA. Compose: `scripts/pki.sh` (openssl/step). k8s: **cert-manager** | Apache-2.0 |
-| Monitoring (Dynatrace substitute) | **OpenTelemetry** in every service, plus the **Grafana LGTM** stack: Prometheus (metrics), Tempo (traces, service map), Loki (logs), Grafana (dashboards), Alertmanager | Free and open source; the closest match to Dynatrace's full-stack view. Compose uses the single `grafana/otel-lgtm` container. k8s uses `kube-prometheus-stack`, Tempo and Loki Helm charts. Exporters cover Kafka (kafka-exporter), JVM/Actuator (Micrometer), APISIX, ES and ODM JMX. |
+| Ingestion / PII masking | **Logstash 8.x** (same version as Elasticsearch, pinned): Kafka input over mTLS, persistent queues, a masking filter, Elasticsearch output as a least-privilege user. Replaces the custom `es-indexer` ([ADR-0009](adr/0009-elk-ingestion.md)) | Elastic licence, free (basic tier) |
+| Log shipping | **Filebeat 8.x** (Docker autodiscover, labelled services only) to Logstash over TLS, into `cc-logs-*` with ILM 7d, read in Kibana | Elastic licence, free |
+| Monitoring (Dynatrace substitute) | **OpenTelemetry** in every service, plus the **Grafana** stack for metrics and traces only: Prometheus (metrics), Tempo (traces, service map), Grafana (dashboards), Alertmanager. **Logs are not in Grafana**: they live in Elasticsearch and are read in Kibana | Free and open source; the closest match to Dynatrace's full-stack view. Compose uses the single `grafana/otel-lgtm` container (its bundled Loki is not used). k8s uses `kube-prometheus-stack` and the Tempo Helm chart. Exporters cover Kafka (kafka-exporter), JVM/Actuator (Micrometer), APISIX, ES, Logstash (monitoring API :9600) and ODM JMX. |
 | Services | Java 21, Spring Boot 3, Maven multi-module | — |
 | Packaging / delivery | **Helm** umbrella chart plus **ArgoCD** app-of-apps (OpenShift GitOps on OCP) | Apache-2.0 |
 | MCP | (1) the official `DecisionsDev/ibm-odm-decision-mcp-server` (Apache-2.0, RES; supports mTLS). (2) Our own **`odm-dc-mcp-server`** (Python FastMCP), which wraps the Decision Center REST API plus our query API | No official Decision Center MCP exists |
@@ -75,7 +77,7 @@ All MCP servers are checked into `.mcp.json`. Each third-party server gets its r
   - A CI lint fails if the BOM or rules reference prohibited grounds: gender, ethnicity, marital status, or age beyond the age-of-majority check.
   - A fairness report shows approval-rate parity by province and age band (Kibana and Grafana).
 - **Explainability:** the ODM execution trace (fired rules) and reason codes are stored with each decision, and `GET /v1/decisions/{id}/explanation` returns them.
-- **Data protection:** synthetic data only, masking at the indexer, Kafka ACLs per service (Strimzi KafkaUser), ES snapshots, ILM retention, and a STRIDE threat model doc.
+- **Data protection:** synthetic data only, masking in the Logstash pipeline, Kafka ACLs per service (Strimzi KafkaUser), ES snapshots, ILM retention, and a STRIDE threat model doc.
 
 ### Evals (`evals/`)
 - **Rule regression (CI gate):** a golden dataset of about 300 labelled applications covering edge cases (age 18 vs 19 by province, TDS boundaries, bankruptcy) runs against RES. Any diff fails the PR.
@@ -100,9 +102,10 @@ Clients/Partners --mTLS--> [APISIX gateway] --mTLS--> [application-api]  POST /v
                                                                    |              ^ RuleApp from Decision Center <- Rule Designer (git)
              cc.decisions.approved.v1 / declined.v1 / referred.v1  |
                     +--> [notification-svc] --> cc.notifications.v1
-                    +--> [es-indexer] --> Elasticsearch --> Kibana (business dashboards)
+                    +--> [Logstash: mask PII] --> Elasticsearch --> Kibana (business dashboards)
+     cc.audit.v1 / cc.notifications.v1 / *.dlq -----^   container logs: [Filebeat] --TLS--> [Logstash] --> cc-logs-* (Kibana)
  cc.audit.v1 from every service · retry and DLQ topics on every consumer · Kafka listeners mTLS (Strimzi KafkaUser TLS)
- OTel agent in every service --> OTel Collector --> Prometheus / Tempo / Loki --> Grafana (+ Alertmanager)
+ OTel agent in every service --> OTel Collector --> Prometheus / Tempo --> Grafana (+ Alertmanager); logs go through Filebeat and Logstash to Elasticsearch
  [MCP #1 RES runtime]  [MCP #2 Decision Center + query API]  --> Claude / agents
 ```
 
@@ -126,7 +129,8 @@ cc-decisioning-platform/
 ├─ docs/ architecture/(C4, mermaid) adr/ runbooks/ api/(OpenAPI) rules-catalog.md data-model.md apigee-mapping.md security-mtls.md
 ├─ contracts/                 JSON Schemas for every topic
 ├─ rules/ xom/ cc-approval-rules/ cc-approval-ds/ tests/ README(Rule Designer setup)
-├─ services/ common-lib/ application-api/ txn-generator/ decision-orchestrator/ es-indexer/ decision-query-api/ notification-svc/
+├─ deploy/ compose/ es/ (templates, ILM) logstash/ (pipelines, tests) filebeat/
+├─ services/ common-lib/ application-api/ txn-generator/ decision-orchestrator/ decision-query-api/ notification-svc/
 ├─ gateway/apisix/            routes, upstreams, consumers, plugins (declarative yaml, standalone mode)
 ├─ mcp/ odm-res-mcp/ odm-dc-mcp-server/
 ├─ observability/ otel/ grafana/dashboards/ prometheus/rules/ kibana/(saved objects, index templates, ILM)
@@ -150,10 +154,10 @@ cc-decisioning-platform/
 - **Images:** pushed to GHCR, multi-arch. ODM stays amd64 only.
 - **Secrets and keys:** none committed. `.env.example` holds placeholders, and k8s uses Sealed Secrets. Certificates are generated locally or by cert-manager.
 
-## Memory budget (8 GB Mac; Docker Desktop about 6.5 GB with Rosetta) — run by profile
+## Memory budget (8 GB Mac; Docker Desktop at 7 GB since P4b, 6 GB is the floor) — run by profile
 | Profile | Contents | ~RAM |
 |---|---|---|
-| `core` | Kafka, ODM, orchestrator, generator, indexer, ES | 4.5 GB |
+| `core` | Kafka, ODM, orchestrator, generator, notifier, ES, Logstash (heap 384 MB, limit 768 MB), Filebeat (128 MB) | 5.5 GB |
 | `analytics` | + Kibana, query-api | +1.0 GB |
 | `edge` | + APISIX (standalone, no etcd), application-api | +0.5 GB |
 | `obs` | + otel-lgtm | +1.0 GB |
@@ -167,11 +171,12 @@ cc-decisioning-platform/
 1. **Contracts and domain:** JSON Schemas, `common-lib`, Java XOM.
 2. **PKI and local infrastructure:** `pki.sh` (CA plus server and client certs), Compose with Kafka (mTLS listener), kafka-ui, ODM (HTTPS), ES and Kibana, plus health checks and topic init.
 3. **ODM rules:** Rule Designer setup guide, BOM, rules, decision tables, ruleflow, scenarios, Decision Center sync, `deploy-ruleapp.sh`. ⚠ Rule Designer is a GUI. Sonnet writes the XOM, the rule text and the scenario files, and you open the project in Rule Designer to build and export the RuleApp.
-4. **Event services:** txn-generator (Datafaker, Canadian synthetic data, configurable TPS), decision-orchestrator, notification-svc, es-indexer. Unit and Testcontainers tests.
+4. **Event services:** txn-generator (Datafaker, Canadian synthetic data, configurable TPS), decision-orchestrator, notification-svc, es-indexer (the indexer is removed again in 4b). Unit and Testcontainers tests.
+4b. **ELK ingestion (inserted after P4):** Logstash replaces the custom es-indexer (Kafka to Elasticsearch, PII masking, DLQ topics indexed, container logs via Filebeat to `cc-logs-*`), `logstash_writer` least-privilege user, ILM for logs and DLQ, Logstash pipeline tests. Loki is dropped.
 5. **APIs:** application-api and decision-query-api (search by id, applicant, province, date; stats endpoints; pagination), OpenAPI specs.
 6. **Gateway and mTLS:** APISIX routes, client-cert consumers, rate limits, API keys, Apigee mapping doc, mTLS on every hop (client→gateway→service, service→Kafka/ES/ODM).
 7. **Kibana:** index templates, ILM, dashboard ndjson (approval rate, decline reasons, decisions by province, score distribution, limits, throughput, DLQ).
-8. **Observability:** OTel agent, Collector, Prometheus scrape configs, Grafana dashboards (Kafka lag, JVM, API latency SLOs, APISIX, ODM), Tempo service map, Loki logs, alert rules.
+8. **Observability:** OTel agent, Collector, Prometheus scrape configs, Grafana dashboards (Kafka lag, JVM, API latency SLOs, APISIX, ODM), Tempo service map, alert rules. No Loki: logs are already in Kibana (`cc-logs-*`), so the logging half of observability is a Kibana data view and saved searches plus a Logstash/Filebeat health panel.
 9. **MCP:** container for the official RES MCP (mTLS to RES) plus `odm-dc-mcp-server`. Its tools: list projects and branches, get rules, run tests, deploy a RuleApp, query decisions and stats. Claude config sample.
 10. **Helm and OpenShift:** umbrella chart, Strimzi, ECK and cert-manager CRs, kind values (Ingress) and OpenShift values (Routes, SCC, NetworkPolicies).
 11. **ArgoCD GitOps:** ArgoCD in kind, then the app-of-apps pointing at `main` (sync waves: operators → infra → platform → apps, with auto-sync and self-heal). OpenShift GitOps documented.
@@ -184,7 +189,7 @@ cc-decisioning-platform/
 - **Bring-up:** `make pki && make up PROFILE=core,analytics` brings all containers to healthy. RES answers on `:9443/res`, Decision Center on `/decisioncenter`, Kibana on `:5601`, kafka-ui on `:8080`.
 - **End-to-end:** `make demo` sends 1,000 applications, which produce events on the three outcome topics, matching ES counts, and a populated Kibana dashboard. A poison message lands in the DLQ.
 - **mTLS:** `curl --cert client.crt --key client.key https://gateway/v1/decisions/stats` returns 200. Without a cert the gateway rejects the TLS handshake. An unauthorized Kafka client is rejected.
-- **Observability:** Grafana shows one trace spanning gateway → api → Kafka → orchestrator → ODM → indexer, Kafka lag panels, and a firing test alert.
+- **Observability:** Grafana shows one trace spanning gateway → api → Kafka → orchestrator → ODM → Logstash, Kafka lag panels, and a firing test alert.
 - **Tests and CI:** `mvn verify` passes, PR CI is green, and the `helm template` output passes kubeconform with both values files.
 - **MCP:** the MCP Inspector lists the tools for both servers, and Claude calls `ccApproval` and gets a decision back.
 - **kind / ArgoCD:** `make kind-up` leaves every ArgoCD Application Synced and Healthy, and a git change triggers an auto-sync.
@@ -220,7 +225,7 @@ Do:
 5. Makefile w/ help + stub targets: up down logs verify test pki demo kind-up ocp-render eval-rules eval-agent what-if. `make up PROFILE=core,analytics` style.
 6. .pre-commit-config.yaml: gitleaks, ruff, yamllint, markdownlint, commitlint (conventional). Add commitlint config.
 7. .github/: PULL_REQUEST_TEMPLATE (what/why/test/risk/checklist), ISSUE_TEMPLATE bug/feature/rule-change, CODEOWNERS `* @<GH_USER>`, dependabot (maven, pip, docker, github-actions weekly), workflows: ci.yml (mvn verify, skip if no modules), security.yml (gitleaks, trivy fs, codeql java+python), release.yml (release-please). Pin action versions by SHA or major.
-8. docs/adr/ MADR format: 0001-odm-dev-licence 0002-kafka-kraft-strimzi 0003-custom-es-indexer 0004-apisix-instead-of-apigee 0005-lgtm-instead-of-dynatrace 0006-mcp-strategy 0007-llm-never-decides 0008-mtls-everywhere.
+8. docs/adr/ MADR format: 0001-odm-dev-licence 0002-kafka-kraft-strimzi 0003-custom-es-indexer (superseded by 0009) 0004-apisix-instead-of-apigee 0005-lgtm-instead-of-dynatrace 0006-mcp-strategy 0007-llm-never-decides 0008-mtls-everywhere 0009-elk-ingestion.
 9. .claude/: CLAUDE.md, settings.json, hooks/:
    - pre_tool_guard.sh (PreToolUse Bash|Read|Edit|Write): block *.key *.p12 *.pem-private .env* security/pki/out/**, git push --force, rm -rf /, kubectl delete ns, git commit on main after P0. exit 2 + reason.
    - post_edit_fmt.sh (PostToolUse Edit|Write): java->spotless apply file module, py->ruff format, yaml->yamllint, contracts/*.json->schema validate.
@@ -294,9 +299,15 @@ Services (each own module, Dockerfile, compose service in profile core, tests):
 1. txn-generator: Datafaker en-CA. Realistic Canadian applicants (provinces weighted by pop, postal code format, income dist, score 300-900, TDS, bankruptcy 2%). Edge-case mix 10%. Config TPS + total + poison-rate. Produce cc.applications.submitted.v1 key=applicationId. REST /admin/start /admin/stop.
 2. decision-orchestrator: consume submitted -> call ODM RES REST (mTLS, retry w/ backoff, circuit breaker resilience4j, timeout) -> map to Decision incl firedRules (enable ruleset trace) -> route to approved/declined/referred topic. Audit event. Failures -> retry topic -> DLQ. Exactly-once-ish: idempotent producer + transactional consume-produce.
 3. notification-svc: consume decision topics -> build applicant notice (approval or FCAC-style adverse action w/ reason text) -> cc.notifications.v1 (no real email).
-4. es-indexer: consume decisions + audit + notifications -> bulk index ES (mTLS/TLS), mask PII (SIN last 3, name initials, postal FSA only) before index, index per type w/ date suffix alias. DLQ on mapping errors.
+4. es-indexer (SUPERSEDED in P4b by Logstash, see ADR-0009): consume decisions + audit + notifications -> bulk index ES (mTLS/TLS), mask PII (SIN last 3, name initials, postal FSA only) before index, index per type w/ date suffix alias. DLQ on mapping errors.
 Testcontainers (Kafka + ES + WireMock for RES) integration tests each. `make demo` = generator 1000 apps.
 Verify: mvn verify green; make up PROFILE=core; make demo; show counts per topic (kafka-ui or cli) + ES _count matches; poison msg in DLQ. PR flow.
+```
+
+### P4b — ELK ingestion (inserted)
+```
+See the P4b prompt kept with the phase PR (feat/p4b-elk) and ADR-0009: Logstash pipelines kafka-events, kafka-dlq, logs, events-dlq;
+Filebeat; logstash_writer role; ILM for cc-logs and cc-dlq; scripts/test-logstash.sh; es-indexer removed.
 ```
 
 ### P5 — APIs
@@ -326,7 +337,7 @@ Verify: curl w/ demo-partner cert -> 202/200; no cert -> TLS fail; wrong CA -> f
 ```
 /caveman
 Phase 7. Branch feat/p7-kibana. Read CLAUDE.md.
-1. observability/kibana/: index templates + mappings (keyword vs text, dates, geo by province centroid), ILM (hot 7d -> delete 90d demo), aliases.
+1. observability/kibana/: index templates + mappings (keyword vs text, dates, geo by province centroid), ILM (hot 7d -> delete 90d demo), aliases. Templates, aliases and ILM for cc-decisions/-audit/-notifications/-dlq/-logs exist since P4b (deploy/es); extend them, add data views for cc-logs-* and cc-dlq.
 2. Saved objects ndjson: data views + dashboard "Credit Card Decisioning — Maple Northern Bank": KPIs (apps today, approval %, referral %, avg limit), approval rate over time, decisions by province map/bar, decline reason top-N, score distribution histogram, limit by product, TDS vs outcome heatmap, latency p95 (orchestrator timing field), DLQ count, fairness approval parity by ageBand/province, recent decisions table. Controls: province, product, outcome, date.
 3. scripts/seed-kibana.sh: import via Kibana saved objects API (TLS), idempotent. `make seed-kibana`.
 Verify: make demo then seed; screenshot instructions + curl _find shows dashboard. PR flow.
@@ -337,11 +348,11 @@ Verify: make demo then seed; screenshot instructions + curl _find shows dashboar
 /caveman
 Phase 8. Branch feat/p8-observability. Read CLAUDE.md + PLAN "Tech decisions" monitoring row.
 1. OTel Java agent in every service image (env OTEL_EXPORTER_OTLP_ENDPOINT, service.name, resource attrs). Trace context propagated over Kafka headers.
-2. Compose profile obs: grafana/otel-lgtm (Grafana+Prometheus+Tempo+Loki+collector), kafka-exporter, elasticsearch-exporter, ODM JMX exporter if feasible (else NEED USER note). Prometheus scrape actuator + APISIX.
+2. Compose profile obs: grafana/otel-lgtm (Grafana+Prometheus+Tempo+collector; ignore its bundled Loki, logs are in Kibana via Filebeat+Logstash from P4b), logstash monitoring API :9600 scraped, kafka-exporter, elasticsearch-exporter, ODM JMX exporter if feasible (else NEED USER note). Prometheus scrape actuator + APISIX.
 3. observability/grafana/dashboards (provisioned json): Platform overview (golden signals per service), Kafka (lag per group, throughput, DLQ rate), JVM, API SLO (p95/p99, error budget), APISIX, ODM decision latency, Service map (Tempo).
 4. observability/prometheus/rules: alerts — consumer lag > threshold, DLQ > 0, p95 > 300ms, error rate > 1%, pod/container down, cert expiry < 14d.
 5. docs/runbooks/ one per alert.
-Verify: make up PROFILE=core,obs; make demo; show trace across generator->orchestrator->ODM->indexer in Tempo (query output), alert test fire. PR flow.
+Verify: make up PROFILE=core,obs; make demo; show trace across generator->orchestrator->ODM in Tempo (query output), alert test fire. PR flow.
 ```
 
 ### P9 — MCP servers
