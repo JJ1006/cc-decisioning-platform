@@ -1,12 +1,18 @@
 version: 2
-# pip/docker ecosystems are added in the phases that introduce manifests.
+# pip (mcp/odm-dc-mcp-server) is added in P9; docker (deploy/compose) is added in P2.
 updates:
   - package-ecosystem: maven
     directory: /
     schedule: { interval: weekly }
+    groups:
+      maven-minor-patch:
+        update-types: [minor, patch]
     ignore:
-      - dependency-name: org.springframework.boot:spring-boot-starter-parent
+      - dependency-name: "org.springframework.boot:*"
         update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
+    groups:
+      actions:
+        patterns: ["*"]
