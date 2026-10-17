@@ -151,7 +151,7 @@
   },
   {
     "id": "TC04",
-    "name": "approve at table limit, no requested limit, boundaries delinq 2 inq 6",
+    "name": "approve at table limit (request above table), boundaries delinq 2 inq 6",
     "request": {
       "application": {
         "applicationId": "APP-TC04",
@@ -185,7 +185,8 @@
           "inquiriesLast6Months": 6,
           "activeBankruptcy": false,
           "fileAgeMonths": 84
-        }
+        },
+        "requestedLimit": 50000
       }
     },
     "expected": {

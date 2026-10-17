@@ -1,11 +1,11 @@
 # Ruleflow `ccApproval`
 
 Build in Rule Designer: New > Ruleflow, name `ccApproval`, package root. Set it as the ruleset's main ruleflow
-(Decision operation > Ruleflow = `ccApproval`).
+(Decision operation > Ruleflow = `ccApproval`). In the headless flow `scripts/gen_dc_project.py` generates it from this spec.
 
 ```text
 start
-  |  initial action:  set 'the decision' to a new decision ;
+  |  (the OUT variable 'the decision' is created by its initial value: new ca.maplenorthern.cc.xom.Decision())
   v
 [eligibility]     rule task, package eligibility, algorithm Default
   |
@@ -15,7 +15,9 @@ start
   |
 <outcome of 'the decision' is null ?>  -- no --> end   (DECLINE or REFER)
   | yes
-[limit]           rule task, package limit, Sequential: decision table IncomeScoreLimit, then LIM-02
+[limit]           rule task, package limit: decision table IncomeScoreLimit
+  |
+[limitcap]        rule task, package limitcap: LIM-02 (runs after the table, so it needs its own package)
   |
 [product]         rule task, package product (PROD-01..06, APR-01..04)
   |
@@ -27,5 +29,4 @@ end
 Order matters only at the gateways. Inside `eligibility` and `risk`, rules call `escalate`, which keeps the most severe
 outcome (DECLINE over REFER over APPROVE), so rule order does not change the result.
 
-Task execution mode: Default (RetePlus) for all tasks, except `limit` which must run the table before LIM-02 (give the
-table priority High, or use two tasks).
+Task execution mode: RetePlus for all tasks.

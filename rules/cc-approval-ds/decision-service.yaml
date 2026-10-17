@@ -1,5 +1,5 @@
-# Decision service descriptor. Rule Designer: New > Decision Service project, then mirror these values.
-# (Rule Designer stores the same data in its own project files; this file is the reviewable source of truth.)
+# Decision service descriptor. scripts/gen_dc_project.py reads ruleset.properties for the agent properties; the
+# rest documents what it generates (one Decision Center project, "cc-approval", holding rules + operation + deployment).
 name: cc-approval-ds
 ruleApp: { name: ccApprovalApp, version: "1.0" }
 ruleProjects: [cc-approval-rules]
@@ -15,9 +15,9 @@ operation:
       verbalization: the application
     - name: decision
       direction: OUT
+      initialValue: new ca.maplenorthern.cc.xom.Decision()
       type: ca.maplenorthern.cc.xom.Decision
       verbalization: the decision
-      # created by the ruleflow initial action: set 'the decision' to a new decision ;
   properties:
     # Expose the operation to ODM's MCP/agent surface (ODM 9.5).
     agent.enabled: "true"

@@ -9,7 +9,7 @@ it in Python to prove `rules/tests/scenarios.json` agrees with it.
 therefore does not change the outcome. Every rule that applies adds its reason code, so adverse-action notices are complete.
 
 **Flow** (`rules/cc-approval-rules/ruleflow/ccApproval.md`): eligibility, then (only if no outcome yet) risk, then (only if
-still no outcome) limit, product, reasons. An applicant who passes all checks has no outcome until RSN-01 approves.
+still no outcome) limit, limitcap, product, reasons. An applicant who passes all checks has no outcome until RSN-01 approves.
 
 **Age of majority** (in the `Province` XOM enum and rule ELIG-01): 19 in BC, NB, NL, NS, NT, NU, YT; 18 in AB, MB, ON, PE, QC, SK.
 
@@ -24,7 +24,7 @@ still no outcome) limit, product, reasons. An applicant who passes all checks ha
 | RISK-04 | risk | Enough history to assess | file age < 6 months | REFER | R_THIN_FILE |
 | RISK-DT-01 | risk | Score x debt service (decision table `ScoreTdsOutcome`) | see table below | DECLINE / REFER / none | R_LOW_SCORE, R_HIGH_TDS, R_BORDERLINE_SCORE, R_BORDERLINE_TDS |
 | LIM-DT-01 | limit | Base limit by income and score (decision table `IncomeScoreLimit`) | see table below | set credit limit | none |
-| LIM-02 | limit | Never exceed what was asked for | requested limit present and credit limit > requested limit | credit limit = requested limit | none |
+| LIM-02 | limitcap | Never exceed what was asked for | credit limit > requested limit (requested limit is mandatory input) | credit limit = requested limit | none |
 | PROD-01 | product | Entry product | requested product is NO_FEE or absent | product NO_FEE | none |
 | PROD-02 | product | Cashback eligibility | requested CASHBACK, income >= 40,000, score >= 660 | product CASHBACK | none |
 | PROD-03 | product | Cashback not met | requested CASHBACK, income < 40,000 or score < 660 | product NO_FEE | none |
