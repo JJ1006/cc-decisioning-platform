@@ -4,7 +4,7 @@ JAVA_HOME := $(shell [ -d /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Conte
 export JAVA_HOME
 
 .DEFAULT_GOAL := help
-.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls demo kind-up ocp-render eval-rules eval-agent what-if
+.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules test-rules lint-rules demo kind-up ocp-render eval-rules eval-agent what-if
 
 help: ## Show targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -41,6 +41,17 @@ verify-mtls: ## Check TLS/mTLS endpoints and rejection of clients without certs
 
 kafka-topics-mtls: ## List Kafka topics over mTLS (admin client cert)
 	@PROFILE=core scripts/compose.sh exec -T kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9093 --command-config /pki/kafka-client.properties --list
+
+deploy-rules: ## Deploy rules/ruleapps/ccApprovalApp.jar to ODM RES (needs make up PROFILE=core)
+	@scripts/deploy-ruleapp.sh
+
+test-rules: ## Run the 30 scenarios in rules/tests against the deployed ruleset
+	@python3 rules/tests/check_scenarios.py
+	@scripts/test-ruleset.sh
+
+lint-rules: ## Prohibited-grounds lint + scenario spec check (no ODM needed)
+	@scripts/lint-prohibited-grounds.sh
+	@python3 rules/tests/check_scenarios.py
 
 demo: ## Send 1000 synthetic applications
 	@echo "TODO(P4): txn-generator demo"; exit 0
