@@ -56,8 +56,8 @@ lint-rules: ## Prohibited-grounds lint + scenario spec check (no ODM needed)
 	@scripts/lint-prohibited-grounds.sh
 	@python3 rules/tests/check_scenarios.py
 
-demo: ## Send 1000 synthetic applications
-	@echo "TODO(P4): txn-generator demo"; exit 0
+demo: ## Deploy rules if missing, send 1000 synthetic applications, print topic and index counts (needs make up PROFILE=core)
+	@scripts/demo.sh
 
 kind-up: ## Create kind cluster + install platform
 	@echo "TODO(P10): kind-up"; exit 0

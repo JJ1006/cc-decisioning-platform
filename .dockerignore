@@ -1,0 +1,17 @@
+.git
+.github
+.claude
+**/target
+tmp
+security
+.env
+.env.*
+**/.env.derived
+rules/ruleapps
+rules/dc-export
+docs
+evals
+mcp
+observability
+gateway
+node_modules

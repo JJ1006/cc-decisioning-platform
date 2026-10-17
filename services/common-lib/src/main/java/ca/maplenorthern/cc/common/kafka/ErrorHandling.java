@@ -22,6 +22,7 @@ public final class ErrorHandling {
   public static DefaultErrorHandler errorHandler(
       KafkaOperations<String, String> kafka, String producerName, int maxRetries) {
     ExponentialBackOff backOff = new ExponentialBackOff(200L, 2.0);
+    backOff.setMaxAttempts(maxRetries);
     backOff.setMaxElapsedTime(30_000L);
     DefaultErrorHandler handler =
         new DefaultErrorHandler(new DlqRecoverer(kafka, producerName, maxRetries + 1), backOff);

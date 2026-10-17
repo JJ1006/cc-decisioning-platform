@@ -10,6 +10,13 @@ source scripts/res-env.sh
 SERVER=${DC_SERVER:-Decision Service Execution}
 JAR=$ROOT/rules/ruleapps/ccApprovalApp.jar
 
+# Decision Center creates its schema a little after the container reports healthy: wait for it
+for _ in $(seq 1 60); do
+  [[ $(scripts/dc.sh -o /dev/null -w '%{http_code}' /v1/decisionservices || true) == 200 ]] && break
+  echo "waiting for Decision Center ..."
+  sleep 5
+done
+
 [[ -d rules/xom/target/classes ]] || mvn -B -ntp -q -pl rules/xom -DskipTests package
 python3 scripts/gen_dc_project.py
 

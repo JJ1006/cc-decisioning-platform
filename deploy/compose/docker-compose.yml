@@ -112,19 +112,15 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.19.23
     profiles: [core]
     env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
-    mem_limit: 64m
+    mem_limit: 128m
     restart: "no"
     depends_on:
       elasticsearch: { condition: service_healthy }
-    entrypoint:
-      - /bin/bash
-      - -c
-      - >
-        curl -sf --cacert /pki/ca.crt -u "elastic:$$ELASTIC_PASSWORD"
-        -X POST -H 'Content-Type: application/json'
-        https://elasticsearch:9200/_security/user/kibana_system/_password
-        -d "{\"password\":\"$$KIBANA_PASSWORD\"}" && echo "kibana_system password set"
+    # kibana_system password, least-privilege es-indexer user, index templates, write aliases
+    entrypoint: ["/bin/bash", "/scripts/es-setup.sh"]
     volumes:
+      - ../../scripts/es-setup.sh:/scripts/es-setup.sh:ro
+      - ../es:/es:ro
       - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
 
   odm:
@@ -152,6 +148,116 @@ services:
       timeout: 10s
       retries: 15
       start_period: 120s
+
+  txn-generator:
+    build: { context: ../.., dockerfile: services/txn-generator/Dockerfile }
+    image: ccplatform/txn-generator:dev
+    profiles: [core]
+    env_file: [.env.derived]
+    mem_limit: 256m
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:8080"
+    depends_on:
+      kafka: { condition: service_healthy }
+      topic-init: { condition: service_completed_successfully }
+    environment:
+      KAFKA_BOOTSTRAP: kafka:9093
+      KAFKA_KEYSTORE: /pki/keystore.p12
+      KAFKA_TRUSTSTORE: /pki/truststore.p12
+    volumes:
+      - ${PKI_DIR:-../../security/pki/out}/txn-generator/txn-generator.p12:/pki/keystore.p12:ro
+      - ${PKI_DIR:-../../security/pki/out}/truststore.p12:/pki/truststore.p12:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health/readiness >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  decision-orchestrator:
+    build: { context: ../.., dockerfile: services/decision-orchestrator/Dockerfile }
+    image: ccplatform/decision-orchestrator:dev
+    profiles: [core]
+    env_file: [.env.derived]
+    mem_limit: 320m
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8082:8080"
+    depends_on:
+      kafka: { condition: service_healthy }
+      topic-init: { condition: service_completed_successfully }
+      odm: { condition: service_healthy }
+    environment:
+      KAFKA_BOOTSTRAP: kafka:9093
+      KAFKA_KEYSTORE: /pki/keystore.p12
+      KAFKA_TRUSTSTORE: /pki/truststore.p12
+      RES_BASE_URL: https://odm:9453
+      RES_TRUSTSTORE: /pki/truststore.p12
+    volumes:
+      - ${PKI_DIR:-../../security/pki/out}/decision-orchestrator/decision-orchestrator.p12:/pki/keystore.p12:ro
+      - ${PKI_DIR:-../../security/pki/out}/truststore.p12:/pki/truststore.p12:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health/readiness >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  notification-svc:
+    build: { context: ../.., dockerfile: services/notification-svc/Dockerfile }
+    image: ccplatform/notification-svc:dev
+    profiles: [core]
+    env_file: [.env.derived]
+    mem_limit: 256m
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8083:8080"
+    depends_on:
+      kafka: { condition: service_healthy }
+      topic-init: { condition: service_completed_successfully }
+    environment:
+      KAFKA_BOOTSTRAP: kafka:9093
+      KAFKA_KEYSTORE: /pki/keystore.p12
+      KAFKA_TRUSTSTORE: /pki/truststore.p12
+    volumes:
+      - ${PKI_DIR:-../../security/pki/out}/notification-svc/notification-svc.p12:/pki/keystore.p12:ro
+      - ${PKI_DIR:-../../security/pki/out}/truststore.p12:/pki/truststore.p12:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health/readiness >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+
+  es-indexer:
+    build: { context: ../.., dockerfile: services/es-indexer/Dockerfile }
+    image: ccplatform/es-indexer:dev
+    profiles: [core]
+    env_file: [.env.derived]
+    mem_limit: 320m
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8084:8080"
+    depends_on:
+      kafka: { condition: service_healthy }
+      topic-init: { condition: service_completed_successfully }
+      es-setup: { condition: service_completed_successfully }
+    environment:
+      KAFKA_BOOTSTRAP: kafka:9093
+      KAFKA_KEYSTORE: /pki/keystore.p12
+      KAFKA_TRUSTSTORE: /pki/truststore.p12
+      ES_URL: https://elasticsearch:9200
+      ES_TRUSTSTORE: /pki/truststore.p12
+    volumes:
+      - ${PKI_DIR:-../../security/pki/out}/es-indexer/es-indexer.p12:/pki/keystore.p12:ro
+      - ${PKI_DIR:-../../security/pki/out}/truststore.p12:/pki/truststore.p12:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health/readiness >/dev/null"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
 
   # ----------------------------------------------------------- analytics
   kibana:

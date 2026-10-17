@@ -28,6 +28,11 @@
   <modules>
     <module>rules/xom</module>
     <module>services/common-lib</module>
+    <module>services/txn-generator</module>
+    <module>services/decision-orchestrator</module>
+    <module>services/notification-svc</module>
+    <module>services/es-indexer</module>
+    <module>services/flow-test</module>
   </modules>
 
   <properties>
@@ -36,6 +41,9 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Override Boot's managed Jackson: fixes CVE-2026-68497/91776/91777 (needs >= 2.21.7) -->
     <jackson-bom.version>2.21.7</jackson-bom.version>
+    <datafaker.version>2.4.2</datafaker.version>
+    <resilience4j.version>2.2.0</resilience4j.version>
+    <wiremock.version>3.13.1</wiremock.version>
     <spotless.version>2.46.1</spotless.version>
     <jacoco.version>0.8.15</jacoco.version>
     <google-java-format.version>1.25.2</google-java-format.version>
@@ -44,6 +52,26 @@
   <dependencyManagement>
     <dependencies>
       <!-- kafka-clients transitive; CVE-2026-106451 fixed in 1.11.4 -->
+      <dependency>
+        <groupId>net.datafaker</groupId>
+        <artifactId>datafaker</artifactId>
+        <version>${datafaker.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.resilience4j</groupId>
+        <artifactId>resilience4j-retry</artifactId>
+        <version>${resilience4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>io.github.resilience4j</groupId>
+        <artifactId>resilience4j-circuitbreaker</artifactId>
+        <version>${resilience4j.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.wiremock</groupId>
+        <artifactId>wiremock-standalone</artifactId>
+        <version>${wiremock.version}</version>
+      </dependency>
       <dependency>
         <groupId>at.yawk.lz4</groupId>
         <artifactId>lz4-java</artifactId>
