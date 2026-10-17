@@ -8,7 +8,7 @@ name: ${COMPOSE_PROJECT_NAME:-ccplatform}
 services:
   # ---------------------------------------------------------------- core
   kafka:
-    image: apache/kafka:3.9.2
+    image: apache/kafka:4.3.1
     profiles: [core]
     env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
     mem_limit: 768m
@@ -50,7 +50,7 @@ services:
       start_period: 30s
 
   topic-init:
-    image: apache/kafka:3.9.2
+    image: apache/kafka:4.3.1
     profiles: [core]
     mem_limit: 256m
     restart: "no"
