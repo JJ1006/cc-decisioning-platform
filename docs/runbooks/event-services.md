@@ -13,6 +13,8 @@ every <topic>.dlq --> Logstash --> cc-dlq          container logs --> Filebeat -
 | `txn-generator` | 8081 | Datafaker en-CA applications; `POST /admin/start?tps=&total=&poisonRate=&seed=`, `POST /admin/stop`, `GET /admin/status` |
 | `decision-orchestrator` | 8082 | consume submitted, call RES, route by outcome, audit; transactional consume-produce |
 | `notification-svc` | 8083 | approval, adverse-action and referral notices (never sent anywhere) |
+| `application-api` | 8084 (profile `edge`) | HTTP: submit applications, status, underwriter decisions: [docs/api](../api/README.md) |
+| `decision-query-api` | 8085 (profile `analytics`) | HTTP: decisions, explanations, statistics, dead letters, logs from Elasticsearch: [docs/api](../api/README.md) |
 | `logstash` | 9600 (monitoring API) | four pipelines, below |
 | `filebeat` | none | ships the logs of containers labelled `co.elastic.logs/enabled=true` |
 
@@ -41,7 +43,7 @@ Logstash stats: `curl localhost:9600/_node/stats/pipelines`.
 
 | Pipeline | Input | Output | Notes |
 |---|---|---|---|
-| `kafka-events` | decisions, manual, audit and notification topics, mTLS, group `logstash-indexer` | `cc-decisions-write`, `cc-audit-write`, `cc-notifications-write` | persistent queue; parse envelope, mask PII (`ruby/cc_mask.rb`), `@timestamp` from `occurredAt`, document id = `eventId` (redelivery is a 409, ignored) |
+| `kafka-events` | decisions, manual, audit and notification topics, mTLS, group `logstash-indexer` | `cc-decisions-write`, `cc-audit-write`, `cc-notifications-write` | persistent queue; parse envelope, mask PII (`ruby/cc_mask.rb`), `@timestamp` from `occurredAt`, document id = `eventId` (redelivery is a 409, ignored); decisions get `decisionSource` ODM, or MANUAL for `cc.decisions.manual.v1` |
 | `kafka-dlq` | every `cc.*.dlq` topic, group `logstash-dlq` | `cc-dlq-write` | flattens the dead letter envelope; `originalValue` is masked or redacted and cut to 1 KB |
 | `logs` | Filebeat on :5044, TLS with client certificate | `cc-logs-write` | JSON log lines parsed, `service` from the compose service name; ILM 7 days |
 | `events-dlq` | Logstash's own dead letter queue | `cc-dlq-write` | documents Elasticsearch rejected (strict mapping violations) |
@@ -53,7 +55,8 @@ street line and employer dropped.
 ## Elasticsearch bootstrap
 
 `scripts/es-setup.sh` (compose `es-setup`) creates role and user `logstash_writer` (`create_doc` on the five write aliases, cluster `monitor`
-for the output's start-up check, nothing else; password generated into the root env file on first run), ILM policies `cc-logs-7d` and
+for the output's start-up check, nothing else; password generated into the root env file on first run), role and user `query_reader` /
+`decision-query-api` (`read` on the five read aliases only, for the query API; password generated the same way), ILM policies `cc-logs-7d` and
 `cc-dlq-30d`, the index templates in `deploy/es/`, and the first index behind each `-write` alias. Decisions, audit and notifications are
 date-suffixed indices rolled by re-running es-setup (`docker compose ... run --rm es-setup`); logs and dlq roll through ILM. After changing a
 template, delete the old indices (or `make down V=1`): an existing index keeps its old strict mapping.
