@@ -64,6 +64,8 @@ class OrchestratorFlowTest {
 
   static final WireMockServer RES =
       new WireMockServer(WireMockConfiguration.options().dynamicPort());
+  static final String USER = "svc-" + java.util.UUID.randomUUID();
+  static final String PASS = java.util.UUID.randomUUID().toString();
   static final String PATH = "/DecisionService/rest/ccApprovalApp/1.0/ccApproval/1.0";
 
   @BeforeAll
@@ -80,8 +82,8 @@ class OrchestratorFlowTest {
   static void props(DynamicPropertyRegistry r) {
     r.add("platform.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
     r.add("res.base-url", () -> "http://localhost:" + RES.port());
-    r.add("res.username", () -> "tester");
-    r.add("res.password", () -> "secret");
+    r.add("res.username", () -> USER);
+    r.add("res.password", () -> PASS);
     r.add("res.retry-wait-ms", () -> "10");
     r.add("platform.kafka.max-retries", () -> "1");
   }
@@ -219,7 +221,12 @@ class OrchestratorFlowTest {
 
     RES.verify(
         postRequestedFor(urlEqualTo(PATH))
-            .withHeader("Authorization", equalTo("Basic dGVzdGVyOnNlY3JldA=="))
+            .withHeader(
+                "Authorization",
+                equalTo(
+                    "Basic "
+                        + java.util.Base64.getEncoder()
+                            .encodeToString((USER + ":" + PASS).getBytes())))
             .withRequestBody(matchingJsonPath("$.application.applicationId", equalTo("OK-1")))
             .withRequestBody(matchingJsonPath("$.application.bureau.score", equalTo("742"))));
     String sent = RES.getAllServeEvents().get(0).getRequest().getBodyAsString();

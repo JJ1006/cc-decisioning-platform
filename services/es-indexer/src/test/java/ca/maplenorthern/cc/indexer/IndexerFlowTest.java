@@ -51,8 +51,8 @@ import org.testcontainers.utility.DockerImageName;
 @Testcontainers
 @SpringBootTest
 class IndexerFlowTest {
-  static final String ELASTIC_PW = "elastic-test-pw";
-  static final String INDEXER_PW = "indexer-test-pw";
+  static final String ELASTIC_PW = java.util.UUID.randomUUID().toString();
+  static final String INDEXER_PW = java.util.UUID.randomUUID().toString();
 
   @Container
   static final KafkaContainer KAFKA =
@@ -88,7 +88,7 @@ class IndexerFlowTest {
     pb.environment().put("ES_CACERT", caFile.toString());
     pb.environment().put("ES_DIR", new File(root, "deploy/es").getPath());
     pb.environment().put("ELASTIC_PASSWORD", ELASTIC_PW);
-    pb.environment().put("KIBANA_PASSWORD", "kibana-test-pw");
+    pb.environment().put("KIBANA_PASSWORD", java.util.UUID.randomUUID().toString());
     pb.environment().put("ES_INDEXER_PASSWORD", INDEXER_PW);
     pb.redirectErrorStream(true);
     Process p = pb.start();

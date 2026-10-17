@@ -48,8 +48,8 @@ import org.testcontainers.utility.DockerImageName;
  */
 @Testcontainers
 class EndToEndFlowTest {
-  static final String ELASTIC_PW = "elastic-flow-pw";
-  static final String INDEXER_PW = "indexer-flow-pw";
+  static final String ELASTIC_PW = java.util.UUID.randomUUID().toString();
+  static final String INDEXER_PW = java.util.UUID.randomUUID().toString();
 
   @Container
   static final KafkaContainer KAFKA =
@@ -137,7 +137,7 @@ class EndToEndFlowTest {
     env.put("ES_CACERT", caFile.toString());
     env.put("ES_DIR", new File(root(), "deploy/es").getPath());
     env.put("ELASTIC_PASSWORD", ELASTIC_PW);
-    env.put("KIBANA_PASSWORD", "kibana-flow-pw");
+    env.put("KIBANA_PASSWORD", java.util.UUID.randomUUID().toString());
     env.put("ES_INDEXER_PASSWORD", INDEXER_PW);
     pb.redirectErrorStream(true);
     Process p = pb.start();
