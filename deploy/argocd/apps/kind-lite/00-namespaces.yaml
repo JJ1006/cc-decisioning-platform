@@ -13,6 +13,7 @@ spec:
   project: platform
   destination:
     server: https://kubernetes.default.svc
+    namespace: cc # the project allows only cc; the Namespace object itself is cluster-scoped
   sources:
     - repoURL: https://github.com/JJ1006/cc-decisioning-platform.git
       targetRevision: main
