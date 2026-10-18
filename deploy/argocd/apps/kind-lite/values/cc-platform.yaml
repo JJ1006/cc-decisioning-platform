@@ -2,3 +2,5 @@
 global:
   image:
     tag: 984f132029130ed3c993ee618f2536bdf434d54f
+notification-svc:
+  replicas: 2 # drift test (a): a Git change reaches the cluster by itself
