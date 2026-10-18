@@ -227,7 +227,7 @@ Do:
 5. Makefile w/ help + stub targets: up down logs verify test pki demo kind-up ocp-render eval-rules eval-agent what-if. `make up PROFILE=core,analytics` style.
 6. .pre-commit-config.yaml: gitleaks, ruff, yamllint, markdownlint, commitlint (conventional). Add commitlint config.
 7. .github/: PULL_REQUEST_TEMPLATE (what/why/test/risk/checklist), ISSUE_TEMPLATE bug/feature/rule-change, CODEOWNERS `* @<GH_USER>`, dependabot (maven, pip, docker, github-actions weekly), workflows: ci.yml (mvn verify, skip if no modules), security.yml (gitleaks, trivy fs, codeql java+python), release.yml (release-please). Pin action versions by SHA or major.
-8. docs/adr/ MADR format: 0001-odm-dev-licence 0002-kafka-kraft-strimzi 0003-custom-es-indexer (superseded by 0009) 0004-apisix-instead-of-apigee 0005-lgtm-instead-of-dynatrace 0006-mcp-strategy 0007-llm-never-decides 0008-mtls-everywhere 0009-elk-ingestion 0010-api-tier 0011-gateway-identity 0012-agent-access.
+8. docs/adr/ MADR format: 0001-odm-dev-licence 0002-kafka-kraft-strimzi 0003-custom-es-indexer (superseded by 0009) 0004-apisix-instead-of-apigee 0005-lgtm-instead-of-dynatrace 0006-mcp-strategy 0007-llm-never-decides 0008-mtls-everywhere 0009-elk-ingestion 0010-api-tier 0011-gateway-identity 0012-agent-access 0013-kubernetes-deployment.
 9. .claude/: CLAUDE.md, settings.json, hooks/:
    - pre_tool_guard.sh (PreToolUse Bash|Read|Edit|Write): block *.key *.p12 *.pem-private .env* security/pki/out/**, git push --force, rm -rf /, kubectl delete ns, git commit on main after P0. exit 2 + reason.
    - post_edit_fmt.sh (PostToolUse Edit|Write): java->spotless apply file module, py->ruff format, yaml->yamllint, contracts/*.json->schema validate.
@@ -414,6 +414,13 @@ Phase 10. Branch feat/p10-helm-ocp. Read CLAUDE.md.
 5. CI helm.yml: helm lint, helm template both values -> kubeconform (w/ CRD schemas) + kube-linter.
 Verify: CI green; make kind-up (reduced set) pods Ready; show. PR flow. RAM issue -> NEED USER.
 ```
+
+Delivered in PR feat/p10-helm-ocp (deltas to the runbook above, see docs/deploy-kubernetes.md and ADR-0013): `deploy/helm/cc-lib` renders every workload (pod security
+restricted, no fixed UID/GID/fsGroup, read-only root file system), charts per service in `deploy/helm/charts`, umbrella `cc-platform` with `values-kind-lite|full` and
+`values-openshift`, `cc-infra` for Strimzi (Kafka 4.3 KRaft, 21 topics and 8 users with ACLs generated from the docs), ECK, the cert-manager issuer (the CA of `make pki`) and
+default-deny NetworkPolicies. Own APISIX chart (standalone, same declarative file) instead of the upstream one; the gateway Route on OpenShift is passthrough (re-encrypt
+would end the client mutual TLS); Filebeat is off on OpenShift. `make kind-up PROFILE=lite|full`, `kind-deploy-rules`, `kind-demo`, `kind-down`, `ocp-render`, `lint-helm`.
+CI: helm.yml (lint, kubeconform, kube-linter, optional kind smoke), images.yml (multi-arch GHCR, cosign keyless, Syft SBOM).
 
 ### P11 — ArgoCD
 ```

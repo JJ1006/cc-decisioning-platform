@@ -79,3 +79,7 @@ The `pre_tool_guard` hook blocks commands that touch `*.key`, `*.p12`, `*.jks`, 
 | Kafka container dies with `file does not exist` / `KAFKA_SSL_KEYSTORE_FILENAME` | A listener name ends in `SSL`; the image then expects file-based secrets. Keep names `INTERNAL`/`EXTERNAL`. |
 | Browser: `NET::ERR_CERT_AUTHORITY_INVALID` | Trust `security/pki/out/ca/ca.crt` in your OS keychain (dev only) |
 | Changed `PKI_PASSWORD` | `make pki FORCE=1 CONFIRM=1`, `make down V=1`, `make up ...` |
+
+## Kubernetes
+
+`make kind-up PROFILE=lite` runs the platform on a local kind cluster instead of compose (stop compose first: `make down V=1`). See [deploy-kubernetes](../deploy-kubernetes.md).

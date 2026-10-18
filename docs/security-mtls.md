@@ -1,6 +1,6 @@
 # Mutual TLS on every hop (P6)
 
-One private CA (`scripts/pki.sh`, `make pki`; cert-manager replaces it on Kubernetes in P10) signs every certificate. Every connection on the
+One private CA (`scripts/pki.sh`, `make pki`; on Kubernetes cert-manager signs with the same CA, see below) signs every certificate. Every connection on the
 request and event paths presents a certificate and verifies the other side against that CA. Decisions: [ADR-0008](adr/0008-mtls-everywhere.md),
 [ADR-0011](adr/0011-gateway-identity.md). Checked from the outside by `make verify-mtls`.
 
@@ -110,6 +110,14 @@ certificate) with `authorization: simple` ACLs. The retry and dead-letter topics
 | `mcp-agent` (odm-dc-mcp audit trail) | | `cc.audit.v1` | |
 | `kafka-ui` | all topics, describe | | operator tool; read-only in production |
 | `admin` (topic-init, CLI) | | | create, alter, describe topics and groups |
+
+## On Kubernetes (P10)
+
+Every hop above is unchanged; [deploy-kubernetes](deploy-kubernetes.md) has the details. Certificates are cert-manager `Certificate`s from a `ClusterIssuer` that uses
+the CA of `make pki` (CN = service name, so the CN rules of hops 2, 3 and 9 hold). **Hop 4 differs**: Kafka runs under Strimzi, which has its own cluster CA and clients CA.
+Each service is a `KafkaUser` (principal `CN=<name>`) and reads its user store and the cluster CA store from the secrets Strimzi writes; the ACLs of the table above
+are generated into the `KafkaUser`s (`scripts/gen-k8s-kafka.py`) and enforced (`authorization: simple`). The gateway key is the cert-manager secret `apisix-tls`, and
+NetworkPolicies (default-deny) let only the gateway reach the services.
 
 ## Limits of the demo
 

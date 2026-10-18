@@ -64,6 +64,11 @@ Stop with `make down` (`make down V=1` also deletes the volumes).
 | `edge` | + APISIX (mutual TLS gateway on :8443), application-api | +0.6 GB |
 | `mcp` | 2 MCP servers for AI agents ([docs/mcp.md](docs/mcp.md)) | +0.45 GB |
 
+## Kubernetes and OpenShift
+
+The same platform as Helm charts ([docs/deploy-kubernetes.md](docs/deploy-kubernetes.md)): `make kind-up PROFILE=lite` (7 GB Docker VM, compose stopped) then
+`make kind-deploy-rules` and `make kind-demo`; `PROFILE=full` needs 12 GB or more. `make ocp-render` writes the OpenShift manifests to `out/openshift/`.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
