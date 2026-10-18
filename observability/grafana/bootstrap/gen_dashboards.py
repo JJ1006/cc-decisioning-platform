@@ -380,7 +380,7 @@ d.timeseries(
     "Server spans that ended in error, divided by all.",
     [
         (
-            f'sum by (service_name) (rate(traces_span_metrics_calls_total{{{SERVER},status_code="STATUS_CODE_ERROR"}}[5m])) / sum by (service_name) (rate(traces_span_metrics_calls_total{{{SERVER}}}[5m]))',
+            f'(sum by (service_name) (rate(traces_span_metrics_calls_total{{{SERVER},status_code="STATUS_CODE_ERROR"}}[5m])) or sum by (service_name) (rate(traces_span_metrics_calls_total{{{SERVER}}}[5m])) * 0) / sum by (service_name) (rate(traces_span_metrics_calls_total{{{SERVER}}}[5m]))',
             "{{service_name}}",
         )
     ],

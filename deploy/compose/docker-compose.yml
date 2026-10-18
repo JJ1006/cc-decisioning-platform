@@ -513,7 +513,7 @@ services:
   tempo:
     image: grafana/tempo:2.7.2
     profiles: [obs]
-    mem_limit: 256m
+    mem_limit: 320m # 256m was too tight (it ran at 99%)
     restart: unless-stopped
     user: "0:0" # local demo: the named volume is root-owned
     command: ["-config.file=/etc/tempo/tempo.yaml"]

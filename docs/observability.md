@@ -145,7 +145,7 @@ the 0.5% budget, latency p95 and p99, decision latency p95 and p99, JVM heap rat
 | Group | Containers | Measured (docker stats) |
 |---|---|---|
 | core + edge | kafka, elasticsearch (1.25 GB limit, heap 640 MB), odm, logstash (896 MB), filebeat, the five Java services (64 MB more each for the agent), apisix | about 4.6 GB |
-| obs | otel-collector 128 MB, tempo 256 MB, prometheus 256 MB, grafana 192 MB, alertmanager 64 MB, kafka-, elasticsearch- and logstash-exporter 64 MB each, blackbox-exporter 32 MB (limits) | about 0.6 GB |
+| obs | otel-collector 128 MB, tempo 320 MB, prometheus 256 MB, grafana 192 MB, alertmanager 64 MB, kafka-, elasticsearch- and logstash-exporter 64 MB each, blackbox-exporter 32 MB (limits) | about 0.7 GB |
 | analytics | kibana, kafka-ui, decision-query-api | about 1.1 GB |
 
 `make up-obs` (core, edge, obs) uses about 5.2 GB and is the way to run it. **All four profiles together** (`make up PROFILE=core,analytics,edge,obs`) total

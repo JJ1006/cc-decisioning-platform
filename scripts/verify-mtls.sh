@@ -156,8 +156,12 @@ if want gateway && running apisix; then
   [[ "$code" == 403 ]] && pass "gateway: partner certificate with spoofed X-Role: UNDERWRITER -> 403 (still PARTNER)" || fail "gateway: spoofed role -> HTTP $code"
   code=$(gw demo-partner -s -o /dev/null -w '%{http_code}' -H 'X-Role: ANALYST' /v1/stats/latency)
   [[ "$code" == 403 ]] && pass "gateway: partner certificate with spoofed X-Role: ANALYST on /v1/stats -> 403" || fail "gateway: spoofed analyst role -> HTTP $code"
-  title=$(gw demo-partner -s /v1/applications/NOPE/status | jq -r .title)
-  [[ "$title" == "Application not found" ]] && pass "gateway: partner may call GET /v1/applications/{id}/status (the 404 is the service's problem+json, not a missing route)" || fail "gateway: partner status -> $title"
+  if running decision-query-api; then
+    title=$(gw demo-partner -s /v1/applications/NOPE/status | jq -r .title)
+    [[ "$title" == "Application not found" ]] && pass "gateway: partner may call GET /v1/applications/{id}/status (the 404 is the service's problem+json, not a missing route)" || fail "gateway: partner status -> $title"
+  else
+    skip "gateway: partner status needs decision-query-api (analytics profile)"
+  fi
   headers=$(gw analyst -s -I /v1/stats/latency)
   if grep -qi '^strict-transport-security:' <<<"$headers" && ! grep -qiE '^server: .*[0-9]' <<<"$headers"; then
     pass "gateway: HSTS present, no server version banner"
@@ -179,10 +183,10 @@ if want gateway && running apisix; then
   n429=0
   for _ in $(seq 1 130); do
     c=$(gw load-test -s -o /dev/null -w '%{http_code}' /v1/stats/latency)
-    [[ "$c" == 200 ]] && n200=$((n200 + 1))
+    [[ "$c" != 429 ]] && n200=$((n200 + 1)) # answered by the service (200, or 503 when decision-query-api is not running)
     [[ "$c" == 429 ]] && n429=$((n429 + 1))
   done
-  [[ "$n429" -ge 1 && "$n200" -ge 1 ]] && pass "gateway: quota, 130 requests by one consumer -> $n200 x 200 then $n429 x 429" || fail "gateway: quota not enforced ($n200 x 200, $n429 x 429)"
+  [[ "$n429" -ge 1 && "$n200" -ge 1 ]] && pass "gateway: quota, 130 requests by one consumer -> $n200 answered then $n429 x 429" || fail "gateway: quota not enforced ($n200 answered, $n429 x 429)"
 fi
 
 if want bypass && running apisix; then
