@@ -1,0 +1,11 @@
+{
+  "id": "maple-northern",
+  "name": "Maple Northern",
+  "description": "Credit decisioning dashboards (fictitious bank, synthetic data)",
+  "color": "#C8102E",
+  "initials": "MN",
+  "disabledFeatures": [
+    "ml", "apm", "enterpriseSearch", "observabilityCases", "observabilityAIAssistant", "infrastructure", "logs",
+    "siem", "securitySolutionCases", "uptime", "fleet", "monitoring", "canvas"
+  ]
+}

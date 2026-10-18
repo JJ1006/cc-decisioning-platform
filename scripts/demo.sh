@@ -19,6 +19,13 @@ if ! jq -e --arg rs "$RULESET" '.. | objects | select(.id? == $rs or .name? == $
   echo "RuleApp missing: running deploy-rules"
   scripts/deploy-dc.sh
 fi
+# a freshly deployed ruleset takes a moment to be executable: wait until RES stops answering 404 for it
+for _ in $(seq 1 60); do
+  code=$(res_curl -o /dev/null -w '%{http_code}' -X POST "$RES_URL/DecisionService/rest/$RULEAPP/$RULEAPP_VERSION/$RULESET/$RULESET_VERSION" \
+    -H 'Content-Type: application/json' -H 'Accept: application/json' -d '{}' 2>/dev/null || echo 000)
+  [[ "$code" != 404 && "$code" != 000 ]] && break
+  sleep 2
+done
 
 kafka_sh() { # kafka_sh TOOL args... : a Kafka CLI inside the broker container over mTLS
   local tool=$1
@@ -27,7 +34,7 @@ kafka_sh() { # kafka_sh TOOL args... : a Kafka CLI inside the broker container o
 }
 topic_count() { # data records, not offsets: transactional topics also hold commit markers
   kafka_sh kafka-console-consumer.sh --consumer.config /pki/kafka-client.properties --topic "$1" \
-    --from-beginning --isolation-level read_committed --timeout-ms 8000 2>/dev/null | wc -l | tr -d ' '
+    --from-beginning --isolation-level read_committed --timeout-ms 20000 2>/dev/null | wc -l | tr -d ' '
 }
 es() { scripts/es-curl.sh "$@"; }
 es_count() { es "/$1/_count" | jq -r '.count // 0'; }

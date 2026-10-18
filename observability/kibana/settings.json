@@ -1,0 +1,9 @@
+{
+  "changes": {
+    "courier:ignoreFilterIfFieldNotInIndex": true,
+    "timepicker:timeDefaults": "{\"from\":\"now-24h\",\"to\":\"now\"}",
+    "dateFormat:tz": "America/Toronto",
+    "defaultRoute": "/app/dashboards",
+    "theme:darkMode": false
+  }
+}

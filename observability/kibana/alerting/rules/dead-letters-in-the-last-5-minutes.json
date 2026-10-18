@@ -1,0 +1,63 @@
+{
+  "id": "6d6f2f5e-0a6c-4f0a-9d10-4d4e5c000101",
+  "name": "Dead letters in the last 5 minutes",
+  "tags": [
+    "maple-northern"
+  ],
+  "rule_type_id": ".index-threshold",
+  "consumer": "alerts",
+  "schedule": {
+    "interval": "1m"
+  },
+  "params": {
+    "index": [
+      "cc-dlq"
+    ],
+    "timeField": "@timestamp",
+    "aggType": "count",
+    "groupBy": "all",
+    "timeWindowSize": 5,
+    "timeWindowUnit": "m",
+    "thresholdComparator": ">",
+    "threshold": [
+      0
+    ]
+  },
+  "actions": [
+    {
+      "group": "threshold met",
+      "id": "6d6f2f5e-0a6c-4f0a-9d10-4d4e5c000001",
+      "params": {
+        "level": "warn",
+        "message": "[{{rule.name}}] {{context.message}}"
+      },
+      "frequency": {
+        "summary": false,
+        "notify_when": "onActionGroupChange",
+        "throttle": null
+      }
+    },
+    {
+      "group": "threshold met",
+      "id": "6d6f2f5e-0a6c-4f0a-9d10-4d4e5c000002",
+      "params": {
+        "documents": [
+          {
+            "@timestamp": "{{date}}",
+            "rule": "{{rule.name}}",
+            "ruleId": "{{rule.id}}",
+            "alertId": "{{alert.id}}",
+            "status": "fired",
+            "severity": "warning",
+            "message": "{{context.message}}"
+          }
+        ]
+      },
+      "frequency": {
+        "summary": false,
+        "notify_when": "onActionGroupChange",
+        "throttle": null
+      }
+    }
+  ]
+}
