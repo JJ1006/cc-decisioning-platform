@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.2](https://github.com/JJ1006/cc-decisioning-platform/compare/v0.1.1...v0.1.2) (2026-10-18)
+
+
+### Features
+
+* **kibana:** dashboards, alert rules and roles as code (P7) ([#35](https://github.com/JJ1006/cc-decisioning-platform/issues/35)) ([8f641cd](https://github.com/JJ1006/cc-decisioning-platform/commit/8f641cd0c2099456c97490dfb3c8513524794b71))
+* **mcp:** official ODM MCP server and our odm-dc MCP server, read-only and audited (P9) ([#38](https://github.com/JJ1006/cc-decisioning-platform/issues/38)) ([05c1755](https://github.com/JJ1006/cc-decisioning-platform/commit/05c175594f1963ca1e5c7d6d763517cd38d84072))
+* **obs:** OpenTelemetry traces, Prometheus, Tempo, Grafana and alert runbooks (P8) ([#37](https://github.com/JJ1006/cc-decisioning-platform/issues/37)) ([cfda69f](https://github.com/JJ1006/cc-decisioning-platform/commit/cfda69fac89964b820134b606254f4471d439a6d))
+
 ## [0.1.1](https://github.com/JJ1006/cc-decisioning-platform/compare/v0.1.0...v0.1.1) (2026-10-17)
 
 
