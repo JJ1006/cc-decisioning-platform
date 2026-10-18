@@ -1,0 +1,56 @@
+{{- if .Values.pki.enabled }}
+# The platform CA is the one scripts/pki.sh made (make pki), loaded by scripts/k8s-secrets.sh into the secret below in the cert-manager
+# namespace. On OpenShift or in production, point global.pki.issuer at your own (Vault, ACME, corporate CA) ClusterIssuer instead.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: {{ .Values.pki.issuer }}
+spec:
+  ca:
+    secretName: {{ .Values.pki.caSecretName }}
+{{- if .Values.elasticsearch.enabled }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Values.elasticsearch.name }}-es-http
+spec:
+  secretName: {{ .Values.elasticsearch.name }}-es-http-cert
+  commonName: {{ .Values.elasticsearch.name }}-es-http
+  dnsNames:
+    - {{ .Values.elasticsearch.name }}-es-http
+    - {{ .Values.elasticsearch.name }}-es-http.{{ .Release.Namespace }}
+    - {{ .Values.elasticsearch.name }}-es-http.{{ .Release.Namespace }}.svc
+    - {{ .Values.elasticsearch.name }}-es-http.{{ .Release.Namespace }}.svc.cluster.local
+    - localhost
+  usages: [digital signature, key encipherment, server auth, client auth]
+  duration: 2160h
+  renewBefore: 360h
+  privateKey: { algorithm: RSA, size: 2048, rotationPolicy: Always }
+  issuerRef: { name: {{ .Values.pki.issuer }}, kind: ClusterIssuer, group: cert-manager.io }
+{{- end }}
+{{- if .Values.kibana.enabled }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .Values.kibana.name }}-kb-http
+spec:
+  secretName: {{ .Values.kibana.name }}-kb-http-cert
+  commonName: {{ .Values.kibana.name }}-kb-http
+  dnsNames:
+    - {{ .Values.kibana.name }}-kb-http
+    - {{ .Values.kibana.name }}-kb-http.{{ .Release.Namespace }}
+    - {{ .Values.kibana.name }}-kb-http.{{ .Release.Namespace }}.svc
+    - {{ .Values.kibana.name }}-kb-http.{{ .Release.Namespace }}.svc.cluster.local
+    - localhost
+    {{- with .Values.kibana.host }}
+    - {{ . }}
+    {{- end }}
+  usages: [digital signature, key encipherment, server auth]
+  duration: 2160h
+  renewBefore: 360h
+  privateKey: { algorithm: RSA, size: 2048, rotationPolicy: Always }
+  issuerRef: { name: {{ .Values.pki.issuer }}, kind: ClusterIssuer, group: cert-manager.io }
+{{- end }}
+{{- end }}

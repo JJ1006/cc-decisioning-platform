@@ -1,0 +1,6 @@
+apiVersion: v2
+name: cc-infra
+description: Infrastructure custom resources of the cc-platform - Strimzi Kafka (KRaft), topics, users and ACLs; ECK Elasticsearch and Kibana; cert-manager issuer and certificates; default-deny network policies. Install the operators first, then this chart, then cc-platform.
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

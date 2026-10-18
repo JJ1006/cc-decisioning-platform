@@ -107,6 +107,7 @@ certificate) with `authorization: simple` ACLs. The retry and dead-letter topics
 | `decision-orchestrator` | `cc.applications.submitted.v1` (`decision-orchestrator`) | `cc.decisions.{approved,declined,referred}.v1`, `cc.audit.v1`, `cc.applications.submitted.v1.dlq` | transactional id prefix `orchestrator-tx-` (consume-transform-produce) |
 | `notification-svc` | `cc.decisions.{approved,declined,referred,manual}.v1` (`notification-svc`) | `cc.notifications.v1`, the `.dlq` topics it consumes | |
 | `logstash` | `cc.decisions.*.v1`, `cc.audit.v1`, `cc.notifications.v1` (`logstash-indexer`); every `*.dlq` (`logstash-dlq`) | | |
+| `mcp-agent` (odm-dc-mcp audit trail) | | `cc.audit.v1` | |
 | `kafka-ui` | all topics, describe | | operator tool; read-only in production |
 | `admin` (topic-init, CLI) | | | create, alter, describe topics and groups |
 

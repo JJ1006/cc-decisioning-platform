@@ -1,0 +1,128 @@
+{{- if .Values.networkPolicies.enabled }}
+# Default deny for the whole namespace, then the allow rules. Our own workloads carry their rules in their charts (cc-lib networkpolicy);
+# these are the ones for the operator-managed pods and the jobs. Ingress to the gateway is the one rule open to the world: its client
+# certificate is what lets anyone in.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to: [{ namespaceSelector: {} }]
+      ports:
+        - { port: 53, protocol: UDP }
+        - { port: 53, protocol: TCP }
+        - { port: 5353, protocol: UDP }
+        - { port: 5353, protocol: TCP }
+{{- if .Values.kafka.enabled }}
+---
+# brokers: clients of the platform on the TLS listener; the cluster, the entity operator and the Strimzi operator among themselves
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kafka
+spec:
+  podSelector:
+    matchLabels:
+      strimzi.io/cluster: {{ .Values.kafka.name }}
+      strimzi.io/kind: Kafka
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from: [{ podSelector: { matchLabels: { app.kubernetes.io/part-of: cc-platform } } }]
+      ports: [{ port: 9093, protocol: TCP }]
+    - from:
+        - podSelector: { matchLabels: { strimzi.io/cluster: {{ .Values.kafka.name }} } }
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: {{ .Values.operatorNamespaces.strimzi }} } }
+      ports:
+        - { port: 9090, protocol: TCP }
+        - { port: 9091, protocol: TCP }
+        - { port: 9093, protocol: TCP }
+        - { port: 8443, protocol: TCP }
+    - from: [{ namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: {{ .Values.networkPolicies.monitoringNamespace }} } } }]
+      ports: [{ port: 9404, protocol: TCP }]
+  egress:
+    - to: [{ podSelector: { matchLabels: { strimzi.io/cluster: {{ .Values.kafka.name }} } } }]
+---
+# entity operator (topics and users): the brokers and the Kubernetes API
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kafka-entity-operator
+spec:
+  podSelector:
+    matchLabels:
+      strimzi.io/cluster: {{ .Values.kafka.name }}
+      strimzi.io/kind: Kafka
+      strimzi.io/name: {{ .Values.kafka.name }}-entity-operator
+  policyTypes: [Egress]
+  egress:
+    - to: [{ podSelector: { matchLabels: { strimzi.io/cluster: {{ .Values.kafka.name }} } } }]
+    - to: [{ ipBlock: { cidr: 0.0.0.0/0 } }]
+      ports: [{ port: 443, protocol: TCP }, { port: 6443, protocol: TCP }]
+{{- end }}
+{{- if .Values.elasticsearch.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: elasticsearch
+spec:
+  podSelector:
+    matchLabels:
+      common.k8s.elastic.co/type: elasticsearch
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app.kubernetes.io/part-of: cc-platform } }
+        - podSelector: { matchLabels: { common.k8s.elastic.co/type: kibana } }
+        - podSelector: { matchLabels: { common.k8s.elastic.co/type: elasticsearch } }
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: {{ .Values.operatorNamespaces.eck }} } }
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: {{ .Values.networkPolicies.monitoringNamespace }} } }
+      ports: [{ port: 9200, protocol: TCP }, { port: 9300, protocol: TCP }]
+  egress:
+    - to: [{ podSelector: { matchLabels: { common.k8s.elastic.co/type: elasticsearch } } }]
+      ports: [{ port: 9300, protocol: TCP }]
+{{- end }}
+{{- if .Values.kibana.enabled }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: kibana
+spec:
+  podSelector:
+    matchLabels:
+      common.k8s.elastic.co/type: kibana
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector: {}
+      ports: [{ port: 5601, protocol: TCP }]
+  egress:
+    - to: [{ podSelector: { matchLabels: { common.k8s.elastic.co/type: elasticsearch } } }]
+      ports: [{ port: 9200, protocol: TCP }]
+{{- end }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: es-setup
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: es-setup
+  policyTypes: [Egress]
+  egress:
+    - to: [{ podSelector: { matchLabels: { common.k8s.elastic.co/type: elasticsearch } } }]
+      ports: [{ port: 9200, protocol: TCP }]
+{{- end }}

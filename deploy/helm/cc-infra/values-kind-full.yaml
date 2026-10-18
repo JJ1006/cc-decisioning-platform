@@ -1,0 +1,10 @@
+# kind full: Kafka + ECK Elasticsearch and Kibana (Kibana through ingress-nginx).
+kafka:
+  storage: { ephemeral: false, size: 2Gi }
+elasticsearch: { enabled: true }
+kibana:
+  enabled: true
+  host: kibana.localtest.me
+  publicBaseUrl: https://kibana.localtest.me
+networkPolicies: { monitoringNamespace: cc }
+exposure: ingress

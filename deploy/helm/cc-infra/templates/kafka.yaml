@@ -1,0 +1,60 @@
+{{- if .Values.kafka.enabled }}
+# Strimzi manages its own CAs (cluster CA for the brokers, clients CA for the KafkaUsers): they are NOT the cert-manager platform CA.
+# The services read the user's PKCS12 store and the cluster CA store from the secrets Strimzi writes (docs/security-mtls.md "Kubernetes").
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: {{ .Values.kafka.name }}
+  labels:
+    strimzi.io/cluster: {{ .Values.kafka.name }}
+spec:
+  replicas: {{ .Values.kafka.replicas }}
+  roles: [controller, broker]
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        {{- if .Values.kafka.storage.ephemeral }}
+        type: ephemeral
+        {{- else }}
+        type: persistent-claim
+        size: {{ .Values.kafka.storage.size }}
+        {{- with .Values.kafka.storage.class }}
+        class: {{ . }}
+        {{- end }}
+        deleteClaim: {{ .Values.kafka.storage.deleteClaim }}
+        {{- end }}
+  resources: {{- toYaml .Values.kafka.resources | nindent 4 }}
+  jvmOptions:
+    -Xms: {{ .Values.kafka.heap }}
+    -Xmx: {{ .Values.kafka.heap }}
+---
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: {{ .Values.kafka.name }}
+spec:
+  kafka:
+    version: {{ .Values.kafka.version }}
+    metadataVersion: {{ .Values.kafka.metadataVersion }}
+    listeners:
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+        authentication:
+          type: tls
+    authorization:
+      type: simple
+    config:
+      auto.create.topics.enable: "false"
+      offsets.topic.replication.factor: {{ .Values.kafka.replicationFactor }}
+      transaction.state.log.replication.factor: {{ .Values.kafka.replicationFactor }}
+      transaction.state.log.min.isr: {{ .Values.kafka.minIsr }}
+      default.replication.factor: {{ .Values.kafka.replicationFactor }}
+      min.insync.replicas: {{ .Values.kafka.minIsr }}
+      group.initial.rebalance.delay.ms: "0"
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+{{- end }}

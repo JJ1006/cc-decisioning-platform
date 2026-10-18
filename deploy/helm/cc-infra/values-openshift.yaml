@@ -1,0 +1,23 @@
+# OpenShift: Strimzi and ECK from OperatorHub, cert-manager Operator for Red Hat OpenShift, your own storage class.
+# The ECK operator must run with --set-default-security-context=auto-detect (the OperatorHub default) so the pods get no fixed UID.
+pki:
+  issuer: cc-ca # replace by the ClusterIssuer of your organisation (Vault, ACME, ...) and set global.pki.issuer to match
+kafka:
+  replicas: 3
+  replicationFactor: 3
+  minIsr: 2
+  storage: { ephemeral: false, size: 20Gi, class: "", deleteClaim: false }
+  resources:
+    requests: { cpu: "1", memory: 1536Mi }
+    limits: { cpu: "2", memory: 2Gi }
+elasticsearch:
+  enabled: true
+  count: 3
+  storage: { size: 50Gi, class: "" }
+kibana:
+  enabled: true
+  host: ""
+  publicBaseUrl: ""
+operatorNamespaces: { strimzi: openshift-operators, eck: openshift-operators }
+networkPolicies: { monitoringNamespace: openshift-user-workload-monitoring }
+exposure: route
