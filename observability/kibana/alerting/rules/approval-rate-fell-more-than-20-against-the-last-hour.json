@@ -1,5 +1,5 @@
 {
-  "id": "mn-rule-approval-drop",
+  "id": "6d6f2f5e-0a6c-4f0a-9d10-4d4e5c000104",
   "name": "Approval rate fell more than 20% against the last hour",
   "tags": [
     "maple-northern"
@@ -22,12 +22,14 @@
     "excludeHitsFromPreviousRun": false,
     "esqlQuery": {
       "esql": "FROM cc-decisions | WHERE decisionSource == \"ODM\" | EVAL recent = CASE(@timestamp >= NOW() - 5 minutes, 1, 0), approved = CASE(payload.outcome == \"APPROVE\", 1.0, 0.0) | STATS n_recent = SUM(recent), r_recent = AVG(approved) WHERE recent == 1, r_base = AVG(approved) WHERE recent == 0 | WHERE n_recent >= 20 AND r_base > 0 AND r_recent < r_base * 0.8"
-    }
+    },
+    "aggType": "count",
+    "groupBy": "all"
   },
   "actions": [
     {
       "group": "query matched",
-      "id": "mn-server-log",
+      "id": "6d6f2f5e-0a6c-4f0a-9d10-4d4e5c000001",
       "params": {
         "level": "warn",
         "message": "[{{rule.name}}] {{context.message}}"
@@ -40,7 +42,7 @@
     },
     {
       "group": "query matched",
-      "id": "mn-cc-alerts",
+      "id": "6d6f2f5e-0a6c-4f0a-9d10-4d4e5c000002",
       "params": {
         "documents": [
           {

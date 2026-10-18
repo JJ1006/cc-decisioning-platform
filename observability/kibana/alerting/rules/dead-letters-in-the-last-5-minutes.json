@@ -1,5 +1,5 @@
 {
-  "id": "mn-rule-dlq",
+  "id": "6d6f2f5e-0a6c-4f0a-9d10-4d4e5c000101",
   "name": "Dead letters in the last 5 minutes",
   "tags": [
     "maple-northern"
@@ -26,7 +26,7 @@
   "actions": [
     {
       "group": "threshold met",
-      "id": "mn-server-log",
+      "id": "6d6f2f5e-0a6c-4f0a-9d10-4d4e5c000001",
       "params": {
         "level": "warn",
         "message": "[{{rule.name}}] {{context.message}}"
@@ -39,7 +39,7 @@
     },
     {
       "group": "threshold met",
-      "id": "mn-cc-alerts",
+      "id": "6d6f2f5e-0a6c-4f0a-9d10-4d4e5c000002",
       "params": {
         "documents": [
           {

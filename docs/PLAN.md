@@ -357,6 +357,12 @@ Phase 7. Branch feat/p7-kibana. Read CLAUDE.md.
 2. Saved objects ndjson: data views + dashboard "Credit Card Decisioning — Maple Northern Bank": KPIs (apps today, approval %, referral %, avg limit), approval rate over time, decisions by province map/bar, decline reason top-N, score distribution histogram, limit by product, TDS vs outcome heatmap, latency p95 (orchestrator timing field), DLQ count, fairness approval parity by ageBand/province, recent decisions table. Controls: province, product, outcome, date.
 3. scripts/seed-kibana.sh: import via Kibana saved objects API (TLS), idempotent. `make seed-kibana`.
 Verify: make demo then seed; screenshot instructions + curl _find shows dashboard. PR flow.
+
+Delivered in PR feat/p7-kibana (deltas to the runbook above, see docs/kibana.md): everything is code in observability/kibana/ (space maple-northern,
+data views, saved searches, Lens, four dashboards as ndjson, alert connectors and rules as JSON); `make seed-kibana` (run by `make up` with the
+analytics profile) and `make export-kibana` for the round trip; roles kibana_analyst and kibana_ops with users analyst and ops (es-setup);
+four alert rules (dead letters, error logs, latency p95, approval rate drop) writing to the cc-alerts index; the province map is a bar chart (Elastic
+Maps Service needs internet); Playwright screenshots in docs/images (`make kibana-shots`).
 ```
 
 ### P8 — observability (Dynatrace substitute)

@@ -32,7 +32,7 @@ Do not run everything at once on an 8 GB Mac (see the README profile table).
 | ODM Decision Center (client certificate required: import `security/pki/out/admin/admin.p12`, see [security-mtls](../security-mtls.md)) | <https://localhost:9443/decisioncenter> | `odmAdmin` / `odmAdmin` |
 | ODM Rule Execution Server console | <https://localhost:9443/res> | `resAdmin` / `resAdmin` |
 | ODM Decision Runner | <https://localhost:9443/DecisionRunner> | `odmAdmin` / `odmAdmin` |
-| Kibana | <https://localhost:5601> | `elastic` / `ELASTIC_PASSWORD` from `.env` |
+| Kibana (space Maple Northern, [docs/kibana.md](../kibana.md)) | <https://localhost:5601/s/maple-northern> | `analyst` / `ANALYST_PASSWORD`, `ops` / `OPS_PASSWORD`, admin `elastic` / `ELASTIC_PASSWORD`, all from the root env file |
 | kafka-ui | <http://localhost:8080> | none (bound to 127.0.0.1) |
 | Elasticsearch | <https://localhost:9200> | `elastic` / `ELASTIC_PASSWORD` |
 | Kafka (mTLS) | `localhost:9093` | client certificate required |

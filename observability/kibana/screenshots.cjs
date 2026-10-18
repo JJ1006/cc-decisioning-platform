@@ -75,7 +75,7 @@ const DASHBOARDS = {
         const isSearchPanel = /\d+ documents/i.test(text); // document tables show data that may itself mention errors
         if (error || (!isSearchPanel && failure.test(text))) status = "ERROR: " + ((error && error.innerText) || text).replace(/\s+/g, " ").slice(0, 160);
         else if (/no results found/i.test(text)) status = "NO RESULTS";
-        else if (text.replace(/\s+/g, "").length < 40 && !/documents/i.test(text)) status = "EMPTY";
+        else if (text.replace(/\s+/g, "").length < 40 && !/documents/i.test(text) && !/\d/.test(text)) status = "EMPTY";
         out.push({ title: title.trim(), status });
       });
       return out;
