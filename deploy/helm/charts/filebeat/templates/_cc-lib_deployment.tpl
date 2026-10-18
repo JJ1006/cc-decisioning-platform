@@ -61,7 +61,7 @@ spec:
         {{- end }}
         seccompProfile:
           type: RuntimeDefault
-      {{- with .Values.imagePullSecrets }}
+      {{- with (.Values.imagePullSecrets | default $g.imagePullSecrets) }}
       imagePullSecrets: {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- with .Values.nodeSelector }}

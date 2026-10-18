@@ -9,7 +9,7 @@ OBS_ENV = $(if $(filter obs,$(subst $(comma), ,$(PROFILE))),APISIX_OTEL_SAMPLER=
 comma := ,
 
 .DEFAULT_GOAL := help
-.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules test-logstash lint-api api-docs test-api-docs test-mcp lint-obs up-obs grafana-shots check-dashboards api-call cert-expiry seed-kibana export-kibana kibana-shots demo kind-up kind-deploy-rules kind-demo kind-down helm-sync lint-helm ocp-render eval-rules eval-agent what-if
+.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules test-logstash lint-api api-docs test-api-docs test-mcp lint-obs up-obs grafana-shots check-dashboards api-call cert-expiry seed-kibana export-kibana kibana-shots demo kind-up kind-deploy-rules kind-demo kind-down helm-sync lint-helm argocd-up argocd-ui argocd-status argocd-down lint-argocd ocp-render eval-rules eval-agent what-if
 
 help: ## Show targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -136,6 +136,21 @@ helm-sync: ## Copy the compose configuration into the charts and regenerate Kafk
 
 lint-helm: ## helm lint + template (kind-lite, kind-full, openshift) + kubeconform + kube-linter (needs kubeconform, kube-linter)
 	@scripts/lint-helm.sh
+
+argocd-up: ## Argo CD on kind with everything synced from Git: make argocd-up ENV=kind-lite|kind-full [REVISION=branch] [IMAGES=local]
+	@scripts/argocd.sh up $(or $(ENV),kind-lite)
+
+argocd-ui: ## Port-forward the Argo CD UI to https://localhost:8080 and print the admin login
+	@scripts/argocd.sh ui
+
+argocd-status: ## Applications with sync and health
+	@scripts/argocd.sh status
+
+argocd-down: ## Delete the kind cluster (and with it Argo CD and everything it deployed)
+	@scripts/argocd.sh down
+
+lint-argocd: ## Argo CD manifests: kubeconform, policy checks per environment, every Application rendered
+	@scripts/lint-argocd.sh
 
 ocp-render: ## helm template for OpenShift values -> out/openshift/*.yaml (add CA=path to embed the CA for re-encrypt Routes)
 	@scripts/ocp-render.sh

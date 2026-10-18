@@ -1,0 +1,17 @@
+# root: only the app-of-apps may live here. It can create Applications and AppProjects in the Argo CD namespace and nothing else.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: root
+  namespace: argocd
+spec:
+  description: App of apps
+  sourceRepos:
+    - https://github.com/JJ1006/cc-decisioning-platform.git
+  destinations:
+    - { server: https://kubernetes.default.svc, namespace: argocd }
+    - { server: https://kubernetes.default.svc, namespace: openshift-gitops }
+  clusterResourceWhitelist: []
+  namespaceResourceWhitelist:
+    - { group: argoproj.io, kind: Application }
+    - { group: argoproj.io, kind: AppProject }

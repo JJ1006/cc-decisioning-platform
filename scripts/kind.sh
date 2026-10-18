@@ -4,6 +4,7 @@
 #   scripts/kind.sh deploy-rules       port-forward ODM and run scripts/deploy-dc.sh                      (make kind-deploy-rules)
 #   scripts/kind.sh demo [total]       generator through the gateway, counts per Kafka topic via the pod   (make kind-demo)
 #   scripts/kind.sh status             pods of every namespace
+#   scripts/kind.sh cluster [lite|full]  only the cluster (IMAGES=local also builds and loads the images): for Argo CD, scripts/argocd.sh
 #   scripts/kind.sh down               delete the cluster                                                  (make kind-down)
 # lite = Kafka, ODM, orchestrator, generator, notification, application-api, gateway (fits a 7 GB Docker VM, compose must be down)
 # full = lite + Elasticsearch/Kibana (ECK), Logstash, Filebeat, query API, MCP server, observability, ingress-nginx (12 GB+)
@@ -101,6 +102,21 @@ install_operators() {
       --set "controller.tolerations[0].effect=NoSchedule" --set controller.extraArgs.enable-ssl-passthrough=true \
       --set controller.admissionWebhooks.enabled=false --wait --timeout 5m >/dev/null
   fi
+}
+
+cluster() { # just the cluster (and, with IMAGES=local, the locally built images): Argo CD installs everything else (scripts/argocd.sh)
+  local profile=$1
+  need docker; need kind; need kubectl; need helm
+  docker info >/dev/null 2>&1 || { echo "NEED USER: start Docker Desktop"; exit 2; }
+  compose_must_be_down
+  scripts/pki.sh >/dev/null
+  if ! kind get clusters 2>/dev/null | grep -qx "$CLUSTER"; then
+    say "kind cluster $CLUSTER"
+    kind create cluster --config deploy/kind/cluster.yaml --image "$KIND_NODE_IMAGE" --wait 120s
+  else
+    echo "kind cluster $CLUSTER exists"
+  fi
+  if [[ ${IMAGES:-ghcr} == local ]]; then build_images "$profile"; load_images "$profile"; fi
 }
 
 up() {
@@ -233,6 +249,7 @@ demo() {
 
 case "${1:-}" in
   up) up "$PROFILE_NAME" ;;
+  cluster) cluster "$PROFILE_NAME" ;;
   deploy-rules) deploy_rules ;;
   demo) demo "${2:-200}" ;;
   status) ctx get pods -A ;;

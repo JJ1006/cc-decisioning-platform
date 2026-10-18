@@ -1,0 +1,3 @@
+# Overrides for cc-infra in this environment.
+pki:
+  caPem: "" # PEM of the platform CA (public) for the Kibana re-encrypt Route: paste ca.crt here in the PR that sets up the cluster

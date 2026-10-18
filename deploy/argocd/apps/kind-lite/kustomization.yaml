@@ -1,0 +1,9 @@
+# The applications of this environment, in sync-wave order (annotation on each). Referenced by the root application.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - 00-namespaces.yaml
+  - 10-cert-manager.yaml
+  - 11-strimzi.yaml
+  - 20-cc-infra.yaml
+  - 30-cc-platform.yaml

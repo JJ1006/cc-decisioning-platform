@@ -1,0 +1,39 @@
+# Kafka (Strimzi), topics, users and ACLs, ECK, the ClusterIssuer, default-deny NetworkPolicies. The es-setup hook Job runs as a PostSync hook.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cc-infra
+  namespace: openshift-gitops
+  labels:
+    cc/revision: follow # the root application can point every labelled application at another branch (make argocd-up REVISION=...)
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cc
+  sources:
+    - repoURL: https://github.com/JJ1006/cc-decisioning-platform.git
+      targetRevision: v0.1.2
+      path: deploy/helm/cc-infra
+      helm:
+        releaseName: infra
+        valueFiles:
+          - values-openshift.yaml
+          - $values/deploy/argocd/apps/openshift/values/cc-infra.yaml
+    - repoURL: https://github.com/JJ1006/cc-decisioning-platform.git
+      targetRevision: v0.1.2
+      ref: values
+  ignoreDifferences:
+    - group: kafka.strimzi.io
+      kind: Kafka
+      jqPathExpressions: [".spec.kafka.metadataVersion"] # the operator moves it forward after a Kafka upgrade
+    - group: kafka.strimzi.io
+      kind: KafkaTopic
+      jqPathExpressions: [".spec.config", ".spec.replicas"] # the topic operator normalises and may adopt broker defaults
+  syncPolicy:
+    # no `automated`: a human presses Sync (or runs `argocd app sync`) after reviewing the diff - the approval gate of this environment
+    syncOptions: [ServerSideApply=true, PruneLast=true]
+    retry: { limit: 5, backoff: { duration: 15s, factor: 2, maxDuration: 3m } }

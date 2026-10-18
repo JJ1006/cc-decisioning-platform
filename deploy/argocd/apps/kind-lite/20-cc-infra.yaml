@@ -1,0 +1,39 @@
+# Kafka (Strimzi), topics, users and ACLs, ECK, the ClusterIssuer, default-deny NetworkPolicies. The es-setup hook Job runs as a PostSync hook.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cc-infra
+  namespace: argocd
+  labels:
+    cc/revision: follow # the root application can point every labelled application at another branch (make argocd-up REVISION=...)
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cc
+  sources:
+    - repoURL: https://github.com/JJ1006/cc-decisioning-platform.git
+      targetRevision: main
+      path: deploy/helm/cc-infra
+      helm:
+        releaseName: infra
+        valueFiles:
+          - values-kind-lite.yaml
+          - $values/deploy/argocd/apps/kind-lite/values/cc-infra.yaml
+    - repoURL: https://github.com/JJ1006/cc-decisioning-platform.git
+      targetRevision: main
+      ref: values
+  ignoreDifferences:
+    - group: kafka.strimzi.io
+      kind: Kafka
+      jqPathExpressions: [".spec.kafka.metadataVersion"] # the operator moves it forward after a Kafka upgrade
+    - group: kafka.strimzi.io
+      kind: KafkaTopic
+      jqPathExpressions: [".spec.config", ".spec.replicas"] # the topic operator normalises and may adopt broker defaults
+  syncPolicy:
+    automated: { prune: true, selfHeal: true } # kind: Git is the truth, drift is reverted
+    syncOptions: [ServerSideApply=true, PruneLast=true]
+    retry: { limit: 5, backoff: { duration: 15s, factor: 2, maxDuration: 3m } }
