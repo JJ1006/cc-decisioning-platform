@@ -86,9 +86,9 @@ class KafkaSink:
                 {
                     "bootstrap.servers": s.kafka_bootstrap,
                     "security.protocol": "SSL",
-                    "ssl.ca.location": s.ca_file,
-                    "ssl.certificate.location": s.agent_cert,
-                    "ssl.key.location": s.agent_cert_key,
+                    "ssl.ca.location": s.kafka_ca_file or s.ca_file,
+                    "ssl.certificate.location": s.kafka_cert or s.agent_cert,
+                    "ssl.key.location": s.kafka_cert_key or s.agent_cert_key,
                     "ssl.endpoint.identification.algorithm": "none",
                     "enable.idempotence": True,
                     "acks": "all",

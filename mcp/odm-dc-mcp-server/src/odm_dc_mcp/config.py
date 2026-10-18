@@ -34,6 +34,10 @@ class Settings:
     agent_cert_key: str = field(default_factory=lambda: os.environ.get("MCP_AGENT_CERT_KEY", ""))
     # audit trail: every tool call becomes an event on cc.audit.v1 (mutual TLS to Kafka, mcp-agent certificate)
     kafka_bootstrap: str = field(default_factory=lambda: os.environ.get("KAFKA_BOOTSTRAP", "localhost:9093"))
+    # Kubernetes: Strimzi issues its own CA and user certificate, so Kafka can have a different trust and client certificate than the gateway
+    kafka_ca_file: str = field(default_factory=lambda: os.environ.get("KAFKA_CA_FILE", ""))
+    kafka_cert: str = field(default_factory=lambda: os.environ.get("KAFKA_CERT", ""))
+    kafka_cert_key: str = field(default_factory=lambda: os.environ.get("KAFKA_CERT_KEY", ""))
     audit_topic: str = field(default_factory=lambda: os.environ.get("AUDIT_TOPIC", "cc.audit.v1"))
     audit_required: bool = field(default_factory=lambda: _bool("AUDIT_REQUIRED", True))
     # guardrails
