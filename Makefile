@@ -29,7 +29,6 @@ test-mcp: ## ruff, mypy --strict and pytest of the MCP server in mcp/odm-dc-mcp-
 
 lint-obs: ## Static checks of the observability config: dashboards = generator, promtool, amtool, collector validate, runbooks
 	@scripts/lint-observability.sh
-	@scripts/test-mcp.sh
 
 grafana-shots: ## Screenshots of the Grafana dashboards, the service graph and a trace waterfall (Playwright; run make demo first)
 	@scripts/grafana-shots.sh
@@ -55,6 +54,7 @@ verify: ## Full local verification (build + tests + format check)
 	@scripts/test-logstash.sh
 	@$(MAKE) --no-print-directory lint-api
 	@scripts/lint-observability.sh
+	@scripts/test-mcp.sh
 
 test: ## Unit tests
 	@if grep -q '<module>' pom.xml; then mvn -q test; else echo "no Maven modules yet"; fi
