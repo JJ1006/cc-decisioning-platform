@@ -17,4 +17,4 @@ When it expires every client of that endpoint fails the TLS handshake.
 
 ## Fix
 
-* Reissue and restart: delete the component's folder under `security/pki/out/` and run `make pki` (or `make pki FORCE=1` for everything), then restart the affected containers and run `make verify-mtls`.
+* Reissue and restart: delete the component's folder under `security/pki/out/` and run `make pki` (or `make pki FORCE=1 CONFIRM=1` for everything, then `make down V=1`), then restart the affected containers and run `make verify-mtls`.
