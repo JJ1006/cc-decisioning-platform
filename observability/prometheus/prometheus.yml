@@ -3,7 +3,7 @@
 #   gateway: APISIX prometheus plugin on :9091; Kafka: kafka-exporter (TLS to the broker); Elasticsearch: elasticsearch-exporter;
 #   Logstash: logstash-exporter over its monitoring API; traces as metrics: the collector (spanmetrics, servicegraph); Tempo, Grafana,
 #   Alertmanager themselves; certificates: blackbox-exporter probes (probe_ssl_earliest_cert_expiry).
-#   ODM Liberty: not scraped, see docs/observability.md (the image ships no mpMetrics feature).
+#   ODM Liberty: MicroProfile Metrics on https://odm:9453/metrics with the admin client certificate (deploy/odm/metrics.xml).
 global:
   scrape_interval: 15s
   evaluation_interval: 15s
@@ -51,6 +51,18 @@ scrape_configs:
     metrics_path: /apisix/prometheus/metrics
     static_configs:
       - targets: ["apisix:9091"]
+
+  - job_name: odm
+    # ODM Liberty: MicroProfile Metrics (deploy/odm/metrics.xml); the HTTPS port demands a client certificate
+    scheme: https
+    metrics_path: /metrics
+    tls_config:
+      ca_file: /pki/ca.crt
+      cert_file: /pki/odm-client.crt
+      key_file: /pki/odm-client.key
+      server_name: odm
+    static_configs:
+      - targets: ["odm:9453"]
 
   - job_name: kafka
     static_configs:

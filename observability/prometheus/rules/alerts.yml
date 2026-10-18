@@ -43,7 +43,7 @@ groups:
           runbook_url: docs/runbooks/alerts/TargetDown.md
 
       - alert: JvmHeapHigh
-        expr: job:jvm_heap_used_ratio > 0.85
+        expr: job:jvm_heap_used_ratio > 0.85 or (label_replace(memory_usedHeap_bytes{job="odm"} / memory_maxHeap_bytes{job="odm"}, "service", "odm", "job", ".*") > 0.85)
         for: 5m
         labels: { severity: warning }
         annotations:

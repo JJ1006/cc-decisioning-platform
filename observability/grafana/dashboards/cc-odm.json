@@ -588,11 +588,261 @@
     {
       "id": 10,
       "type": "row",
-      "title": "Slowest traces",
+      "title": "ODM server (Liberty metrics, deploy/odm/metrics.xml)",
       "collapsed": false,
       "gridPos": {
         "x": 0,
         "y": 22,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "ODM heap used",
+      "description": "Liberty heap used divided by the maximum (JVM heap alert above 85%).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none"
+            },
+            "spanNulls": true,
+            "axisSoftMax": 1,
+            "thresholdsStyle": {
+              "mode": "line"
+            }
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 0.85
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "memory_usedHeap_bytes{job=\"odm\"} / memory_maxHeap_bytes{job=\"odm\"}",
+          "legendFormat": "heap used",
+          "editorMode": "code"
+        }
+      ],
+      "id": 11,
+      "gridPos": {
+        "x": 0,
+        "y": 23,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "ODM process CPU",
+      "description": "CPU used by the ODM process.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none"
+            },
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "cpu_processCpuLoad_percent{job=\"odm\"} / 100",
+          "legendFormat": "cpu",
+          "editorMode": "code"
+        }
+      ],
+      "id": 12,
+      "gridPos": {
+        "x": 6,
+        "y": 23,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "ODM requests per second by route",
+      "description": "HTTPS requests to ODM (rule execution is /DecisionService).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none"
+            },
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (http_route) (rate(http_server_request_duration_seconds_count{job=\"odm\",server_port=\"9453\"}[1m]))",
+          "legendFormat": "{{http_route}}",
+          "editorMode": "code"
+        }
+      ],
+      "id": 13,
+      "gridPos": {
+        "x": 12,
+        "y": 23,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "ODM mean request time by route",
+      "description": "Seconds per request, mean over 5 minutes.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none"
+            },
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (http_route) (rate(http_server_request_duration_seconds_sum{job=\"odm\",server_port=\"9453\"}[5m])) / sum by (http_route) (rate(http_server_request_duration_seconds_count{job=\"odm\",server_port=\"9453\"}[5m]))",
+          "legendFormat": "{{http_route}}",
+          "editorMode": "code"
+        }
+      ],
+      "id": 14,
+      "gridPos": {
+        "x": 18,
+        "y": 23,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "id": 15,
+      "type": "row",
+      "title": "Slowest traces",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 31,
         "w": 24,
         "h": 1
       },
@@ -619,10 +869,10 @@
           "tableType": "traces"
         }
       ],
-      "id": 11,
+      "id": 16,
       "gridPos": {
         "x": 0,
-        "y": 23,
+        "y": 32,
         "w": 24,
         "h": 9
       }

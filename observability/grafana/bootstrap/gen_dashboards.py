@@ -1044,6 +1044,52 @@ d.timeseries(
     unit="s",
     w=12,
 )
+d.row("ODM server (Liberty metrics, deploy/odm/metrics.xml)")
+d.timeseries(
+    "ODM heap used",
+    "Liberty heap used divided by the maximum (JVM heap alert above 85%).",
+    [
+        (
+            'memory_usedHeap_bytes{job="odm"} / memory_maxHeap_bytes{job="odm"}',
+            "heap used",
+        )
+    ],
+    unit="percentunit",
+    w=6,
+    soft_max=1,
+    thresholds=[(0.85, RED)],
+)
+d.timeseries(
+    "ODM process CPU",
+    "CPU used by the ODM process.",
+    [('cpu_processCpuLoad_percent{job="odm"} / 100', "cpu")],
+    unit="percentunit",
+    w=6,
+)
+d.timeseries(
+    "ODM requests per second by route",
+    "HTTPS requests to ODM (rule execution is /DecisionService).",
+    [
+        (
+            'sum by (http_route) (rate(http_server_request_duration_seconds_count{job="odm",server_port="9453"}[1m]))',
+            "{{http_route}}",
+        )
+    ],
+    unit="reqps",
+    w=6,
+)
+d.timeseries(
+    "ODM mean request time by route",
+    "Seconds per request, mean over 5 minutes.",
+    [
+        (
+            'sum by (http_route) (rate(http_server_request_duration_seconds_sum{job="odm",server_port="9453"}[5m])) / sum by (http_route) (rate(http_server_request_duration_seconds_count{job="odm",server_port="9453"}[5m]))',
+            "{{http_route}}",
+        )
+    ],
+    unit="s",
+    w=6,
+)
 d.row("Slowest traces")
 d.traces(
     "Traces of the orchestrator slower than 300 ms",

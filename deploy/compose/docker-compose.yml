@@ -145,6 +145,7 @@ services:
       # The plain http port 9060 is not published: Decision Center reaches RES on it inside the container.
     volumes:
       - ../odm/mtls.xml:/config/configDropins/overrides/mtls.xml:ro
+      - ../odm/metrics.xml:/config/configDropins/overrides/metrics.xml:ro
       - ${PKI_DIR:-../../security/pki/out}/odm/odm.jks:/config/security/volume/keystore.jks:ro
       - ${PKI_DIR:-../../security/pki/out}/truststore.jks:/config/security/volume/truststore.jks:ro
     healthcheck:
@@ -538,6 +539,8 @@ services:
       - ../../observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ../../observability/prometheus/rules:/etc/prometheus/rules:ro
       - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/admin/admin.crt:/pki/odm-client.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/admin/admin.key:/pki/odm-client.key:ro
       - prometheus-data:/prometheus
 
   alertmanager:
