@@ -32,6 +32,8 @@ Do not run everything at once on an 8 GB Mac (see the README profile table).
 | ODM Decision Center (client certificate required: import `security/pki/out/admin/admin.p12`, see [security-mtls](../security-mtls.md)) | <https://localhost:9443/decisioncenter> | `odmAdmin` / `odmAdmin` |
 | ODM Rule Execution Server console | <https://localhost:9443/res> | `resAdmin` / `resAdmin` |
 | ODM Decision Runner | <https://localhost:9443/DecisionRunner> | `odmAdmin` / `odmAdmin` |
+| Grafana (metrics, traces; `make up-obs`, [docs/observability.md](../observability.md)) | <https://localhost:3000> | `admin` / `GRAFANA_ADMIN_PASSWORD` from the root env file |
+| Prometheus, Alertmanager (`obs` profile) | <http://localhost:9090>, <http://localhost:9097> | none (loopback only) |
 | Kibana (space Maple Northern, [docs/kibana.md](../kibana.md)) | <https://localhost:5601/s/maple-northern> | `analyst` / `ANALYST_PASSWORD`, `ops` / `OPS_PASSWORD`, admin `elastic` / `ELASTIC_PASSWORD`, all from the root env file |
 | kafka-ui | <http://localhost:8080> | none (bound to 127.0.0.1) |
 | Elasticsearch | <https://localhost:9200> | `elastic` / `ELASTIC_PASSWORD` |

@@ -66,6 +66,24 @@ plugin_configs:
         show_limit_headers: true
         policy: local
 
+# the opentelemetry plugin reads where to send spans from its plugin metadata (not from config.yaml)
+plugin_metadata:
+  - id: opentelemetry
+    trace_id_source: random
+    resource:
+      service.name: apisix
+      service.namespace: cc
+      deployment.environment: local
+    collector:
+      address: otel-collector:4318 # OTLP over http inside the compose network
+      request_timeout: 3
+    batch_span_processor:
+      drop_on_queue_full: true
+      max_queue_size: 1024
+      batch_timeout: 2
+      inactive_timeout: 1
+      max_export_batch_size: 64
+
 global_rules:
   - id: identity-and-hardening
     plugins:
@@ -126,7 +144,7 @@ global_rules:
       prometheus:
         prefer_name: true
       opentelemetry:
-        sampler: { name: always_off } # P8 switches it to parent_base / trace_id_ratio with the collector
+        sampler: { name: @OTEL_SAMPLER@ } # always_on with the obs profile (every local request is traced), always_off without it; production: trace_id_ratio 0.1
 
 routes:
   # ---- applications (application-api): partner submits and follows, underwriter decides

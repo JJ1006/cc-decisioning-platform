@@ -11,6 +11,7 @@ import ca.maplenorthern.cc.common.events.Events;
 import ca.maplenorthern.cc.xom.Application;
 import ca.maplenorthern.cc.xom.Outcome;
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import java.nio.charset.StandardCharsets;
@@ -32,6 +33,7 @@ public class DecisionRouter {
   private final ResClient res;
   private final KafkaTemplate<String, String> kafka;
   private final Timer latency;
+  private final Timer resCall;
   private final MeterRegistry registry;
 
   public DecisionRouter(
@@ -44,6 +46,26 @@ public class DecisionRouter {
             .description("ODM RES decision latency (decisionLatencyMs)")
             .publishPercentileHistogram()
             .register(registry);
+    // res_call_seconds: the ODM RES call as seen by the orchestrator, with histogram buckets for
+    // the p95 alert
+    this.resCall =
+        Timer.builder("res.call")
+            .description("ODM RES call duration")
+            .publishPercentileHistogram()
+            .register(registry);
+    // 0 closed, 1 half open, 2 open (anything else, such as disabled, is -1)
+    Gauge.builder(
+            "res.circuitbreaker.state",
+            res,
+            r ->
+                switch (r.breaker().getState()) {
+                  case CLOSED -> 0;
+                  case HALF_OPEN -> 1;
+                  case OPEN -> 2;
+                  default -> -1;
+                })
+        .description("Circuit breaker around the ODM RES call: 0 closed, 1 half open, 2 open")
+        .register(registry);
   }
 
   /**
@@ -60,7 +82,7 @@ public class DecisionRouter {
     String corr = correlationId != null ? correlationId : in.correlationId();
 
     long start = System.nanoTime();
-    RuleDecision d = res.execute(app);
+    RuleDecision d = resCall.recordCallable(() -> res.execute(app));
     long millis = Duration.ofNanos(System.nanoTime() - start).toMillis();
     latency.record(Duration.ofMillis(millis));
     if (d.outcome() == null) {
@@ -99,8 +121,12 @@ public class DecisionRouter {
                 "outcome", d.outcome().name(),
                 "decisionLatencyMs", millis));
     send(Topics.AUDIT, app.getApplicationId(), EventTypes.AUDIT, corr, audit);
+    // business counter; labels are coarse, never an identifier or anything about a person
     Counter.builder("decisions.total")
+        .description("Automated decisions")
         .tag("outcome", d.outcome().name())
+        .tag("product", d.product() == null ? "NONE" : d.product().name())
+        .tag("province", app.getAddress().getProvince().name())
         .register(registry)
         .increment();
   }

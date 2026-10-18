@@ -1,0 +1,120 @@
+# Prometheus: 2 days of metrics, scrapes everything of the stack that speaks Prometheus.
+#   Spring Boot services: /actuator/prometheus (the three API services on their plain management port 9090, the two event services on 8080)
+#   gateway: APISIX prometheus plugin on :9091; Kafka: kafka-exporter (TLS to the broker); Elasticsearch: elasticsearch-exporter;
+#   Logstash: logstash-exporter over its monitoring API; traces as metrics: the collector (spanmetrics, servicegraph); Tempo, Grafana,
+#   Alertmanager themselves; certificates: blackbox-exporter probes (probe_ssl_earliest_cert_expiry).
+#   ODM Liberty: MicroProfile Metrics on https://odm:9453/metrics with the admin client certificate (deploy/odm/metrics.xml).
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    environment: local
+
+rule_files:
+  - /etc/prometheus/rules/*.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: spring
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["decision-orchestrator:8080"]
+        labels: { service: decision-orchestrator }
+      - targets: ["notification-svc:8080"]
+        labels: { service: notification-svc }
+      - targets: ["txn-generator:9090"]
+        labels: { service: txn-generator }
+      - targets: ["application-api:9090"]
+        labels: { service: application-api }
+
+  - job_name: spring-optional # decision-query-api runs only with the analytics profile: DNS finds it when it is there, no target when it is not
+    metrics_path: /actuator/prometheus
+    dns_sd_configs:
+      - names: ["decision-query-api"]
+        type: A
+        port: 9090
+    relabel_configs:
+      - target_label: service
+        replacement: decision-query-api
+      - target_label: job
+        replacement: spring
+
+  - job_name: apisix
+    metrics_path: /apisix/prometheus/metrics
+    static_configs:
+      - targets: ["apisix:9091"]
+
+  - job_name: odm
+    # ODM Liberty: MicroProfile Metrics (deploy/odm/metrics.xml); the HTTPS port demands a client certificate
+    scheme: https
+    metrics_path: /metrics
+    tls_config:
+      ca_file: /pki/ca.crt
+      cert_file: /pki/odm-client.crt
+      key_file: /pki/odm-client.key
+      server_name: odm
+    static_configs:
+      - targets: ["odm:9453"]
+
+  - job_name: kafka
+    static_configs:
+      - targets: ["kafka-exporter:9308"]
+
+  - job_name: elasticsearch
+    static_configs:
+      - targets: ["elasticsearch-exporter:9114"]
+
+  - job_name: logstash
+    static_configs:
+      - targets: ["logstash-exporter:9198"]
+
+  - job_name: otel-collector
+    static_configs:
+      - targets: ["otel-collector:8889"] # spanmetrics and servicegraph
+        labels: { kind: traces-as-metrics }
+      - targets: ["otel-collector:8888"] # the collector itself
+        labels: { kind: self }
+
+  - job_name: tempo
+    static_configs:
+      - targets: ["tempo:3200"]
+
+  - job_name: grafana
+    scheme: https
+    tls_config:
+      ca_file: /pki/ca.crt
+      server_name: grafana
+    static_configs:
+      - targets: ["grafana:3000"]
+
+  - job_name: alertmanager
+    static_configs:
+      - targets: ["alertmanager:9093"]
+
+  - job_name: blackbox-ca
+    metrics_path: /probe
+    params: { module: [https_ca] }
+    static_configs:
+      - targets: ["https://elasticsearch:9200"]
+    relabel_configs: &probe_relabel
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115
+
+  - job_name: blackbox-mtls
+    metrics_path: /probe
+    params: { module: [https_mtls] }
+    static_configs:
+      - targets: ["https://apisix:9443", "https://odm:9453/res/"]
+    relabel_configs: *probe_relabel

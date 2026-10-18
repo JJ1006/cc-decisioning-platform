@@ -20,7 +20,7 @@ if [[ -z "${QUERY_API_PASSWORD:-}" ]]; then # password of the read-only decision
   printf '\nQUERY_API_PASSWORD=%s\n' "$QUERY_API_PASSWORD" >>"$ROOT/.env"
   echo "generated QUERY_API_PASSWORD in .env" >&2
 fi
-for var in ANALYST_PASSWORD OPS_PASSWORD KIBANA_ENCRYPTION_KEY; do # Kibana users analyst and ops; key for saved objects (rules), >= 32 chars
+for var in ANALYST_PASSWORD OPS_PASSWORD KIBANA_ENCRYPTION_KEY GRAFANA_ADMIN_PASSWORD OBS_EXPORTER_PASSWORD GRAFANA_ES_PASSWORD; do # Kibana users analyst and ops; key for saved objects (rules), >= 32 chars; Grafana admin, exporter and logs reader
   if [[ -z "${!var:-}" ]]; then
     value=$(openssl rand -hex 32)
     printf '\n%s=%s\n' "$var" "$value" >>"$ROOT/.env"
@@ -51,6 +51,8 @@ LOGSTASH_WRITER_PASSWORD=$LOGSTASH_WRITER_PASSWORD
 QUERY_API_PASSWORD=$QUERY_API_PASSWORD
 ANALYST_PASSWORD=$ANALYST_PASSWORD
 OPS_PASSWORD=$OPS_PASSWORD
+OBS_EXPORTER_PASSWORD=$OBS_EXPORTER_PASSWORD
+GRAFANA_ES_PASSWORD=$GRAFANA_ES_PASSWORD
 XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY=$KIBANA_ENCRYPTION_KEY
 XPACK_SECURITY_ENCRYPTIONKEY=$KIBANA_ENCRYPTION_KEY
 XPACK_REPORTING_ENCRYPTIONKEY=$KIBANA_ENCRYPTION_KEY

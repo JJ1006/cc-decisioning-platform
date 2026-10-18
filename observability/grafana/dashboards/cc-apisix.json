@@ -1,0 +1,489 @@
+{
+  "uid": "cc-apisix",
+  "title": "APISIX gateway",
+  "description": "The API gateway: traffic, status codes, latency, connections and bandwidth.",
+  "tags": [
+    "maple-northern",
+    "apisix"
+  ],
+  "timezone": "browser",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": true,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  },
+  "links": [
+    {
+      "title": "Observability guide",
+      "type": "link",
+      "url": "https://localhost:3000/dashboards?tag=maple-northern",
+      "icon": "dashboard"
+    }
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Traffic",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Requests per second by status code",
+      "description": "Per HTTP status.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 18,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "normal"
+            },
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (code) (rate(apisix_http_status[1m]))",
+          "legendFormat": "{{code}}",
+          "editorMode": "code"
+        }
+      ],
+      "id": 2,
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 12,
+        "h": 9
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "429 (quota, spike arrest) and 403 (role)",
+      "description": "What the gateway refuses: rate limits and roles.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none"
+            },
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(rate(apisix_http_status{code=\"429\"}[1m])) or vector(0)",
+          "legendFormat": "429 too many requests",
+          "editorMode": "code"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(rate(apisix_http_status{code=\"403\"}[1m])) or vector(0)",
+          "legendFormat": "403 forbidden",
+          "editorMode": "code"
+        }
+      ],
+      "id": 3,
+      "gridPos": {
+        "x": 12,
+        "y": 1,
+        "w": 12,
+        "h": 9
+      }
+    },
+    {
+      "id": 4,
+      "type": "row",
+      "title": "Latency",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 10,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Request latency p50 / p95 / p99",
+      "description": "Total time of a request through the gateway.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none"
+            },
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.5, sum by (le) (rate(apisix_http_latency_bucket{type=\"request\"}[5m]))) / 1000",
+          "legendFormat": "p50",
+          "editorMode": "code"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.95, sum by (le) (rate(apisix_http_latency_bucket{type=\"request\"}[5m]))) / 1000",
+          "legendFormat": "p95",
+          "editorMode": "code"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.99, sum by (le) (rate(apisix_http_latency_bucket{type=\"request\"}[5m]))) / 1000",
+          "legendFormat": "p99",
+          "editorMode": "code"
+        }
+      ],
+      "id": 5,
+      "gridPos": {
+        "x": 0,
+        "y": 11,
+        "w": 12,
+        "h": 9
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Upstream latency p95 by route",
+      "description": "Time the services take, per route.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none"
+            },
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "histogram_quantile(0.95, sum by (le, route) (rate(apisix_http_latency_bucket{type=\"upstream\"}[5m]))) / 1000",
+          "legendFormat": "{{route}}",
+          "editorMode": "code"
+        }
+      ],
+      "id": 6,
+      "gridPos": {
+        "x": 12,
+        "y": 11,
+        "w": 12,
+        "h": 9
+      }
+    },
+    {
+      "id": 7,
+      "type": "row",
+      "title": "Connections and bandwidth",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 20,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "type": "timeseries",
+      "title": "Connections",
+      "description": "Nginx connections by state.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none"
+            },
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (state) (apisix_nginx_http_current_connections)",
+          "legendFormat": "{{state}}",
+          "editorMode": "code"
+        }
+      ],
+      "id": 8,
+      "gridPos": {
+        "x": 0,
+        "y": 21,
+        "w": 8,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Bandwidth",
+      "description": "Bytes per second by direction.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none"
+            },
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (type) (rate(apisix_bandwidth[1m]))",
+          "legendFormat": "{{type}}",
+          "editorMode": "code"
+        }
+      ],
+      "id": 9,
+      "gridPos": {
+        "x": 8,
+        "y": 21,
+        "w": 8,
+        "h": 8
+      }
+    },
+    {
+      "type": "timeseries",
+      "title": "Shared dictionary use",
+      "description": "Gateway memory zones in use (bytes).",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 8,
+            "showPoints": "never",
+            "stacking": {
+              "mode": "none"
+            },
+            "spanNulls": true
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (name) (apisix_shared_dict_capacity_bytes - apisix_shared_dict_free_space_bytes)",
+          "legendFormat": "{{name}}",
+          "editorMode": "code"
+        }
+      ],
+      "id": 10,
+      "gridPos": {
+        "x": 16,
+        "y": 21,
+        "w": 8,
+        "h": 8
+      }
+    }
+  ]
+}

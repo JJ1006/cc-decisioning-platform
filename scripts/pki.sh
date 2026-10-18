@@ -27,7 +27,7 @@ COMPONENTS=(
   kafka elasticsearch kibana odm apisix
   application-api decision-query-api txn-generator decision-orchestrator notification-svc
   logstash filebeat
-  kafka-ui
+  kafka-ui grafana kafka-exporter
 )
 # Pure clients: client authentication only. The CN is the consumer name at the gateway (gateway/apisix/README.md); load-test is
 # used by verify-mtls for the rate-limit checks so the real consumers keep their quota.

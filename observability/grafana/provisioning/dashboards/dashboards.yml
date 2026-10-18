@@ -1,0 +1,11 @@
+apiVersion: 1
+providers:
+  - name: Maple Northern
+    orgId: 1
+    folder: Maple Northern
+    type: file
+    disableDeletion: true
+    allowUiUpdates: false # change the JSON in observability/grafana/dashboards and restart Grafana (or edit in the UI and export)
+    updateIntervalSeconds: 30
+    options:
+      path: /var/lib/grafana/dashboards

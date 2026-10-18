@@ -5,17 +5,18 @@
 #      monitor (the Logstash output reads GET / at start-up), nothing else
 #      and role / user query_reader / decision-query-api: read-only on the five read aliases (cc-decisions ...)
 #      and the Kibana roles kibana_analyst / kibana_ops with the users analyst / ops (dashboards of the space maple-northern),
+#      and the observability users: metrics_exporter (monitor only, for elasticsearch-exporter), grafana_logs_reader (read cc-logs)
 #      plus the cc-alerts index the alert rules write to
 #   3. install the ILM policies (logs 7d, dlq 30d) and the index templates
 #   4. make sure every type has a current index behind its <type>-write alias:
 #        cc-decisions / cc-audit / cc-notifications  date-suffixed (cc-decisions-2026.10.17), rolled by re-running this script
 #        cc-logs / cc-dlq                            cc-logs-000001, rolled and deleted by ILM
-# Env: ELASTIC_PASSWORD, KIBANA_PASSWORD, LOGSTASH_WRITER_PASSWORD, QUERY_API_PASSWORD, ANALYST_PASSWORD, OPS_PASSWORD (required); ES_URL, ES_CACERT, ES_DIR (optional).
+# Env: ELASTIC_PASSWORD, KIBANA_PASSWORD, LOGSTASH_WRITER_PASSWORD, QUERY_API_PASSWORD, ANALYST_PASSWORD, OPS_PASSWORD, OBS_EXPORTER_PASSWORD, GRAFANA_ES_PASSWORD (required); ES_URL, ES_CACERT, ES_DIR (optional).
 set -euo pipefail
 ES_URL=${ES_URL:-https://elasticsearch:9200}
 ES_CACERT=${ES_CACERT:-/pki/ca.crt}
 ES_DIR=${ES_DIR:-/es}
-: "${ELASTIC_PASSWORD:?}" "${KIBANA_PASSWORD:?}" "${LOGSTASH_WRITER_PASSWORD:?}" "${QUERY_API_PASSWORD:?}" "${ANALYST_PASSWORD:?}" "${OPS_PASSWORD:?}"
+: "${ELASTIC_PASSWORD:?}" "${KIBANA_PASSWORD:?}" "${LOGSTASH_WRITER_PASSWORD:?}" "${QUERY_API_PASSWORD:?}" "${ANALYST_PASSWORD:?}" "${OPS_PASSWORD:?}" "${OBS_EXPORTER_PASSWORD:?}" "${GRAFANA_ES_PASSWORD:?}"
 
 es() { # es METHOD PATH [curl args...]; credentials via a curl config, never on the command line
   local method=$1 path=$2
@@ -49,6 +50,14 @@ must PUT /_security/user/analyst \
 must PUT /_security/user/ops \
   "{\"password\":\"$OPS_PASSWORD\",\"roles\":[\"kibana_ops\"],\"full_name\":\"Operations (Kibana dashboards, logs, alerts)\"}"
 echo "roles kibana_analyst, kibana_ops and users analyst, ops ready"
+
+must PUT /_security/role/metrics_exporter "@$ES_DIR/metrics_exporter.role.json"
+must PUT /_security/user/metrics_exporter \
+  "{\"password\":\"$OBS_EXPORTER_PASSWORD\",\"roles\":[\"metrics_exporter\"],\"full_name\":\"elasticsearch-exporter (monitor only)\"}"
+must PUT /_security/role/grafana_logs_reader "@$ES_DIR/grafana_logs_reader.role.json"
+must PUT /_security/user/grafana_logs_reader \
+  "{\"password\":\"$GRAFANA_ES_PASSWORD\",\"roles\":[\"grafana_logs_reader\"],\"full_name\":\"Grafana (reads cc-logs)\"}"
+echo "users metrics_exporter and grafana_logs_reader ready"
 must PUT /_index_template/cc-alerts "@$ES_DIR/cc-alerts.template.json"
 code=$(es GET "/cc-alerts" -o /dev/null -w '%{http_code}')
 [[ "$code" == 404 ]] && must PUT /cc-alerts "{}" && echo "cc-alerts index created"
