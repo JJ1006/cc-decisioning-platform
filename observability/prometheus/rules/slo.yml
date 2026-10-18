@@ -1,0 +1,28 @@
+# Recording rules: the SLO building blocks the dashboards and alerts read.
+#   API availability at the gateway: the share of requests that are not a 5xx (target 99.5%, error budget 0.5%).
+#   Decision latency: p95 of the ODM RES call as the orchestrator sees it.
+groups:
+  - name: slo
+    interval: 30s
+    rules:
+      - record: slo:gateway_requests:rate5m
+        expr: sum(rate(apisix_http_status[5m]))
+      - record: slo:gateway_errors:rate5m
+        expr: sum(rate(apisix_http_status{code=~"5.."}[5m])) or vector(0)
+      - record: slo:gateway_error_ratio:rate5m
+        expr: slo:gateway_errors:rate5m / slo:gateway_requests:rate5m
+      - record: slo:gateway_error_ratio:rate1h
+        expr: (sum(rate(apisix_http_status{code=~"5.."}[1h])) or vector(0)) / sum(rate(apisix_http_status[1h]))
+      # budget burn: 1 means the 0.5% budget is used exactly at the pace the SLO allows
+      - record: slo:gateway_error_budget_burn:rate1h
+        expr: slo:gateway_error_ratio:rate1h / 0.005
+      - record: slo:gateway_latency_seconds:p95_5m
+        expr: histogram_quantile(0.95, sum by (le) (rate(apisix_http_latency_bucket{type="request"}[5m])))
+      - record: slo:gateway_latency_seconds:p99_5m
+        expr: histogram_quantile(0.99, sum by (le) (rate(apisix_http_latency_bucket{type="request"}[5m])))
+      - record: slo:decision_latency_seconds:p95_5m
+        expr: histogram_quantile(0.95, sum by (le) (rate(res_call_seconds_bucket[5m])))
+      - record: slo:decision_latency_seconds:p99_5m
+        expr: histogram_quantile(0.99, sum by (le) (rate(res_call_seconds_bucket[5m])))
+      - record: job:jvm_heap_used_ratio
+        expr: sum by (job, service, instance) (jvm_memory_used_bytes{area="heap"}) / sum by (job, service, instance) (jvm_memory_max_bytes{area="heap"})

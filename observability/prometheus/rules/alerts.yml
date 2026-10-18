@@ -1,0 +1,75 @@
+# Infrastructure and SLO alerts (Prometheus -> Alertmanager). The business alerts (approval rate, dead letters seen by the data,
+# error log lines) live in Kibana: docs/observability.md. One runbook per alert: docs/runbooks/alerts/<alertname>.md.
+groups:
+  - name: platform
+    rules:
+      - alert: KafkaConsumerLagHigh
+        expr: sum by (consumergroup, topic) (kafka_consumergroup_lag{consumergroup!~"console-consumer.*|count-.*"}) > 500
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Consumer group {{ $labels.consumergroup }} is {{ $value }} messages behind on {{ $labels.topic }}"
+          runbook_url: docs/runbooks/alerts/KafkaConsumerLagHigh.md
+
+      - alert: DeadLetterRate
+        expr: sum by (topic) (increase(kafka_topic_partition_current_offset{topic=~".*\\.dlq"}[5m])) > 0
+        labels: { severity: warning }
+        annotations:
+          summary: "Messages were dead-lettered on {{ $labels.topic }} in the last 5 minutes"
+          runbook_url: docs/runbooks/alerts/DeadLetterRate.md
+
+      - alert: DecisionLatencyP95High
+        expr: slo:decision_latency_seconds:p95_5m > 0.3
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "p95 of the ODM call is {{ $value | humanizeDuration }} (limit 300 ms)"
+          runbook_url: docs/runbooks/alerts/DecisionLatencyP95High.md
+
+      - alert: ApiErrorRateHigh
+        expr: slo:gateway_error_ratio:rate5m > 0.01 and slo:gateway_requests:rate5m > 0.05
+        for: 5m
+        labels: { severity: critical }
+        annotations:
+          summary: "{{ $value | humanizePercentage }} of the gateway's requests fail with 5xx (limit 1%)"
+          runbook_url: docs/runbooks/alerts/ApiErrorRateHigh.md
+
+      - alert: TargetDown
+        expr: up == 0
+        for: 2m
+        labels: { severity: critical }
+        annotations:
+          summary: "Prometheus cannot scrape {{ $labels.job }} {{ $labels.instance }}"
+          runbook_url: docs/runbooks/alerts/TargetDown.md
+
+      - alert: JvmHeapHigh
+        expr: job:jvm_heap_used_ratio > 0.85
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.service }} uses {{ $value | humanizePercentage }} of its heap"
+          runbook_url: docs/runbooks/alerts/JvmHeapHigh.md
+
+      - alert: ElasticsearchHeapHigh
+        expr: max(elasticsearch_jvm_memory_used_bytes{area="heap"}) / max(elasticsearch_jvm_memory_max_bytes{area="heap"}) > 0.85
+        for: 5m
+        labels: { severity: warning }
+        annotations:
+          summary: "Elasticsearch uses {{ $value | humanizePercentage }} of its heap"
+          runbook_url: docs/runbooks/alerts/ElasticsearchHeapHigh.md
+
+      - alert: CertificateExpiringSoon
+        expr: (probe_ssl_earliest_cert_expiry - time()) < 14 * 86400
+        for: 10m
+        labels: { severity: warning }
+        annotations:
+          summary: "The certificate of {{ $labels.instance }} expires in {{ $value | humanizeDuration }}"
+          runbook_url: docs/runbooks/alerts/CertificateExpiringSoon.md
+
+      - alert: EndpointProbeFailing
+        expr: probe_success == 0
+        for: 3m
+        labels: { severity: warning }
+        annotations:
+          summary: "{{ $labels.instance }} does not answer the TLS probe"
+          runbook_url: docs/runbooks/alerts/TargetDown.md

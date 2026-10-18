@@ -3,8 +3,12 @@ PROFILE ?= core
 JAVA_HOME := $(shell [ -d /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home ] && echo /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home || /usr/libexec/java_home -v 21 2>/dev/null)
 export JAVA_HOME
 
+# tracing is on only with the obs profile: the agents and the gateway export spans to the collector, which exists only there
+OBS_ENV = $(if $(filter obs,$(subst $(comma), ,$(PROFILE))),APISIX_OTEL_SAMPLER=always_on OTEL_SDK_DISABLED=false,APISIX_OTEL_SAMPLER=always_off OTEL_SDK_DISABLED=true)
+comma := ,
+
 .DEFAULT_GOAL := help
-.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules test-logstash lint-api api-docs test-api-docs api-call cert-expiry seed-kibana export-kibana kibana-shots demo kind-up ocp-render eval-rules eval-agent what-if
+.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules test-logstash lint-api api-docs test-api-docs up-obs grafana-shots check-dashboards api-call cert-expiry seed-kibana export-kibana kibana-shots demo kind-up ocp-render eval-rules eval-agent what-if
 
 help: ## Show targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -14,11 +18,20 @@ bootstrap: ## Preflight: tools, Docker memory, Rosetta
 
 up: ## Start compose profiles: make up PROFILE=core,analytics (run make pki first)
 	@scripts/bootstrap.sh || echo "bootstrap reported problems (continuing)"
-	@PROFILE=$(PROFILE) scripts/compose.sh build -q # first, so the Maven builds do not compete with the starting containers
-	@PROFILE=$(PROFILE) scripts/compose.sh up -d --remove-orphans
-	@PROFILE=$(PROFILE) scripts/wait-healthy.sh
+	@$(OBS_ENV) PROFILE=$(PROFILE) scripts/compose.sh build -q # first, so the Maven builds do not compete with the starting containers
+	@$(OBS_ENV) PROFILE=$(PROFILE) scripts/compose.sh up -d --remove-orphans
+	@$(OBS_ENV) PROFILE=$(PROFILE) scripts/wait-healthy.sh
 	@scripts/check-es-mapping.sh
 	@case ',$(PROFILE),' in *,analytics,*) scripts/seed-kibana.sh ;; esac
+
+grafana-shots: ## Screenshots of the Grafana dashboards, the service graph and a trace waterfall (Playwright; run make demo first)
+	@scripts/grafana-shots.sh
+
+check-dashboards: ## Run every Prometheus query of the Grafana dashboards against the live Prometheus; lists those without data
+	@scripts/check-dashboard-queries.py
+
+up-obs: ## Core + gateway + observability (metrics, traces, alerts, Grafana) without Kibana: fits a 7 GB Docker VM
+	@$(MAKE) --no-print-directory up PROFILE=core,edge,obs
 
 down: ## Stop all compose profiles (make down V=1 also deletes volumes)
 	@PROFILE=core,analytics,edge,obs,mcp scripts/compose.sh down $(if $(V),-v,)

@@ -1,0 +1,65 @@
+# Grafana datasources as code. Metrics: Prometheus. Traces: Tempo (service graph from the collector's spanmetrics in Prometheus), with a
+# link from a span to the logs of its trace in Elasticsearch (cc-logs, field trace_id), and from a log line back to its trace.
+apiVersion: 1
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    jsonData:
+      timeInterval: 15s
+      exemplarTraceIdDestinations: []
+
+  - name: Elasticsearch (logs)
+    uid: elasticsearch-logs
+    type: elasticsearch
+    access: proxy
+    url: https://elasticsearch:9200
+    basicAuth: true
+    basicAuthUser: grafana_logs_reader # read on cc-logs only (deploy/es/grafana_logs_reader.role.json)
+    jsonData:
+      index: cc-logs
+      timeField: "@timestamp"
+      esVersion: 8.0.0
+      logMessageField: message
+      logLevelField: level
+      tlsAuthWithCACert: true
+      dataLinks:
+        - field: trace_id
+          datasourceUid: tempo
+          url: "$${__value.raw}"
+          urlDisplayLabel: Trace in Tempo
+    secureJsonData:
+      basicAuthPassword: $__env{GRAFANA_ES_PASSWORD}
+      tlsCACert: $__file{/pki/ca.crt}
+
+  - name: Tempo
+    uid: tempo
+    type: tempo
+    access: proxy
+    url: http://tempo:3200
+    jsonData:
+      httpMethod: GET
+      serviceMap:
+        datasourceUid: prometheus
+      nodeGraph:
+        enabled: true
+      tracesToLogsV2:
+        datasourceUid: elasticsearch-logs
+        filterByTraceID: false
+        filterBySpanID: false
+        customQuery: true
+        query: 'trace_id:"$${__span.traceId}"'
+        spanStartTimeShift: "-5m"
+        spanEndTimeShift: "5m"
+      tracesToMetrics:
+        datasourceUid: prometheus
+        tags:
+          - { key: service.name, value: service_name }
+        queries:
+          - name: Request rate
+            query: 'sum(rate(traces_span_metrics_calls_total{$$__tags}[5m]))'
+      search:
+        hide: false

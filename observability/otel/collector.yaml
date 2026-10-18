@@ -1,0 +1,85 @@
+# OpenTelemetry Collector (contrib): the one place the services and the gateway send traces to.
+#   traces:  OTLP in, personal-data attributes dropped, batched, out to Tempo (storage) and to two connectors that turn spans into metrics:
+#            spanmetrics (rate, errors, duration per service and operation: the RED metrics) and servicegraph (who calls whom).
+#   metrics: spanmetrics and servicegraph are exposed on :8889 for Prometheus (traces_span_metrics_*, traces_service_graph_*).
+# Services and the gateway reach it over plain OTLP inside the Docker network. TLS to the collector is a Kubernetes (P10) item: there it is
+# a cert-manager certificate and a NetworkPolicy; locally the traffic never leaves the compose network.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 96
+    spike_limit_mib: 24
+  filter/noise:
+    # scrapes and probes are not user traffic: no spans for the Prometheus scrape, the actuator probes and the blackbox probes
+    error_mode: ignore
+    traces:
+      span:
+        - 'IsMatch(attributes["url.path"], "^/actuator.*")'
+        - 'IsMatch(attributes["http.target"], "^/actuator.*")'
+        - 'IsMatch(attributes["user_agent.original"], ".*Blackbox.*")'
+        - 'IsMatch(attributes["http.user_agent"], ".*(Blackbox|Prometheus).*")'
+  attributes/no-personal-data:
+    # defence in depth: no instrumentation here records these, and none may ever reach Tempo
+    actions:
+      - { key: sin, action: delete }
+      - { key: first_name, action: delete }
+      - { key: last_name, action: delete }
+      - { key: name, action: delete }
+      - { key: postal_code, action: delete }
+      - { key: date_of_birth, action: delete }
+      - { key: dob, action: delete }
+      - { key: http.request.header.authorization, action: delete }
+      - { key: http.request.header.cookie, action: delete }
+  batch:
+    timeout: 5s
+
+connectors:
+  spanmetrics:
+    histogram:
+      explicit:
+        buckets: [10ms, 25ms, 50ms, 100ms, 250ms, 300ms, 500ms, 1s, 2500ms, 5s, 10s]
+    dimensions:
+      - name: http.request.method
+      - name: http.response.status_code
+    metrics_flush_interval: 15s
+  servicegraph:
+    latency_histogram_buckets: [10ms, 50ms, 100ms, 300ms, 1s, 5s]
+    store:
+      ttl: 5s
+      max_items: 2000
+
+exporters:
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+  prometheus:
+    endpoint: 0.0.0.0:8889
+
+service:
+  telemetry:
+    metrics:
+      level: basic
+      readers:
+        - pull:
+            exporter:
+              prometheus:
+                host: 0.0.0.0
+                port: 8888
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, filter/noise, attributes/no-personal-data, batch]
+      exporters: [otlp/tempo, spanmetrics, servicegraph]
+    metrics:
+      receivers: [spanmetrics, servicegraph]
+      processors: [batch]
+      exporters: [prometheus]

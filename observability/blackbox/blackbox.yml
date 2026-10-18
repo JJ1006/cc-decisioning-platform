@@ -1,0 +1,22 @@
+# Probes for certificate expiry (probe_ssl_earliest_cert_expiry) and reachability of the TLS endpoints.
+modules:
+  https_ca: # server certificate checked against our CA
+    prober: http
+    timeout: 8s
+    http:
+      method: GET
+      fail_if_not_ssl: true
+      valid_status_codes: [200, 302, 401, 403, 404]
+      tls_config:
+        ca_file: /pki/ca.crt
+  https_mtls: # the gateway and ODM demand a client certificate: present the admin one (any of the listed statuses counts as reachable)
+    prober: http
+    timeout: 8s
+    http:
+      method: GET
+      fail_if_not_ssl: true
+      valid_status_codes: [200, 302, 401, 403, 404]
+      tls_config:
+        ca_file: /pki/ca.crt
+        cert_file: /pki/probe.crt
+        key_file: /pki/probe.key

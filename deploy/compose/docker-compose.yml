@@ -1,6 +1,9 @@
 # Local stack. Run via `make up PROFILE=core,analytics` (needs `make pki` first).
 #   core       kafka (mTLS), topic-init, elasticsearch (TLS), es-setup, odm, the event services, logstash, filebeat
 #   analytics  kibana, kafka-ui, decision-query-api   (requires core)
+#   obs        otel-collector, tempo, prometheus, alertmanager, grafana (:3000, https) and the exporters (kafka, elasticsearch, logstash,
+#              blackbox): metrics, traces and infrastructure alerts. About 1 GB; with core+edge it fits in 7 GB, add analytics only on a
+#              larger Docker VM (docs/observability.md).
 #   edge       apisix gateway (:8443, mutual TLS) and application-api   (requires core; status, decisions and statistics also need
 #              decision-query-api from analytics). Service ports are not published: see compose.debug.yml.
 # All images are multi-arch; ODM and the rest run natively on Apple Silicon.
@@ -75,14 +78,14 @@ services:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.19.23
     profiles: [core]
     env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
-    mem_limit: 1g
+    mem_limit: 1280m # 1.25 GB: heap 640 MB plus off-heap
     hostname: elasticsearch
     ports:
       - "127.0.0.1:9200:9200"
     # ES only reads SSL files from inside its config dir
     environment:
       discovery.type: single-node
-      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      ES_JAVA_OPTS: -Xms640m -Xmx640m
       xpack.security.enabled: "true"
       xpack.ml.enabled: "false"
       cluster.routing.allocation.disk.threshold_enabled: "false"
@@ -161,12 +164,17 @@ services:
       options: { max-size: 10m, max-file: "3" }
     profiles: [core]
     env_file: [.env.derived]
-    mem_limit: 256m
+    mem_limit: 320m # includes the OpenTelemetry agent
     restart: unless-stopped
     depends_on:
       kafka: { condition: service_healthy }
       topic-init: { condition: service_completed_successfully }
     environment:
+      OTEL_SERVICE_NAME: txn-generator
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment=local,service.namespace=cc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_TRACES_SAMPLER: parentbased_always_on # production: parentbased_traceidratio with OTEL_TRACES_SAMPLER_ARG=0.1
+      OTEL_SDK_DISABLED: ${OTEL_SDK_DISABLED:-false} # make up sets it to true when the obs profile is not selected
       SERVER_SSL_ENABLED: "true" # mutual TLS on the service port; only the listed client CNs may call (apisix)
       SERVER_KEYSTORE: /pki/keystore.p12
       SERVER_TRUSTSTORE: /pki/truststore.p12
@@ -194,13 +202,18 @@ services:
       options: { max-size: 10m, max-file: "3" }
     profiles: [core]
     env_file: [.env.derived]
-    mem_limit: 320m
+    mem_limit: 384m # includes the OpenTelemetry agent
     restart: unless-stopped
     depends_on:
       kafka: { condition: service_healthy }
       topic-init: { condition: service_completed_successfully }
       odm: { condition: service_healthy }
     environment:
+      OTEL_SERVICE_NAME: decision-orchestrator
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment=local,service.namespace=cc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_TRACES_SAMPLER: parentbased_always_on # production: parentbased_traceidratio with OTEL_TRACES_SAMPLER_ARG=0.1
+      OTEL_SDK_DISABLED: ${OTEL_SDK_DISABLED:-false} # make up sets it to true when the obs profile is not selected
       KAFKA_BOOTSTRAP: kafka:9093
       KAFKA_KEYSTORE: /pki/keystore.p12
       KAFKA_TRUSTSTORE: /pki/truststore.p12
@@ -227,12 +240,17 @@ services:
       options: { max-size: 10m, max-file: "3" }
     profiles: [core]
     env_file: [.env.derived]
-    mem_limit: 256m
+    mem_limit: 320m # includes the OpenTelemetry agent
     restart: unless-stopped
     depends_on:
       kafka: { condition: service_healthy }
       topic-init: { condition: service_completed_successfully }
     environment:
+      OTEL_SERVICE_NAME: notification-svc
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment=local,service.namespace=cc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_TRACES_SAMPLER: parentbased_always_on # production: parentbased_traceidratio with OTEL_TRACES_SAMPLER_ARG=0.1
+      OTEL_SDK_DISABLED: ${OTEL_SDK_DISABLED:-false} # make up sets it to true when the obs profile is not selected
       KAFKA_BOOTSTRAP: kafka:9093
       KAFKA_KEYSTORE: /pki/keystore.p12
       KAFKA_TRUSTSTORE: /pki/truststore.p12
@@ -373,12 +391,17 @@ services:
       options: { max-size: 10m, max-file: "3" }
     profiles: [analytics]
     env_file: [.env.derived] # QUERY_API_PASSWORD: the read-only Elasticsearch user decision-query-api
-    mem_limit: 320m
+    mem_limit: 384m # includes the OpenTelemetry agent
     restart: unless-stopped
     depends_on:
       elasticsearch: { condition: service_healthy }
       es-setup: { condition: service_completed_successfully }
     environment:
+      OTEL_SERVICE_NAME: decision-query-api
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment=local,service.namespace=cc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_TRACES_SAMPLER: parentbased_always_on # production: parentbased_traceidratio with OTEL_TRACES_SAMPLER_ARG=0.1
+      OTEL_SDK_DISABLED: ${OTEL_SDK_DISABLED:-false} # make up sets it to true when the obs profile is not selected
       SERVER_SSL_ENABLED: "true" # mutual TLS on the service port; only the listed client CNs may call (apisix, application-api)
       SERVER_KEYSTORE: /pki/keystore.p12
       SERVER_TRUSTSTORE: /pki/truststore.p12
@@ -407,13 +430,18 @@ services:
       options: { max-size: 10m, max-file: "3" }
     profiles: [edge]
     env_file: [.env.derived]
-    mem_limit: 320m
+    mem_limit: 384m # includes the OpenTelemetry agent
     restart: unless-stopped
     depends_on:
       kafka: { condition: service_healthy }
       topic-init: { condition: service_completed_successfully }
       decision-query-api: { condition: service_healthy, required: false } # analytics profile
     environment:
+      OTEL_SERVICE_NAME: application-api
+      OTEL_RESOURCE_ATTRIBUTES: deployment.environment=local,service.namespace=cc
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+      OTEL_TRACES_SAMPLER: parentbased_always_on # production: parentbased_traceidratio with OTEL_TRACES_SAMPLER_ARG=0.1
+      OTEL_SDK_DISABLED: ${OTEL_SDK_DISABLED:-false} # make up sets it to true when the obs profile is not selected
       SERVER_SSL_ENABLED: "true" # mutual TLS on the service port; only the listed client CNs may call (apisix)
       SERVER_KEYSTORE: /pki/keystore.p12
       SERVER_TRUSTSTORE: /pki/truststore.p12
@@ -446,6 +474,8 @@ services:
     mem_limit: 256m
     restart: unless-stopped
     hostname: apisix
+    environment:
+      APISIX_OTEL_SAMPLER: ${APISIX_OTEL_SAMPLER:-always_off} # always_on with the obs profile (make up sets it)
     entrypoint: ["/bin/sh", "/gateway/entrypoint.sh"]
     ports:
       - "127.0.0.1:8443:9443"
@@ -467,7 +497,166 @@ services:
       retries: 10
       start_period: 20s
 
+  # ----------------------------------------------------------- obs: metrics, traces, alerts, dashboards (logs stay in ELK)
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.123.0
+    profiles: [obs]
+    mem_limit: 128m
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol/collector.yaml"]
+    depends_on:
+      tempo: { condition: service_started }
+    volumes:
+      - ../../observability/otel/collector.yaml:/etc/otelcol/collector.yaml:ro
+
+  tempo:
+    image: grafana/tempo:2.7.2
+    profiles: [obs]
+    mem_limit: 256m
+    restart: unless-stopped
+    user: "0:0" # local demo: the named volume is root-owned
+    command: ["-config.file=/etc/tempo/tempo.yaml"]
+    volumes:
+      - ../../observability/tempo/tempo.yaml:/etc/tempo/tempo.yaml:ro
+      - tempo-data:/var/tempo
+
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    profiles: [obs]
+    mem_limit: 256m
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=2d
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    ports:
+      - "127.0.0.1:9090:9090" # plain http, no login: a developer tool, loopback only
+    depends_on:
+      alertmanager: { condition: service_started }
+    volumes:
+      - ../../observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ../../observability/prometheus/rules:/etc/prometheus/rules:ro
+      - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
+      - prometheus-data:/prometheus
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    profiles: [obs]
+    mem_limit: 64m
+    restart: unless-stopped
+    command: ["--config.file=/etc/alertmanager/alertmanager.yml", "--storage.path=/alertmanager"]
+    ports:
+      - "127.0.0.1:9097:9093" # 9093 on the host is Kafka
+    volumes:
+      - ../../observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+
+  grafana:
+    image: grafana/grafana-oss:11.5.2
+    profiles: [obs]
+    mem_limit: 192m
+    restart: unless-stopped
+    hostname: grafana
+    ports:
+      - "127.0.0.1:3000:3000" # https with our certificate; log in as admin (GRAFANA_ADMIN_PASSWORD in the root env file)
+    depends_on:
+      prometheus: { condition: service_started }
+      tempo: { condition: service_started }
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?run make up once to generate it}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_SERVER_PROTOCOL: https
+      GF_SERVER_CERT_FILE: /pki/grafana.crt
+      GF_SERVER_CERT_KEY: /pki/grafana.key
+      GF_SERVER_ROOT_URL: https://localhost:3000
+      GF_UNIFIED_ALERTING_ENABLED: "false" # alerts are Prometheus rules in Alertmanager (and the business ones in Kibana)
+      GF_ALERTING_ENABLED: "false"
+      GF_FEATURE_TOGGLES_ENABLE: traceqlEditor
+      GRAFANA_ES_PASSWORD: ${GRAFANA_ES_PASSWORD:?run make up once to generate it}
+    volumes:
+      - ../../observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../../observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ${PKI_DIR:-../../security/pki/out}/grafana/grafana.crt:/pki/grafana.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/grafana/grafana.key:/pki/grafana.key:ro
+      - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
+      - grafana-data:/var/lib/grafana
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --no-check-certificate -O- https://localhost:3000/api/health | grep -q ok"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter:v1.9.0
+    profiles: [obs]
+    mem_limit: 64m
+    restart: unless-stopped
+    command:
+      - --kafka.server=kafka:9093
+      - --tls.enabled
+      - --tls.ca-file=/pki/ca.crt
+      - --tls.cert-file=/pki/kafka-exporter.crt
+      - --tls.key-file=/pki/kafka-exporter.key
+    depends_on:
+      kafka: { condition: service_healthy }
+    volumes:
+      - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/kafka-exporter/kafka-exporter.crt:/pki/kafka-exporter.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/kafka-exporter/kafka-exporter.key:/pki/kafka-exporter.key:ro
+
+  elasticsearch-exporter:
+    image: quay.io/prometheuscommunity/elasticsearch-exporter:v1.8.0
+    profiles: [obs]
+    mem_limit: 64m
+    restart: unless-stopped
+    command:
+      - --es.uri=https://elasticsearch:9200
+      - --es.ca=/pki/ca.crt
+      - --es.all
+      - --es.indices
+    environment:
+      ES_USERNAME: metrics_exporter # monitor privileges only
+      ES_PASSWORD: ${OBS_EXPORTER_PASSWORD:?run make up once to generate it}
+    depends_on:
+      elasticsearch: { condition: service_healthy }
+      es-setup: { condition: service_completed_successfully }
+    volumes:
+      - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
+
+  logstash-exporter:
+    # amd64 only image: runs under Rosetta emulation on Apple Silicon (docs/observability.md)
+    image: ghcr.io/kuskoman/logstash-exporter:v1.8.2
+    platform: linux/amd64
+    profiles: [obs]
+    mem_limit: 64m
+    restart: unless-stopped
+    environment:
+      LOGSTASH_URL: http://logstash:9600
+    depends_on:
+      logstash: { condition: service_healthy }
+
+  blackbox-exporter:
+    image: prom/blackbox-exporter:v0.26.0
+    profiles: [obs]
+    mem_limit: 32m
+    restart: unless-stopped
+    command: ["--config.file=/etc/blackbox/blackbox.yml"]
+    volumes:
+      - ../../observability/blackbox/blackbox.yml:/etc/blackbox/blackbox.yml:ro
+      - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/admin/admin.crt:/pki/probe.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/admin/admin.key:/pki/probe.key:ro
+
 volumes:
   kafka-data:
   es-data:
   logstash-data:
+  tempo-data:
+  prometheus-data:
+  grafana-data:
