@@ -26,11 +26,5 @@ dependencies:
 - name: logstash
   repository: file://../charts/logstash
   version: 0.1.0
-- name: filebeat
-  repository: file://../charts/filebeat
-  version: 0.1.0
-- name: cc-observability
-  repository: file://../charts/cc-observability
-  version: 0.1.0
-digest: sha256:2857d572bd7cdb1193271f78a2ea1de4bc433d66eea50b6b9d897dae94a6e1a2
-generated: "2026-10-18T16:23:06.992795-04:00"
+digest: sha256:081f8f26f90323f67efd2faa8f62c8231e8b58bb0595ee31c1e5525a1755659f
+generated: "2026-10-18T17:55:28.737821-04:00"

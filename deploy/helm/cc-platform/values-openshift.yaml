@@ -16,11 +16,8 @@ apisix:
   securityContext: {} # no runAsUser: the SCC injects one (the image user is only a name)
   expose: { enabled: true, termination: passthrough }
   serviceMonitor: { enabled: true }
-filebeat: { enabled: false } # root + hostPath is not allowed by restricted-v2: use OpenShift Logging (Vector) to forward to Logstash/Elasticsearch
 logstash: { enabled: true }
 odm-dc-mcp: { enabled: true }
-cc-observability:
-  enabled: false # kube-prometheus-stack would clash with the platform Prometheus; Tempo and the collector can be installed alone (see the guide)
 
 txn-generator: { serviceMonitor: { enabled: true } }
 decision-orchestrator: { serviceMonitor: { enabled: true } }

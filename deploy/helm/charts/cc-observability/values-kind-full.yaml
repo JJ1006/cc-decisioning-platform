@@ -1,0 +1,4 @@
+# kind full: Grafana reads cc-logs from the Elasticsearch of cc-infra (secret cc-grafana-env), https with the cert-manager certificate.
+logs:
+  elasticsearch:
+    enabled: true

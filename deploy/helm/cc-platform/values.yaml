@@ -36,5 +36,3 @@ odm:
   enabled: true
   license: "" # you must set accept (values-kind-*.yaml and values-openshift.yaml do, for the dev install)
 logstash: { enabled: false }
-filebeat: { enabled: false }
-cc-observability: { enabled: false }

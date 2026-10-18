@@ -137,6 +137,11 @@ up() {
   say "cc-platform ($profile)"
   hlm upgrade --install cc "$H/cc-platform" -n "$NS" -f "$H/cc-platform/values-kind-$profile.yaml" \
     --set "global.image.registry=${IMAGE_REGISTRY%%/*}" --set "global.image.tag=$IMAGE_TAG" >/dev/null
+  if [[ $profile == full ]]; then # separate releases: cluster-scoped objects (Filebeat's ClusterRole, the Prometheus stack) stay out of the namespaced umbrella
+    say "filebeat and cc-observability"
+    hlm upgrade --install filebeat "$H/charts/filebeat" -n "$NS" --set "image.tag=8.19.23" >/dev/null
+    hlm upgrade --install obs "$H/charts/cc-observability" -n "$NS" -f "$H/charts/cc-observability/values-kind-full.yaml" --timeout 10m >/dev/null
+  fi
   local d
   for d in $(ctx -n "$NS" get deploy -o name); do
     ctx -n "$NS" rollout status "$d" --timeout=600s

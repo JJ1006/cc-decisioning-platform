@@ -16,10 +16,6 @@ apisix:
   serviceMonitor: { enabled: true }
 odm-dc-mcp: { enabled: true }
 logstash: { enabled: true }
-filebeat: { enabled: true }
-cc-observability:
-  enabled: true
-  logs: { elasticsearch: { enabled: true } }
 
 txn-generator: { serviceMonitor: { enabled: true } }
 decision-orchestrator: { serviceMonitor: { enabled: true } }

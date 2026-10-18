@@ -4,7 +4,3 @@ description: "Apache APISIX 3.x gateway in standalone (declarative) mode, mutual
 type: application
 version: 0.1.0
 appVersion: "3.13.0-debian"
-dependencies:
-  - name: cc-lib
-    version: 0.1.0
-    repository: file://../../cc-lib
