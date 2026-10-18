@@ -4,6 +4,7 @@
 #   obs        otel-collector, tempo, prometheus, alertmanager, grafana (:3000, https) and the exporters (kafka, elasticsearch, logstash,
 #              blackbox): metrics, traces and infrastructure alerts. About 1 GB; with core+edge it fits in 7 GB, add analytics only on a
 #              larger Docker VM (docs/observability.md).
+#   mcp        odm-dc-mcp (our MCP server, /mcp/dc at the gateway) and odm-res-mcp (the official ODM one): AI agents, docs/mcp.md
 #   edge       apisix gateway (:8443, mutual TLS) and application-api   (requires core; status, decisions and statistics also need
 #              decision-query-api from analytics). Service ports are not published: see compose.debug.yml.
 # All images are multi-arch; ODM and the rest run natively on Apple Silicon.
@@ -484,6 +485,7 @@ services:
       application-api: { condition: service_healthy }
       decision-query-api: { condition: service_healthy, required: false } # analytics profile
       txn-generator: { condition: service_healthy }
+      odm-dc-mcp: { condition: service_healthy, required: false } # mcp profile
     volumes:
       - ../../gateway/apisix/entrypoint.sh:/gateway/entrypoint.sh:ro
       - ../../gateway/apisix/apisix.yaml.tmpl:/gateway/apisix.yaml.tmpl:ro
@@ -655,6 +657,92 @@ services:
       - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
       - ${PKI_DIR:-../../security/pki/out}/admin/admin.crt:/pki/probe.crt:ro
       - ${PKI_DIR:-../../security/pki/out}/admin/admin.key:/pki/probe.key:ro
+
+  # ----------------------------------------------------------- mcp: the two MCP servers (docs/mcp.md)
+  odm-dc-mcp:
+    # Our server (mcp/odm-dc-mcp-server): Decision Center read-only, decisions and statistics through the gateway, what-if, audit on cc.audit.v1.
+    # Streamable HTTP with mutual TLS; reached at https://localhost:8443/mcp/dc (gateway role MCP_CLIENT), not published.
+    build: { context: ../.., dockerfile: mcp/odm-dc-mcp-server/Dockerfile }
+    image: ccplatform/odm-dc-mcp:dev
+    labels:
+      co.elastic.logs/enabled: "true" # Filebeat ships this container's logs
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
+    profiles: [mcp]
+    env_file: [.env.derived]
+    mem_limit: 256m # was 192m: Presidio and spaCy's tokenizer idle at about 180 MB
+    restart: unless-stopped
+    hostname: odm-dc-mcp
+    depends_on:
+      kafka: { condition: service_healthy }
+      topic-init: { condition: service_completed_successfully }
+      odm: { condition: service_healthy }
+    environment:
+      TLS_CERT: /pki/server.crt
+      TLS_KEY: /pki/server.key
+      TLS_CA: /pki/ca.crt
+      CA_FILE: /pki/ca.crt
+      ALLOWED_CLIENT_CNS: apisix,odm-dc-mcp # the gateway, and the container's own health check
+      DC_URL: https://odm:9453/decisioncenter-api
+      RES_URL: https://odm:9453
+      GATEWAY_URL: https://apisix:9443
+      KAFKA_BOOTSTRAP: kafka:9093
+      MCP_RES_CERT: /pki/mcp-res.crt
+      MCP_RES_CERT_KEY: /pki/mcp-res.key
+      MCP_AGENT_CERT: /pki/mcp-agent.crt
+      MCP_AGENT_CERT_KEY: /pki/mcp-agent.key
+      ALLOW_DEPLOY: "false" # deployment tool stays off; see docs/mcp.md to enable it with an approval token
+    volumes:
+      - ${PKI_DIR:-../../security/pki/out}/odm-dc-mcp/odm-dc-mcp.crt:/pki/server.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/odm-dc-mcp/odm-dc-mcp.key:/pki/server.key:ro
+      - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/mcp-res/mcp-res.crt:/pki/mcp-res.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/mcp-res/mcp-res.key:/pki/mcp-res.key:ro
+      - ${PKI_DIR:-../../security/pki/out}/mcp-agent/mcp-agent.crt:/pki/mcp-agent.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/mcp-agent/mcp-agent.key:/pki/mcp-agent.key:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import ssl,http.client as h; c=ssl.create_default_context(cafile='/pki/ca.crt'); c.load_cert_chain('/pki/server.crt','/pki/server.key'); x=h.HTTPSConnection('odm-dc-mcp',3001,context=c,timeout=4); x.request('GET','/health'); raise SystemExit(0 if x.getresponse().status==200 else 1)"]
+      interval: 15s
+      timeout: 6s
+      retries: 10
+      start_period: 30s
+
+  odm-res-mcp:
+    # The official IBM ODM Decision MCP server at a pinned commit (mcp/odm-res-mcp): every ruleset with agent.enabled=true becomes a tool, RES over mutual TLS.
+    # Remote mode speaks plain HTTP inside the compose network and is not published and not routed by the gateway (docs/mcp.md).
+    build: { context: ../.., dockerfile: mcp/odm-res-mcp/Dockerfile }
+    image: ccplatform/odm-res-mcp:dev
+    labels:
+      co.elastic.logs/enabled: "true"
+    logging:
+      driver: json-file
+      options: { max-size: 10m, max-file: "3" }
+    profiles: [mcp]
+    env_file: [.env.derived]
+    mem_limit: 192m
+    restart: unless-stopped
+    hostname: odm-res-mcp
+    depends_on:
+      odm: { condition: service_healthy }
+    environment:
+      ODM_URL: https://odm:9453/res
+      ODM_RUNTIME_URL: https://odm:9453/DecisionService
+      SSL_CERT_PATH: /pki/ca.crt
+      VERIFY_SSL_HOSTNAME: "True"
+      MTLS_CERT_PATH: /pki/mcp-res.crt
+      MTLS_KEY_PATH: /pki/mcp-res.key
+      LOG_LEVEL: WARNING
+    volumes:
+      - ${PKI_DIR:-../../security/pki/out}/ca/ca.crt:/pki/ca.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/mcp-res/mcp-res.crt:/pki/mcp-res.crt:ro
+      - ${PKI_DIR:-../../security/pki/out}/mcp-res/mcp-res.key:/pki/mcp-res.key:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import socket; socket.create_connection(('localhost',3000),3).close()"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
 volumes:
   kafka-data:

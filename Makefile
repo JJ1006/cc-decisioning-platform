@@ -8,7 +8,7 @@ OBS_ENV = $(if $(filter obs,$(subst $(comma), ,$(PROFILE))),APISIX_OTEL_SAMPLER=
 comma := ,
 
 .DEFAULT_GOAL := help
-.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules test-logstash lint-api api-docs test-api-docs lint-obs up-obs grafana-shots check-dashboards api-call cert-expiry seed-kibana export-kibana kibana-shots demo kind-up ocp-render eval-rules eval-agent what-if
+.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules test-logstash lint-api api-docs test-api-docs test-mcp lint-obs up-obs grafana-shots check-dashboards api-call cert-expiry seed-kibana export-kibana kibana-shots demo kind-up ocp-render eval-rules eval-agent what-if
 
 help: ## Show targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -23,6 +23,9 @@ up: ## Start compose profiles: make up PROFILE=core,analytics (run make pki firs
 	@$(OBS_ENV) PROFILE=$(PROFILE) scripts/wait-healthy.sh
 	@scripts/check-es-mapping.sh
 	@case ',$(PROFILE),' in *,analytics,*) scripts/seed-kibana.sh ;; esac
+
+test-mcp: ## ruff, mypy --strict and pytest of the MCP server in mcp/odm-dc-mcp-server (needs uv)
+	@scripts/test-mcp.sh
 
 lint-obs: ## Static checks of the observability config: dashboards = generator, promtool, amtool, collector validate, runbooks
 	@scripts/lint-observability.sh
@@ -51,6 +54,7 @@ verify: ## Full local verification (build + tests + format check)
 	@scripts/test-logstash.sh
 	@$(MAKE) --no-print-directory lint-api
 	@scripts/lint-observability.sh
+	@scripts/test-mcp.sh
 
 test: ## Unit tests
 	@if grep -q '<module>' pom.xml; then mvn -q test; else echo "no Maven modules yet"; fi

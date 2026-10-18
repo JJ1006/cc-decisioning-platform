@@ -11,7 +11,11 @@ rules/ruleapps
 rules/dc-export
 docs
 evals
-mcp
 observability
 gateway
 node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache

@@ -27,11 +27,11 @@ COMPONENTS=(
   kafka elasticsearch kibana odm apisix
   application-api decision-query-api txn-generator decision-orchestrator notification-svc
   logstash filebeat
-  kafka-ui grafana kafka-exporter
+  kafka-ui grafana kafka-exporter odm-dc-mcp odm-res-mcp
 )
 # Pure clients: client authentication only. The CN is the consumer name at the gateway (gateway/apisix/README.md); load-test is
 # used by verify-mtls for the rate-limit checks so the real consumers keep their quota.
-CLIENTS=(admin demo-partner underwriter-portal analyst ops-admin load-test mcp)
+CLIENTS=(admin demo-partner underwriter-portal analyst ops-admin load-test mcp-res mcp-agent mcp-client)
 
 KEYTOOL=${KEYTOOL:-$(command -v keytool || true)}
 [[ -z "$KEYTOOL" && -x /opt/homebrew/opt/openjdk@21/bin/keytool ]] && KEYTOOL=/opt/homebrew/opt/openjdk@21/bin/keytool
@@ -95,6 +95,9 @@ issue() {
     -out "$dir/$name.csr"
   {
     echo "basicConstraints=critical,CA:FALSE"
+    # Python 3.13 verifies strictly (VERIFY_X509_STRICT): a leaf certificate needs the key identifiers or it is refused
+    echo "subjectKeyIdentifier=hash"
+    echo "authorityKeyIdentifier=keyid,issuer"
     echo "keyUsage=critical,digitalSignature,keyEncipherment"
     echo "extendedKeyUsage=$eku"
     [[ -n "$san" ]] && echo "$san"

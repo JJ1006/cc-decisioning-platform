@@ -29,6 +29,7 @@ plugins:
   - serverless-pre-function
   - cors
   - proxy-rewrite
+  - proxy-control
   - response-rewrite
   - limit-count
   - limit-req
