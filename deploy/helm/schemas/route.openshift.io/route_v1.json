@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Hand-written subset of route.openshift.io/v1 Route (the datreeio CRDs-catalog has no OpenShift Route). Strict: unknown fields fail. Source: https://docs.openshift.com/container-platform/latest/rest_api/network_apis/route-route-openshift-io-v1.html",
+  "type": "object",
+  "required": ["apiVersion", "kind", "metadata", "spec"],
+  "properties": {
+    "apiVersion": { "const": "route.openshift.io/v1" },
+    "kind": { "const": "Route" },
+    "metadata": { "type": "object" },
+    "spec": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["to"],
+      "properties": {
+        "host": { "type": "string" },
+        "subdomain": { "type": "string" },
+        "path": { "type": "string" },
+        "wildcardPolicy": { "enum": ["None", "Subdomain"] },
+        "to": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "name"],
+          "properties": { "kind": { "const": "Service" }, "name": { "type": "string" }, "weight": { "type": "integer", "minimum": 0, "maximum": 256 } }
+        },
+        "alternateBackends": { "type": "array", "items": { "type": "object" } },
+        "port": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["targetPort"],
+          "properties": { "targetPort": { "type": ["string", "integer"] } }
+        },
+        "tls": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["termination"],
+          "properties": {
+            "termination": { "enum": ["edge", "passthrough", "reencrypt"] },
+            "insecureEdgeTerminationPolicy": { "enum": ["Allow", "Disable", "None", "Redirect"] },
+            "certificate": { "type": "string" },
+            "key": { "type": "string" },
+            "caCertificate": { "type": "string" },
+            "destinationCACertificate": { "type": "string" },
+            "externalCertificate": { "type": "object" }
+          }
+        }
+      }
+    }
+  }
+}

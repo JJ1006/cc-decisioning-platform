@@ -1,0 +1,34 @@
+# txn-generator. Limits come from deploy/compose/docker-compose.yml (mem_limit 320m, includes the OpenTelemetry agent).
+image:
+  repository: jj1006/cc-txn-generator
+  pullPolicy: IfNotPresent
+replicas: 1
+port: 8080 # mutual TLS: only the gateway certificate (CN=apisix) may call
+tls: true
+managementPort: 9090 # plain http for probes and metrics, never exposed outside the namespace
+resources:
+  requests: { cpu: 50m, memory: 192Mi }
+  limits: { cpu: "1", memory: 320Mi }
+env:
+  SERVER_SSL_ENABLED: "true"
+  SERVER_KEYSTORE: /pki/keystore.p12
+  SERVER_TRUSTSTORE: /pki/truststore.p12
+  MANAGEMENT_PORT: "9090"
+pkiPasswordEnv: [KEYSTORE_PASSWORD, TRUSTSTORE_PASSWORD]
+pki: { enabled: true, format: pkcs12 }
+kafka: { enabled: true } # KafkaUser txn-generator (cc-infra): write cc.applications.submitted.v1
+otel: { enabled: true }
+hpa: { enabled: false }
+pdb: { enabled: false }
+serviceMonitor: { enabled: false }
+networkPolicy:
+  enabled: true
+  allowPrometheus: true
+  ingress:
+    - from: [{ podSelector: { matchLabels: { app.kubernetes.io/name: apisix } } }]
+      ports: [8080]
+  egress:
+    - to: [{ podSelector: { matchLabels: { strimzi.io/cluster: cc, strimzi.io/kind: Kafka } } }]
+      ports: [{ port: 9093, protocol: TCP }]
+    - to: [{ podSelector: { matchLabels: { app.kubernetes.io/name: otel-collector } } }]
+      ports: [{ port: 4318, protocol: TCP }]

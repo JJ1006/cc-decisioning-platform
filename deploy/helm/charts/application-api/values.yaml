@@ -1,0 +1,37 @@
+# application-api: submission, status and manual decisions; reads decisions through decision-query-api. mem_limit 384m in compose.
+image:
+  repository: jj1006/cc-application-api
+  pullPolicy: IfNotPresent
+replicas: 1
+port: 8080 # mutual TLS: only the gateway certificate (CN=apisix) may call
+tls: true
+managementPort: 9090
+resources:
+  requests: { cpu: 100m, memory: 256Mi }
+  limits: { cpu: "1", memory: 384Mi }
+env:
+  SERVER_SSL_ENABLED: "true"
+  SERVER_KEYSTORE: /pki/keystore.p12
+  SERVER_TRUSTSTORE: /pki/truststore.p12
+  MANAGEMENT_PORT: "9090"
+  QUERY_API_URL: https://decision-query-api:8080
+pkiPasswordEnv: [KEYSTORE_PASSWORD, TRUSTSTORE_PASSWORD]
+pki: { enabled: true, format: pkcs12 }
+kafka: { enabled: true }
+otel: { enabled: true }
+hpa: { enabled: false, minReplicas: 1, maxReplicas: 3, cpu: 80 }
+pdb: { enabled: false }
+serviceMonitor: { enabled: false }
+networkPolicy:
+  enabled: true
+  allowPrometheus: true
+  ingress:
+    - from: [{ podSelector: { matchLabels: { app.kubernetes.io/name: apisix } } }]
+      ports: [8080]
+  egress:
+    - to: [{ podSelector: { matchLabels: { strimzi.io/cluster: cc, strimzi.io/kind: Kafka } } }]
+      ports: [{ port: 9093, protocol: TCP }]
+    - to: [{ podSelector: { matchLabels: { app.kubernetes.io/name: decision-query-api } } }]
+      ports: [{ port: 8080, protocol: TCP }]
+    - to: [{ podSelector: { matchLabels: { app.kubernetes.io/name: otel-collector } } }]
+      ports: [{ port: 4318, protocol: TCP }]

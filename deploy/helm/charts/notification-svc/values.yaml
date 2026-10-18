@@ -1,0 +1,24 @@
+# notification-svc: consumes the decision topics, publishes cc.notifications.v1. mem_limit 320m in compose.
+image:
+  repository: jj1006/cc-notification-svc
+  pullPolicy: IfNotPresent
+replicas: 1
+port: 8080 # plain http: probes and metrics only, no API
+tls: false
+resources:
+  requests: { cpu: 50m, memory: 192Mi }
+  limits: { cpu: "1", memory: 320Mi }
+kafka: { enabled: true }
+otel: { enabled: true }
+hpa: { enabled: false }
+pdb: { enabled: false }
+serviceMonitor: { enabled: false }
+networkPolicy:
+  enabled: true
+  allowPrometheus: true
+  ingress: []
+  egress:
+    - to: [{ podSelector: { matchLabels: { strimzi.io/cluster: cc, strimzi.io/kind: Kafka } } }]
+      ports: [{ port: 9093, protocol: TCP }]
+    - to: [{ podSelector: { matchLabels: { app.kubernetes.io/name: otel-collector } } }]
+      ports: [{ port: 4318, protocol: TCP }]

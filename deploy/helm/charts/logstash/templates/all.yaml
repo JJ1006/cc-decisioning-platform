@@ -1,0 +1,58 @@
+{{- /*
+  Pipelines and Ruby filters are the compose files (scripts/helm-sync.sh copies deploy/logstash into files/). ConfigMap keys cannot hold
+  a slash, so "kafka-events/10-input.conf" is stored as "pipelines__kafka-events__10-input.conf" and mapped back to its path by the volume items.
+*/ -}}
+{{- $pipeItems := list }}
+{{- $rubyItems := list }}
+{{- $data := dict }}
+{{- range $path, $content := .Files.Glob "files/pipelines/*/*.conf" }}
+{{- $rel := trimPrefix "files/pipelines/" $path }}
+{{- $key := replace "/" "__" (printf "pipelines__%s" $rel) }}
+{{- $_ := set $data $key ($content | toString) }}
+{{- $pipeItems = append $pipeItems (dict "key" $key "path" $rel) }}
+{{- end }}
+{{- range $path, $content := .Files.Glob "files/ruby/*.rb" }}
+{{- $rel := trimPrefix "files/ruby/" $path }}
+{{- $_ := set $data (printf "ruby__%s" $rel) ($content | toString) }}
+{{- $rubyItems = append $rubyItems (dict "key" (printf "ruby__%s" $rel) "path" $rel) }}
+{{- end }}
+{{- $_ := set .Values "files" (dict "logstash.yml" (.Files.Get "files/logstash.yml") "pipelines.yml" (.Files.Get "files/pipelines.yml")) }}
+{{- $dataVolume := dict "name" "data" "emptyDir" (dict) }}
+{{- if .Values.persistence.enabled }}
+{{- $dataVolume = dict "name" "data" "persistentVolumeClaim" (dict "claimName" "logstash-data") }}
+{{- end }}
+{{- $_ := set .Values "extraVolumes" (list
+  (dict "name" "pipelines" "configMap" (dict "name" "logstash-pipelines" "defaultMode" 292 "items" $pipeItems))
+  (dict "name" "ruby" "configMap" (dict "name" "logstash-pipelines" "defaultMode" 292 "items" $rubyItems))
+  $dataVolume) }}
+{{- $_ := set .Values "extraVolumeMounts" (list
+  (dict "name" "pipelines" "mountPath" "/usr/share/logstash/pipeline" "readOnly" true)
+  (dict "name" "ruby" "mountPath" "/usr/share/logstash/ruby" "readOnly" true)
+  (dict "name" "data" "mountPath" "/usr/share/logstash/data")) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: logstash-pipelines
+  labels: {{- include "cc-lib.labels" . | nindent 4 }}
+data:
+  {{- range $k, $v := $data }}
+  {{ $k }}: |-
+    {{- $v | nindent 4 }}
+  {{- end }}
+{{- if .Values.persistence.enabled }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: logstash-data
+  labels: {{- include "cc-lib.labels" . | nindent 4 }}
+spec:
+  accessModes: [ReadWriteOnce]
+  {{- with .Values.persistence.storageClass }}
+  storageClassName: {{ . }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.size }}
+{{- end }}
+{{ include "cc-lib.all" . }}

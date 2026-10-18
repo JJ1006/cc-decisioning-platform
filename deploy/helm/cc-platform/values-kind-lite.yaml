@@ -1,0 +1,29 @@
+# kind, reduced set for a 7 GB Docker VM: Kafka (Strimzi), ODM (dev), orchestrator, generator, notification, application-api, gateway.
+# NO Elasticsearch / Logstash / Filebeat / observability, so no query API and no MCP server (status and decision reads return 502 from the gateway).
+# `make kind-up PROFILE=lite` builds the images as ghcr.io/jj1006/cc-<service>:dev and loads them into the cluster.
+global:
+  image: { registry: ghcr.io, tag: dev }
+  exposure: none # the gateway is a NodePort mapped to localhost:8443 (deploy/kind/cluster.yaml)
+
+decision-query-api: { enabled: false }
+odm-dc-mcp: { enabled: false }
+logstash: { enabled: false }
+filebeat: { enabled: false }
+cc-observability: { enabled: false }
+
+odm:
+  license: accept # ODM for Developers: running it means you accept the IBM licence
+  resources:
+    requests: { cpu: 300m, memory: 1280Mi }
+    limits: { cpu: "2", memory: 2560Mi }
+
+apisix:
+  service: { type: NodePort, nodePort: 30443 }
+  securityContext: { runAsUser: 636 } # the image's user "apisix" is a name: runAsNonRoot needs the number (OpenShift assigns its own)
+  expose: { enabled: false }
+
+# one replica each, smaller requests so everything fits next to ODM
+txn-generator: { resources: { requests: { cpu: 50m, memory: 160Mi }, limits: { cpu: "1", memory: 320Mi } } }
+decision-orchestrator: { resources: { requests: { cpu: 100m, memory: 224Mi }, limits: { cpu: "1", memory: 384Mi } } }
+notification-svc: { resources: { requests: { cpu: 50m, memory: 160Mi }, limits: { cpu: "1", memory: 320Mi } } }
+application-api: { resources: { requests: { cpu: 50m, memory: 192Mi }, limits: { cpu: "1", memory: 384Mi } } }

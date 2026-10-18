@@ -1,0 +1,5 @@
+apiVersion: v2
+name: cc-lib
+description: Library chart of the cc-decisioning-platform workloads (deployment, service, configmap, certificate, hpa, pdb, networkpolicy, servicemonitor, route/ingress)
+type: library
+version: 0.1.0

@@ -1,0 +1,16 @@
+{{- /* the eight dashboards of observability/grafana/dashboards (scripts/helm-sync.sh); the Grafana sidecar loads every ConfigMap labelled grafana_dashboard */ -}}
+{{- range $path, $content := .Files.Glob "files/dashboards/*.json" }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cc-dashboard-{{ base $path | trimSuffix ".json" }}
+  labels:
+    grafana_dashboard: "1"
+    app.kubernetes.io/part-of: cc-platform
+  annotations:
+    grafana_folder: Maple Northern
+data:
+  {{ base $path }}: |-
+    {{- $content | toString | nindent 4 }}
+{{- end }}

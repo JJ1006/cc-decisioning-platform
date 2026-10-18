@@ -1,0 +1,40 @@
+# cc-platform defaults: everything of the platform on a generic Kubernetes (no Ingress, no Route). Combine with one of
+#   values-kind-lite.yaml   kind, 7 GB Docker VM: Kafka, ODM, the event services, application-api, the gateway
+#   values-kind-full.yaml   kind, 12 GB+: adds Elasticsearch/Logstash/Filebeat, query API, MCP server and observability
+#   values-openshift.yaml   OpenShift 4.14+: Routes, restricted-v2 SCC, platform monitoring
+# Install order: operators (cert-manager, Strimzi, ECK) -> secrets (scripts/k8s-secrets.sh) -> cc-infra -> cc-platform. docs/deploy-kubernetes.md
+global:
+  image:
+    registry: ghcr.io # our images: ghcr.io/jj1006/cc-<service>:<tag> (CI: .github/workflows/images.yml, multi-arch, cosign-signed, SBOM)
+    tag: dev # a commit SHA or the release version
+  pki:
+    issuer: cc-ca # ClusterIssuer of cc-infra (or your own)
+    passwordSecret: cc-pki-password # key "password": PKCS12 / JKS store password of every cert-manager keystore
+    caPem: "" # PEM of the CA for OpenShift reencrypt Routes: --set-file global.pki.caPem=<ca.crt>
+  kafka:
+    bootstrap: cc-kafka-bootstrap:9093
+    clusterCaSecret: cc-cluster-ca-cert
+  otel:
+    enabled: false # true with cc-observability: services send traces to http://otel-collector:4318
+    endpoint: http://otel-collector:4318
+    sampler: parentbased_always_on # production: parentbased_traceidratio with 0.1
+    environment: kubernetes
+  monitoring:
+    namespace: monitoring # where Prometheus runs (NetworkPolicy for the scrape)
+  exposure: none # ingress | route | none
+  ingress:
+    className: nginx
+
+txn-generator: { enabled: true }
+decision-orchestrator: { enabled: true }
+notification-svc: { enabled: true }
+decision-query-api: { enabled: true }
+application-api: { enabled: true }
+odm-dc-mcp: { enabled: false } # needs the gateway, the query API and Elasticsearch
+apisix: { enabled: true }
+odm:
+  enabled: true
+  license: "" # you must set accept (values-kind-*.yaml and values-openshift.yaml do, for the dev install)
+logstash: { enabled: false }
+filebeat: { enabled: false }
+cc-observability: { enabled: false }

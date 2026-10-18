@@ -1,0 +1,59 @@
+# ODM for Developers 9.5 all-in-one (Decision Center + RES + Runner) with the embedded Derby database: DEV / EVALUATION ONLY.
+# It is not open source and not redistributed: the image is pulled from IBM's registry, and running it means you accept the licence
+# (license: accept). Production uses the IBM ODM Helm chart / Operator with a real database and the entitled image
+# (https://github.com/DecisionsDev/odm-docker-kubernetes), see docs/deploy-kubernetes.md.
+license: "" # must be set to "accept" (values-kind-*.yaml and values-openshift.yaml do it for the dev install)
+image:
+  registry: "" # third-party image: not under global.image.registry
+  repository: icr.io/cpopen/odm-k8s/odm
+  tag: 9.5.0.1-IF019_25.1.0
+  pullPolicy: IfNotPresent
+replicas: 1 # Derby is per pod: never scale this
+port: 9453 # https, client certificate REQUIRED (files/mtls.xml)
+tls: true
+managementPort: 9060 # plain http inside the pod for the probe; not in the Service
+service:
+  exposeManagement: false
+resources:
+  requests: { cpu: 500m, memory: 1536Mi }
+  limits: { cpu: "2", memory: 2560Mi } # ODM_MEM default in compose
+env:
+  LICENSE: accept
+  SAMPLE: "false" # true loads the Loan Validation sample
+pkiPasswordEnv: [KEYSTORE_PASSWORD, TRUSTSTORE_PASSWORD]
+pki:
+  enabled: true
+  format: jks
+  mountPath: /config/security/volume
+  sources:
+    - secret:
+        name: odm-tls
+        items:
+          - { key: keystore.jks, path: keystore.jks }
+          - { key: truststore.jks, path: truststore.jks }
+filesMountPath: /config/configDropins/overrides
+# Liberty rewrites /config at start (tlsSecurity.xml, the key and trust stores): the root file system must stay writable.
+# kube-linter exception documented in .kube-linter.yaml (no-read-only-root-fs, odm). The user is the image's 1001, any UID works.
+securityContext:
+  readOnlyRootFilesystem: false
+annotations:
+  ignore-check.kube-linter.io/no-read-only-root-fs: "ODM (Liberty) rewrites /config at start; dev image only, see docs/deploy-kubernetes.md"
+writablePaths: [/tmp]
+probes:
+  startupPath: /res/
+  livenessPath: /res/
+  readinessPath: /res/
+  startupFailureThreshold: 90
+otel: { enabled: false }
+hpa: { enabled: false }
+pdb: { enabled: false }
+serviceMonitor: { enabled: false }
+expose: { enabled: false }
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: decision-orchestrator } }
+        - podSelector: { matchLabels: { app.kubernetes.io/name: odm-dc-mcp } }
+      ports: [9453]
+  egress: []

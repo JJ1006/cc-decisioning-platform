@@ -1,0 +1,3 @@
+cc-platform {{ .Chart.Version }} installed in {{ .Release.Namespace }}.
+Gateway: {{ if .Values.apisix.enabled }}{{ if eq (.Values.global.exposure | default "none") "route" }}oc get route apisix{{ else if eq ((.Values.apisix.service | default dict).type | default "ClusterIP") "NodePort" }}https://localhost:8443 (mutual TLS: present a client certificate from the platform CA){{ else }}kubectl port-forward svc/apisix 8443:9443{{ end }}{{ else }}not installed{{ end }}
+Decision Center / RES (dev ODM): kubectl port-forward svc/odm 9443:9453, then make kind-deploy-rules

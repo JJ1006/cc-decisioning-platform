@@ -1,0 +1,123 @@
+# cc-observability: the obs profile of compose on Kubernetes. Sizes follow docs/observability.md (about 1 GB in compose; the Prometheus
+# Operator stack needs more, kind-full keeps it small). On OpenShift disable kube-prometheus-stack and use the platform monitoring
+# (user workload monitoring reads the ServiceMonitors): values-openshift.yaml.
+logs:
+  elasticsearch:
+    enabled: false # Grafana datasource for cc-logs (needs the Elasticsearch of cc-infra and the cc-grafana secret)
+    url: https://cc-es-http:9200
+alertmanagerConfig:
+  enabled: true # observability/alertmanager/alertmanager.yml (ui-only receiver: wire Slack/e-mail for a real deployment)
+grafanaCertificate:
+  enabled: true # https with a cert-manager certificate, like compose
+  issuer: cc-ca
+  host: ""
+
+kube-prometheus-stack:
+  enabled: true
+  fullnameOverride: kps
+  crds: { enabled: true }
+  defaultRules: { create: false } # our own rules in files/rules; the stock ones need node and apiserver metrics a kind node does not give
+  kubeApiServer: { enabled: false }
+  kubeControllerManager: { enabled: false }
+  kubeScheduler: { enabled: false }
+  kubeProxy: { enabled: false }
+  kubeEtcd: { enabled: false }
+  kubelet: { enabled: false }
+  coreDns: { enabled: false }
+  nodeExporter: { enabled: false }
+  kubeStateMetrics: { enabled: true }
+  prometheusOperator:
+    resources:
+      requests: { cpu: 20m, memory: 64Mi }
+      limits: { cpu: 200m, memory: 128Mi }
+  prometheus:
+    prometheusSpec:
+      retention: 2d
+      serviceMonitorSelectorNilUsesHelmValues: false # every ServiceMonitor of the namespace, ours included
+      podMonitorSelectorNilUsesHelmValues: false
+      ruleSelectorNilUsesHelmValues: false
+      resources:
+        requests: { cpu: 100m, memory: 256Mi }
+        limits: { cpu: "1", memory: 512Mi }
+  alertmanager:
+    alertmanagerSpec:
+      configSecret: cc-alertmanager
+      resources:
+        requests: { cpu: 10m, memory: 32Mi }
+        limits: { cpu: 200m, memory: 64Mi }
+  grafana:
+    enabled: true
+    admin:
+      existingSecret: cc-grafana
+      userKey: admin-user
+      passwordKey: admin-password
+    envFromSecret: cc-grafana-env # GRAFANA_ES_PASSWORD
+    resources:
+      requests: { cpu: 50m, memory: 128Mi }
+      limits: { cpu: 500m, memory: 192Mi }
+    grafana.ini:
+      server:
+        protocol: https
+        cert_file: /etc/pki/tls.crt
+        cert_key: /etc/pki/tls.key
+      users: { allow_sign_up: false }
+      analytics: { reporting_enabled: false, check_for_updates: false, check_for_plugin_updates: false }
+      unified_alerting: { enabled: false }
+      alerting: { enabled: false }
+      feature_toggles: { enable: traceqlEditor }
+    extraSecretMounts:
+      - name: pki
+        secretName: grafana-tls
+        mountPath: /etc/pki
+        readOnly: true
+    service: { port: 3000, targetPort: 3000 }
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+        labelValue: "1"
+        searchNamespace: ALL
+        folderAnnotation: grafana_folder
+        provider: { foldersFromFilesStructure: false, allowUiUpdates: false }
+        skipReload: true # the sidecar would call Grafana over plain http; the provider polls the folder anyway
+      datasources:
+        enabled: true
+        label: grafana_datasource
+        labelValue: "1"
+        skipReload: true
+    readinessProbe: { httpGet: { path: /api/health, port: 3000, scheme: HTTPS } }
+    livenessProbe: { httpGet: { path: /api/health, port: 3000, scheme: HTTPS }, initialDelaySeconds: 60 }
+
+tempo:
+  enabled: true
+  fullnameOverride: tempo
+  tempo:
+    retention: 24h
+    resources:
+      requests: { cpu: 50m, memory: 128Mi }
+      limits: { cpu: 500m, memory: 320Mi }
+  persistence: { enabled: false }
+
+opentelemetry-collector:
+  enabled: true
+  fullnameOverride: otel-collector # services send OTLP to http://otel-collector:4318
+  mode: deployment
+  image:
+    repository: otel/opentelemetry-collector-contrib
+    tag: 0.123.0
+  command: { name: otelcol-contrib }
+  configMap:
+    create: false
+    existingName: otel-collector-config
+  presets: {}
+  ports:
+    jaeger-compact: { enabled: false }
+    jaeger-thrift: { enabled: false }
+    jaeger-grpc: { enabled: false }
+    zipkin: { enabled: false }
+    metrics: { enabled: true, containerPort: 8888, servicePort: 8888, protocol: TCP }
+    spanmetrics: { enabled: true, containerPort: 8889, servicePort: 8889, protocol: TCP }
+  resources:
+    requests: { cpu: 20m, memory: 64Mi }
+    limits: { cpu: 500m, memory: 128Mi }
+  serviceMonitor: { enabled: false }

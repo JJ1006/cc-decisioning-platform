@@ -1,0 +1,10 @@
+apiVersion: v2
+name: filebeat
+description: "Filebeat DaemonSet shipping the logs of the cc-platform pods to Logstash (mutual TLS). Not for OpenShift: use OpenShift Logging there."
+type: application
+version: 0.1.0
+appVersion: "8.19.23"
+dependencies:
+  - name: cc-lib
+    version: 0.1.0
+    repository: file://../../cc-lib

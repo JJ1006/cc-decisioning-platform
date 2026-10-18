@@ -1,0 +1,12 @@
+dependencies:
+- name: kube-prometheus-stack
+  repository: https://prometheus-community.github.io/helm-charts
+  version: 92.10.1
+- name: tempo
+  repository: https://grafana.github.io/helm-charts
+  version: 1.24.4
+- name: opentelemetry-collector
+  repository: https://open-telemetry.github.io/opentelemetry-helm-charts
+  version: 0.176.0
+digest: sha256:1f76803d2ccdab31a2f9eaca0df0ffb406c3653eebc24b812fd00c25c29aeb61
+generated: "2026-10-18T16:23:17.704574-04:00"

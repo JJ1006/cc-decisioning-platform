@@ -1,0 +1,6 @@
+dependencies:
+- name: cc-lib
+  repository: file://../../cc-lib
+  version: 0.1.0
+digest: sha256:584ff8ef443aa338ed5d0053cc56895a5c5f75146b832f643d645a8f7574f21e
+generated: "2026-10-18T16:23:25.950854-04:00"

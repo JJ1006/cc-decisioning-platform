@@ -1,0 +1,56 @@
+# Logstash: Kafka (mutual TLS, Strimzi user "logstash") -> Elasticsearch (user logstash_writer). mem_limit 896m in compose (heap 384 MB).
+image:
+  registry: "" # third-party image: not under global.image.registry
+  repository: docker.elastic.co/logstash/logstash
+  tag: 8.19.23
+  pullPolicy: IfNotPresent
+replicas: 1
+port: 5044 # Filebeat input, mutual TLS
+tls: true
+managementPort: 9600
+resources:
+  requests: { cpu: 200m, memory: 640Mi }
+  limits: { cpu: "2", memory: 896Mi }
+env:
+  LS_JAVA_OPTS: -Xms384m -Xmx384m
+  ES_URL: https://cc-es-http:9200
+secretEnv:
+  - { name: LOGSTASH_WRITER_PASSWORD, secret: cc-es-passwords, key: LOGSTASH_WRITER_PASSWORD }
+persistence: # persistent queues and the dead letter queue; off = emptyDir (lite)
+  enabled: false
+  size: 1Gi
+  storageClass: ""
+filesMountPath: /usr/share/logstash/config
+writablePaths: [/tmp, /usr/share/logstash/logs]
+probes:
+  startupPath: /
+  livenessPath: /
+  readinessPath: /
+  startupFailureThreshold: 60
+pki:
+  enabled: true
+  format: pem
+  sources:
+    - secret:
+        name: logstash-tls
+        items:
+          - { key: tls.crt, path: logstash.crt }
+          - { key: tls.key, path: logstash.pk8.key }
+          - { key: ca.crt, path: ca.crt }
+kafka: { enabled: true }
+otel: { enabled: false }
+hpa: { enabled: false }
+pdb: { enabled: false }
+serviceMonitor: { enabled: false, path: /_node/stats }
+expose: { enabled: false }
+networkPolicy:
+  enabled: true
+  allowPrometheus: true
+  ingress:
+    - from: [{ podSelector: { matchLabels: { app.kubernetes.io/name: filebeat } } }]
+      ports: [5044]
+  egress:
+    - to: [{ podSelector: { matchLabels: { strimzi.io/cluster: cc, strimzi.io/kind: Kafka } } }]
+      ports: [{ port: 9093, protocol: TCP }]
+    - to: [{ podSelector: { matchLabels: { common.k8s.elastic.co/type: elasticsearch } } }]
+      ports: [{ port: 9200, protocol: TCP }]

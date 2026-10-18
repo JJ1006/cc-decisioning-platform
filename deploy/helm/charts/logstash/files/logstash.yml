@@ -1,0 +1,6 @@
+# Logstash settings (mounted into the official image). The monitoring API on :9600 is scraped by Prometheus in P8.
+http.host: "0.0.0.0"
+http.port: 9600
+log.format: json
+pipeline.ecs_compatibility: disabled
+config.reload.automatic: false

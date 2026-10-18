@@ -1,0 +1,15 @@
+# Alertmanager: groups and de-duplicates the Prometheus alerts. The receiver is empty on purpose (the Alertmanager UI at
+# http://localhost:9097 and the ALERTS series in Grafana are the surface); wire a webhook, Slack or e-mail receiver here for a real deployment.
+# Business alerts (approval rate, dead letters in Kibana) are a separate system: docs/observability.md.
+route:
+  receiver: ui-only
+  group_by: [alertname, job]
+  group_wait: 15s
+  group_interval: 1m
+  repeat_interval: 4h
+receivers:
+  - name: ui-only
+inhibit_rules:
+  - source_matchers: [alertname = TargetDown]
+    target_matchers: [severity = warning]
+    equal: [job]
