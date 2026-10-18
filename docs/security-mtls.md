@@ -47,6 +47,12 @@ flowchart LR
 | 6 | Logstash, decision-query-api | Elasticsearch `:9200` | password of a least-privilege user over TLS that verifies our CA | HTTPS, user and role (`logstash_writer`: create documents on the write aliases; `decision-query-api`: read on the read aliases) | ES role. The PKI realm (login by certificate) needs a paid licence: `security.realms.pki.available` is `false` on the basic licence, so no certificate login |
 | 7 | Filebeat | Logstash beats input `:5044` | `filebeat` certificate | TLS, client certificate required, our CA | n/a |
 
+| 8 | MCP client (Claude, inspector) | APISIX `/mcp/dc` | `mcp-client` certificate (role MCP_CLIENT) | as hop 1 | the route admits only that role; rate limited, not buffered |
+| 9 | APISIX | odm-dc-mcp `:3001` | `apisix` certificate | the server requires a client certificate from our CA and accepts only CN=apisix (X-Consumer and X-Role believed only from it) | the consumer is the audit actor |
+| 10 | odm-dc-mcp | APISIX (decisions, statistics) | `mcp-agent` certificate (role AGENT) | as hop 1 | may call `GET /v1/decisions*` and `/v1/stats/*` only |
+| 11 | odm-dc-mcp, odm-res-mcp | ODM RES and Decision Center | `mcp-res` certificate + the ODM user | Liberty client authentication | ODM user (basic auth) |
+| 12 | odm-dc-mcp | Kafka `:9093` | `mcp-agent` certificate | client auth required | audit events on `cc.audit.v1` |
+
 Not on the API path and not mutual TLS: Kibana (HTTPS, login), kafka-ui (plain http on `127.0.0.1:8080`, no login, dev tool; it connects to Kafka with
 its own certificate), the Spring management port `9090` of the three API services (plain http inside the Docker network, not published: probes
 and metrics), the KRaft controller listener (plaintext, not published; `make verify-mtls` checks it).

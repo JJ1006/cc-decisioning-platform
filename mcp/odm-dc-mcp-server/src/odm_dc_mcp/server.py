@@ -11,7 +11,7 @@ import uvicorn
 from . import config
 from .audit import KafkaSink
 from .guard import Guard
-from .mtls import ClientCertMiddleware
+from .mtls import CertH11Protocol, ClientCertMiddleware
 from .tools import build_server
 
 
@@ -48,6 +48,7 @@ def main(argv: list[str] | None = None) -> None:
         ssl_keyfile=args.tls_key,
         ssl_ca_certs=args.tls_ca,
         ssl_cert_reqs=ssl.CERT_REQUIRED,
+        http=CertH11Protocol,
         log_level="warning",
     )
 

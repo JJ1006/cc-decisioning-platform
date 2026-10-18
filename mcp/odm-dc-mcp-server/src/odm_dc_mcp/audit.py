@@ -93,8 +93,8 @@ class KafkaSink:
                     "enable.idempotence": True,
                     "acks": "all",
                     "client.id": PRODUCER,
-                    "socket.timeout.ms": 5000,
-                    "message.timeout.ms": 5000,
+                    "socket.timeout.ms": 10000,
+                    "message.timeout.ms": 12000,
                 }
             )
         return self._producer
@@ -108,7 +108,9 @@ class KafkaSink:
         try:
             producer = self._client()
             producer.produce(self._settings.audit_topic, key=key, value=json.dumps(event), on_delivery=done)
-            producer.flush(6)
+            remaining = producer.flush(15)
+            if remaining:
+                LOG.error("audit event not delivered in time (%d message(s) pending)", remaining)
         except Exception:  # noqa: BLE001
             LOG.exception("audit event could not be produced")
             return False

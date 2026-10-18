@@ -1,6 +1,6 @@
 """Remote mode: who is on the other end of the TLS connection.
 
-uvicorn terminates TLS with client certificates REQUIRED (our CA) and hands the peer certificate to the ASGI app. This middleware lets only the listed
+uvicorn terminates TLS with client certificates REQUIRED (our CA); CertH11Protocol keeps the peer certificate and this middleware lets only the listed
 certificate CNs through (the gateway, CN=apisix) and takes the caller's identity from X-Consumer only on such a connection, the same rule as the Java services
 (docs/security-mtls.md): nobody else can present that certificate, so nobody else can assert an identity.
 """
@@ -11,17 +11,38 @@ from typing import Any
 
 from cryptography import x509
 from cryptography.x509.oid import NameOID
+from uvicorn.protocols.http.h11_impl import H11Protocol
 
 from .guard import CALLER, CORRELATION
 
 LOG = logging.getLogger("odm_dc_mcp.mtls")
 
 
+# uvicorn hands the ASGI app no client certificate, so the protocol below keeps the peer's certificate (DER) per connection, keyed by the
+# client address that is also in every request scope.
+PEERS: dict[tuple[str, int], bytes] = {}
+
+
+class CertH11Protocol(H11Protocol):
+    def connection_made(self, transport: Any) -> None:
+        super().connection_made(transport)
+        ssl_object = transport.get_extra_info("ssl_object")
+        der = ssl_object.getpeercert(binary_form=True) if ssl_object else None
+        if der and self.client:
+            PEERS[self.client] = der
+
+    def connection_lost(self, exc: Exception | None) -> None:
+        if self.client:
+            PEERS.pop(self.client, None)
+        super().connection_lost(exc)
+
+
 def peer_cn(scope: dict[str, Any]) -> str | None:
-    chain = (scope.get("extensions") or {}).get("tls", {}).get("client_cert_chain") or []
-    if not chain:
+    client = scope.get("client")
+    der = PEERS.get((client[0], client[1])) if client else None
+    if not der:
         return None
-    cert = x509.load_pem_x509_certificate(chain[0].encode() if isinstance(chain[0], str) else chain[0])
+    cert = x509.load_der_x509_certificate(der)
     cns = cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)
     return str(cns[0].value) if cns else None
 

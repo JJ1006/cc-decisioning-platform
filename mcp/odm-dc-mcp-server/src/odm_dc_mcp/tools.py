@@ -75,7 +75,7 @@ def build_server(settings: Settings, guard: Guard, host: str = "127.0.0.1", port
         "Read-only; ODM is the system of record; an LLM never decides or overrides a credit decision.",
     )
 
-    @mcp.custom_route("/health", methods=["GET"])
+    @mcp.custom_route("/health", methods=["GET"])  # type: ignore[untyped-decorator]
     async def health(_request: Request) -> PlainTextResponse:  # container health check: no data, still behind mutual TLS
         return PlainTextResponse("ok")
 

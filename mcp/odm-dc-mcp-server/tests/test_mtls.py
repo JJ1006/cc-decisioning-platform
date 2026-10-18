@@ -9,10 +9,10 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import NameOID
 
 from odm_dc_mcp.guard import CALLER, CORRELATION
-from odm_dc_mcp.mtls import ClientCertMiddleware
+from odm_dc_mcp.mtls import PEERS, ClientCertMiddleware
 
 
-def pem(cn: str) -> str:
+def der(cn: str) -> bytes:
     key = ec.generate_private_key(ec.SECP256R1())
     name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])
     now = datetime.datetime.now(datetime.UTC)
@@ -26,7 +26,7 @@ def pem(cn: str) -> str:
         .not_valid_after(now + datetime.timedelta(days=1))
         .sign(key, hashes.SHA256())
     )
-    return cert.public_bytes(serialization.Encoding.PEM).decode()
+    return cert.public_bytes(serialization.Encoding.DER)
 
 
 def run(cn: str | None, headers: dict[str, str]) -> tuple[int, dict[str, str | None]]:
@@ -38,11 +38,10 @@ def run(cn: str | None, headers: dict[str, str]) -> tuple[int, dict[str, str | N
         await send({"type": "http.response.body", "body": b"ok"})
 
     mw = ClientCertMiddleware(app, ("apisix", "mcp-agent"), "apisix")
-    scope = {
-        "type": "http",
-        "headers": [(k.encode(), v.encode()) for k, v in headers.items()],
-        "extensions": {"tls": {"client_cert_chain": [pem(cn)] if cn else []}},
-    }
+    client = ("127.0.0.1", 40000 + len(PEERS))
+    if cn:
+        PEERS[client] = der(cn)  # what CertH11Protocol records for the connection
+    scope = {"type": "http", "client": client, "headers": [(k.encode(), v.encode()) for k, v in headers.items()]}
     status: list[int] = []
 
     async def send(msg):

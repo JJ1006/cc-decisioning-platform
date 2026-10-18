@@ -62,7 +62,7 @@ Stop with `make down` (`make down V=1` also deletes the volumes).
 | `analytics` | + Kibana ([dashboards and alerts](docs/kibana.md)), kafka-ui, query-api | +1.3 GB |
 | `obs` | + [Grafana, Prometheus, Tempo, Alertmanager, collector, exporters](docs/observability.md) (`make up-obs`) | +0.6 GB |
 | `edge` | + APISIX (mutual TLS gateway on :8443), application-api | +0.6 GB |
-| `mcp` | 2 MCP servers | +0.2 GB |
+| `mcp` | 2 MCP servers for AI agents ([docs/mcp.md](docs/mcp.md)) | +0.45 GB |
 
 ## Contributing
 
