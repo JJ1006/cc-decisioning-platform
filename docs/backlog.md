@@ -9,3 +9,6 @@
 | Kubernetes: Elasticsearch, Logstash and blackbox exporters | the ELK dashboard and a few alerts of the obs profile have no data on Kubernetes (Kafka lag comes from the Strimzi `kafkaExporter` only when enabled) | P11 |
 | Kubernetes: ECK pods under Pod Security `restricted` | ECK's own init containers need explicit security contexts; kind-full runs the namespace as `privileged` (Filebeat) and OpenShift relies on the SCC | verify on OpenShift, then add the contexts |
 | Kafka 4.3 on Kubernetes vs 3.9.2 in compose | Strimzi 1.x ships Kafka 4.x only | move the compose broker to a 4.x image |
+| GitOps: Sealed Secrets / External Secrets | secrets still come from `scripts/k8s-secrets.sh` (kind) or by hand (OpenShift); only documented | one more Application at wave -2 once a secret store is chosen |
+| GitOps: OpenShift not run | the openshift environment is rendered, schema-checked and policy-linted, never synced on a cluster; `startingCSV` of the operators is not pinned | first OpenShift install |
+| GitOps: memory on a 7 GB Docker VM | Argo CD (~0.7 GB) plus the lite platform leaves no room for a second replica | 12 GB VM, or trim ODM |

@@ -9,6 +9,13 @@ ROOT=$(cd "$(dirname "$0")/.." && pwd)
 A=$ROOT/deploy/argocd
 OUT=${OUT:-$ROOT/out/argocd-lint}
 rm -rf "$OUT" && mkdir -p "$OUT"
+for tool in kubectl helm yq kubeconform; do
+  if ! command -v "$tool" >/dev/null; then
+    [[ -n ${REQUIRE_ARGOCD_TOOLS:-} ]] && { echo "FAIL  $tool not found" >&2; exit 1; }
+    echo "SKIP  $tool not found (brew install $tool): the Argo CD manifests were not checked"
+    exit 0
+  fi
+done
 fail=0
 bad() { echo "FAIL  $*" >&2; fail=1; }
 KC=(kubeconform -strict -summary -ignore-missing-schemas -kubernetes-version 1.30.0 -schema-location default

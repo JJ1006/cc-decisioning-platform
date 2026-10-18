@@ -57,6 +57,7 @@ verify: ## Full local verification (build + tests + format check)
 	@scripts/lint-observability.sh
 	@scripts/test-mcp.sh
 	@scripts/lint-helm.sh
+	@scripts/lint-argocd.sh
 
 test: ## Unit tests
 	@if grep -q '<module>' pom.xml; then mvn -q test; else echo "no Maven modules yet"; fi
