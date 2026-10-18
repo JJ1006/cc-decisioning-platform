@@ -70,7 +70,7 @@ up() {
   status
 }
 
-status() { k -n $ARGO_NS get applications -o custom-columns='NAME:.metadata.name,WAVE:.metadata.annotations.argocd\.argoproj\.io/sync-wave,PROJECT:.spec.project,SYNC:.status.sync.status,HEALTH:.status.health.status,REVISION:.status.sync.revisions[0]'; }
+status() { k -n $ARGO_NS get applications -o custom-columns='NAME:.metadata.name,WAVE:.metadata.annotations.argocd\.argoproj\.io/sync-wave,PROJECT:.spec.project,SYNC:.status.sync.status,HEALTH:.status.health.status,REVISION:.status.sync.revision'; }
 
 ui() {
   echo "Argo CD UI: https://localhost:8080  user: admin  password: $(k -n $ARGO_NS get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d)"
