@@ -1,0 +1,41 @@
+{
+  "index_patterns": [
+    "cc-alerts*"
+  ],
+  "priority": 100,
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "dynamic": "true",
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "rule": {
+          "type": "keyword"
+        },
+        "ruleId": {
+          "type": "keyword"
+        },
+        "alertId": {
+          "type": "keyword"
+        },
+        "status": {
+          "type": "keyword"
+        },
+        "severity": {
+          "type": "keyword"
+        },
+        "message": {
+          "type": "text"
+        }
+      }
+    }
+  },
+  "_meta": {
+    "description": "cc-alerts: documents written by the Kibana index connector of the alert rules (observability/kibana/alerting)"
+  }
+}

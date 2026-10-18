@@ -1,0 +1,16 @@
+[
+  {
+    "id": "mn-server-log",
+    "name": "Maple Northern server log",
+    "connector_type_id": ".server-log",
+    "config": {},
+    "secrets": {}
+  },
+  {
+    "id": "mn-cc-alerts",
+    "name": "Maple Northern index cc-alerts",
+    "connector_type_id": ".index",
+    "config": { "index": "cc-alerts", "refresh": true, "executionTimeField": "@timestamp" },
+    "secrets": {}
+  }
+]

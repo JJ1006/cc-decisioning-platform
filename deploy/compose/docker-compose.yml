@@ -321,6 +321,7 @@ services:
       SERVER_SSL_KEY: /pki/kibana.key
       SERVER_PUBLICBASEURL: https://localhost:5601
       TELEMETRY_OPTIN: "false"
+      TELEMETRY_ALLOWCHANGINGOPTINSTATUS: "false" # no "help us improve" banner
     volumes:
       - ${PKI_DIR:-../../security/pki/out}/kibana/kibana.crt:/pki/kibana.crt:ro
       - ${PKI_DIR:-../../security/pki/out}/kibana/kibana.key:/pki/kibana.key:ro

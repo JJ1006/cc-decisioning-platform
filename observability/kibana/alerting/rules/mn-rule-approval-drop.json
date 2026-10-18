@@ -1,0 +1,64 @@
+{
+  "id": "mn-rule-approval-drop",
+  "name": "Approval rate fell more than 20% against the last hour",
+  "tags": [
+    "maple-northern"
+  ],
+  "rule_type_id": ".es-query",
+  "consumer": "alerts",
+  "schedule": {
+    "interval": "5m"
+  },
+  "params": {
+    "searchType": "esqlQuery",
+    "timeField": "@timestamp",
+    "timeWindowSize": 65,
+    "timeWindowUnit": "m",
+    "thresholdComparator": ">",
+    "threshold": [
+      0
+    ],
+    "size": 100,
+    "excludeHitsFromPreviousRun": false,
+    "esqlQuery": {
+      "esql": "FROM cc-decisions | WHERE decisionSource == \"ODM\" | EVAL recent = CASE(@timestamp >= NOW() - 5 minutes, 1, 0), approved = CASE(payload.outcome == \"APPROVE\", 1.0, 0.0) | STATS n_recent = SUM(recent), r_recent = AVG(approved) WHERE recent == 1, r_base = AVG(approved) WHERE recent == 0 | WHERE n_recent >= 20 AND r_base > 0 AND r_recent < r_base * 0.8"
+    }
+  },
+  "actions": [
+    {
+      "group": "query matched",
+      "id": "mn-server-log",
+      "params": {
+        "level": "warn",
+        "message": "[{{rule.name}}] {{context.message}}"
+      },
+      "frequency": {
+        "summary": false,
+        "notify_when": "onActionGroupChange",
+        "throttle": null
+      }
+    },
+    {
+      "group": "query matched",
+      "id": "mn-cc-alerts",
+      "params": {
+        "documents": [
+          {
+            "@timestamp": "{{date}}",
+            "rule": "{{rule.name}}",
+            "ruleId": "{{rule.id}}",
+            "alertId": "{{alert.id}}",
+            "status": "fired",
+            "severity": "warning",
+            "message": "{{context.message}}"
+          }
+        ]
+      },
+      "frequency": {
+        "summary": false,
+        "notify_when": "onActionGroupChange",
+        "throttle": null
+      }
+    }
+  ]
+}

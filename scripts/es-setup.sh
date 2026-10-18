@@ -4,16 +4,18 @@
 #   2. create the least-privilege role and user logstash_writer: create_doc on the five write aliases plus cluster
 #      monitor (the Logstash output reads GET / at start-up), nothing else
 #      and role / user query_reader / decision-query-api: read-only on the five read aliases (cc-decisions ...)
+#      and the Kibana roles kibana_analyst / kibana_ops with the users analyst / ops (dashboards of the space maple-northern),
+#      plus the cc-alerts index the alert rules write to
 #   3. install the ILM policies (logs 7d, dlq 30d) and the index templates
 #   4. make sure every type has a current index behind its <type>-write alias:
 #        cc-decisions / cc-audit / cc-notifications  date-suffixed (cc-decisions-2026.10.17), rolled by re-running this script
 #        cc-logs / cc-dlq                            cc-logs-000001, rolled and deleted by ILM
-# Env: ELASTIC_PASSWORD, KIBANA_PASSWORD, LOGSTASH_WRITER_PASSWORD, QUERY_API_PASSWORD (required); ES_URL, ES_CACERT, ES_DIR (optional).
+# Env: ELASTIC_PASSWORD, KIBANA_PASSWORD, LOGSTASH_WRITER_PASSWORD, QUERY_API_PASSWORD, ANALYST_PASSWORD, OPS_PASSWORD (required); ES_URL, ES_CACERT, ES_DIR (optional).
 set -euo pipefail
 ES_URL=${ES_URL:-https://elasticsearch:9200}
 ES_CACERT=${ES_CACERT:-/pki/ca.crt}
 ES_DIR=${ES_DIR:-/es}
-: "${ELASTIC_PASSWORD:?}" "${KIBANA_PASSWORD:?}" "${LOGSTASH_WRITER_PASSWORD:?}" "${QUERY_API_PASSWORD:?}"
+: "${ELASTIC_PASSWORD:?}" "${KIBANA_PASSWORD:?}" "${LOGSTASH_WRITER_PASSWORD:?}" "${QUERY_API_PASSWORD:?}" "${ANALYST_PASSWORD:?}" "${OPS_PASSWORD:?}"
 
 es() { # es METHOD PATH [curl args...]; credentials via a curl config, never on the command line
   local method=$1 path=$2
@@ -39,6 +41,17 @@ must PUT /_security/role/query_reader "@$ES_DIR/query_reader.role.json"
 must PUT /_security/user/decision-query-api \
   "{\"password\":\"$QUERY_API_PASSWORD\",\"roles\":[\"query_reader\"],\"full_name\":\"decision-query-api (read only)\"}"
 echo "role query_reader and user decision-query-api ready"
+
+must PUT /_security/role/kibana_analyst "@$ES_DIR/kibana_analyst.role.json"
+must PUT /_security/role/kibana_ops "@$ES_DIR/kibana_ops.role.json"
+must PUT /_security/user/analyst \
+  "{\"password\":\"$ANALYST_PASSWORD\",\"roles\":[\"kibana_analyst\"],\"full_name\":\"Analyst (Kibana dashboards)\"}"
+must PUT /_security/user/ops \
+  "{\"password\":\"$OPS_PASSWORD\",\"roles\":[\"kibana_ops\"],\"full_name\":\"Operations (Kibana dashboards, logs, alerts)\"}"
+echo "roles kibana_analyst, kibana_ops and users analyst, ops ready"
+must PUT /_index_template/cc-alerts "@$ES_DIR/cc-alerts.template.json"
+code=$(es GET "/cc-alerts" -o /dev/null -w '%{http_code}')
+[[ "$code" == 404 ]] && must PUT /cc-alerts "{}" && echo "cc-alerts index created"
 
 must PUT /_ilm/policy/cc-logs-7d "@$ES_DIR/cc-logs-7d.ilm.json"
 must PUT /_ilm/policy/cc-dlq-30d "@$ES_DIR/cc-dlq-30d.ilm.json"

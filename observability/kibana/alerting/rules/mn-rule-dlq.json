@@ -1,0 +1,63 @@
+{
+  "id": "mn-rule-dlq",
+  "name": "Dead letters in the last 5 minutes",
+  "tags": [
+    "maple-northern"
+  ],
+  "rule_type_id": ".index-threshold",
+  "consumer": "alerts",
+  "schedule": {
+    "interval": "1m"
+  },
+  "params": {
+    "index": [
+      "cc-dlq"
+    ],
+    "timeField": "@timestamp",
+    "aggType": "count",
+    "groupBy": "all",
+    "timeWindowSize": 5,
+    "timeWindowUnit": "m",
+    "thresholdComparator": ">",
+    "threshold": [
+      0
+    ]
+  },
+  "actions": [
+    {
+      "group": "threshold met",
+      "id": "mn-server-log",
+      "params": {
+        "level": "warn",
+        "message": "[{{rule.name}}] {{context.message}}"
+      },
+      "frequency": {
+        "summary": false,
+        "notify_when": "onActionGroupChange",
+        "throttle": null
+      }
+    },
+    {
+      "group": "threshold met",
+      "id": "mn-cc-alerts",
+      "params": {
+        "documents": [
+          {
+            "@timestamp": "{{date}}",
+            "rule": "{{rule.name}}",
+            "ruleId": "{{rule.id}}",
+            "alertId": "{{alert.id}}",
+            "status": "fired",
+            "severity": "warning",
+            "message": "{{context.message}}"
+          }
+        ]
+      },
+      "frequency": {
+        "summary": false,
+        "notify_when": "onActionGroupChange",
+        "throttle": null
+      }
+    }
+  ]
+}

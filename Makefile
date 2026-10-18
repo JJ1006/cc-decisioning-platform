@@ -4,7 +4,7 @@ JAVA_HOME := $(shell [ -d /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Conte
 export JAVA_HOME
 
 .DEFAULT_GOAL := help
-.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules test-logstash lint-api api-docs test-api-docs api-call cert-expiry demo kind-up ocp-render eval-rules eval-agent what-if
+.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules test-logstash lint-api api-docs test-api-docs api-call cert-expiry seed-kibana export-kibana kibana-shots demo kind-up ocp-render eval-rules eval-agent what-if
 
 help: ## Show targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -18,6 +18,7 @@ up: ## Start compose profiles: make up PROFILE=core,analytics (run make pki firs
 	@PROFILE=$(PROFILE) scripts/compose.sh up -d --remove-orphans
 	@PROFILE=$(PROFILE) scripts/wait-healthy.sh
 	@scripts/check-es-mapping.sh
+	@case ',$(PROFILE),' in *,analytics,*) scripts/seed-kibana.sh ;; esac
 
 down: ## Stop all compose profiles (make down V=1 also deletes volumes)
 	@PROFILE=core,analytics,edge,obs,mcp scripts/compose.sh down $(if $(V),-v,)
@@ -39,6 +40,15 @@ test: ## Unit tests
 
 pki: ## Generate private CA and certs (idempotent; make pki FORCE=1 regenerates)
 	@JAVA_HOME=$(JAVA_HOME) scripts/pki.sh $(if $(FORCE),--force,)
+
+seed-kibana: ## Kibana as code: space, data views, dashboards, alert rules (idempotent; make up with the analytics profile runs it)
+	@scripts/seed-kibana.sh
+
+export-kibana: ## Write the live Kibana space back to observability/kibana/ (round trip after editing in the UI)
+	@scripts/export-kibana.sh
+
+kibana-shots: ## Screenshots of the dashboards (Playwright): make kibana-shots KUSER=analyst
+	@scripts/kibana-shots.sh $(or $(KUSER),analyst)
 
 cert-expiry: ## Days left on every certificate of the demo PKI (warns below 14)
 	@scripts/cert-expiry.sh
