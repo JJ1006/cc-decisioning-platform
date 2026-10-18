@@ -1,0 +1,18 @@
+apiVersion: v2
+name: cc-platform
+description: Umbrella chart of the Maple Northern credit-card decisioning platform (fictitious bank, synthetic data) - services, gateway, ODM (dev), Logstash, Filebeat and observability. Install cc-infra first.
+type: application
+version: 0.1.0
+appVersion: "dev"
+dependencies:
+  - { name: txn-generator, version: 0.1.0, repository: "file://../charts/txn-generator", condition: txn-generator.enabled }
+  - { name: decision-orchestrator, version: 0.1.0, repository: "file://../charts/decision-orchestrator", condition: decision-orchestrator.enabled }
+  - { name: notification-svc, version: 0.1.0, repository: "file://../charts/notification-svc", condition: notification-svc.enabled }
+  - { name: decision-query-api, version: 0.1.0, repository: "file://../charts/decision-query-api", condition: decision-query-api.enabled }
+  - { name: application-api, version: 0.1.0, repository: "file://../charts/application-api", condition: application-api.enabled }
+  - { name: odm-dc-mcp, version: 0.1.0, repository: "file://../charts/odm-dc-mcp", condition: odm-dc-mcp.enabled }
+  - { name: apisix, version: 0.1.0, repository: "file://../charts/apisix", condition: apisix.enabled }
+  - { name: odm, version: 0.1.0, repository: "file://../charts/odm", condition: odm.enabled }
+  - { name: logstash, version: 0.1.0, repository: "file://../charts/logstash", condition: logstash.enabled }
+  - { name: filebeat, version: 0.1.0, repository: "file://../charts/filebeat", condition: filebeat.enabled }
+  - { name: cc-observability, version: 0.1.0, repository: "file://../charts/cc-observability", condition: cc-observability.enabled }

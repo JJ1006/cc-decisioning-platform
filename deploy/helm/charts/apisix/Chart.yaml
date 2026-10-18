@@ -1,0 +1,10 @@
+apiVersion: v2
+name: apisix
+description: "Apache APISIX 3.x gateway in standalone (declarative) mode, mutual TLS, same configuration as the compose edge profile"
+type: application
+version: 0.1.0
+appVersion: "3.13.0-debian"
+dependencies:
+  - name: cc-lib
+    version: 0.1.0
+    repository: file://../../cc-lib

@@ -1,0 +1,18 @@
+{
+  "cluster": [],
+  "indices": [
+    {
+      "names": [
+        "cc-decisions",
+        "cc-audit",
+        "cc-notifications",
+        "cc-dlq",
+        "cc-logs"
+      ],
+      "privileges": [
+        "read",
+        "view_index_metadata"
+      ]
+    }
+  ]
+}

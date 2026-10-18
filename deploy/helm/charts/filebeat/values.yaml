@@ -1,0 +1,13 @@
+# Filebeat DaemonSet (the only root workload; see docs/deploy-kubernetes.md). Disabled on OpenShift: OpenShift Logging collects there.
+image:
+  registry: "" # third-party image: not under global.image.registry
+  repository: docker.elastic.co/beats/filebeat
+  tag: 8.19.23
+  pullPolicy: IfNotPresent
+logstashHost: logstash:5044
+resources:
+  requests: { cpu: 50m, memory: 64Mi }
+  limits: { cpu: 500m, memory: 128Mi }
+pki:
+  enabled: true
+  format: pem

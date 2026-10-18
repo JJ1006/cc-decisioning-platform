@@ -1,0 +1,36 @@
+dependencies:
+- name: txn-generator
+  repository: file://../charts/txn-generator
+  version: 0.1.0
+- name: decision-orchestrator
+  repository: file://../charts/decision-orchestrator
+  version: 0.1.0
+- name: notification-svc
+  repository: file://../charts/notification-svc
+  version: 0.1.0
+- name: decision-query-api
+  repository: file://../charts/decision-query-api
+  version: 0.1.0
+- name: application-api
+  repository: file://../charts/application-api
+  version: 0.1.0
+- name: odm-dc-mcp
+  repository: file://../charts/odm-dc-mcp
+  version: 0.1.0
+- name: apisix
+  repository: file://../charts/apisix
+  version: 0.1.0
+- name: odm
+  repository: file://../charts/odm
+  version: 0.1.0
+- name: logstash
+  repository: file://../charts/logstash
+  version: 0.1.0
+- name: filebeat
+  repository: file://../charts/filebeat
+  version: 0.1.0
+- name: cc-observability
+  repository: file://../charts/cc-observability
+  version: 0.1.0
+digest: sha256:2857d572bd7cdb1193271f78a2ea1de4bc433d66eea50b6b9d897dae94a6e1a2
+generated: "2026-10-18T16:23:06.992795-04:00"

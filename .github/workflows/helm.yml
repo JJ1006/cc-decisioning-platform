@@ -1,0 +1,72 @@
+name: helm
+# Chart quality gate on every change to the charts or the configuration they copy, and an optional real cluster test:
+#   lint     helm lint, helm template (kind-lite, kind-full, openshift), kubeconform --strict on Kubernetes 1.30 with the CRD schemas
+#            (Strimzi, ECK, cert-manager, Prometheus Operator: datreeio catalog; OpenShift Route: deploy/helm/schemas), kube-linter
+#   kind-smoke  make kind-up PROFILE=lite, kind-deploy-rules, kind-demo: decisions > 0.  Runs on workflow_dispatch and on pull requests
+#               labelled `kind`.
+on:
+  pull_request:
+    paths: ['deploy/**', 'gateway/**', 'observability/**', 'scripts/**', 'docs/kafka-topics.md', 'docs/security-mtls.md', '.kube-linter.yaml', '.github/workflows/helm.yml']
+    types: [opened, synchronize, reopened, labeled]
+  push:
+    branches: [main]
+    paths: ['deploy/**', 'gateway/**', 'observability/**', 'scripts/**', 'docs/kafka-topics.md', 'docs/security-mtls.md', '.kube-linter.yaml', '.github/workflows/helm.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.action != 'labeled'
+    steps:
+      - uses: actions/checkout@v7
+      - uses: azure/setup-helm@v4
+        with: { version: v4.1.1 }
+      - name: kubeconform and kube-linter
+        run: |
+          set -euo pipefail
+          KC=v0.7.0
+          curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KC}/kubeconform-linux-amd64.tar.gz" | tar xz -C /usr/local/bin kubeconform
+          KL=v0.8.3
+          curl -sSL "https://github.com/stackrox/kube-linter/releases/download/${KL}/kube-linter-linux.tar.gz" | tar xz -C /usr/local/bin kube-linter
+      - uses: actions/setup-python@v7
+        with: { python-version: '3.13' }
+      - name: helm repositories
+        run: |
+          helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+          helm repo add grafana https://grafana.github.io/helm-charts
+          helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+          helm repo update
+      - name: Copies in sync, helm lint, helm template, kubeconform, kube-linter
+        run: REQUIRE_HELM_TOOLS=1 scripts/lint-helm.sh
+      - name: OpenShift manifests render
+        run: scripts/ocp-render.sh
+      - uses: actions/upload-artifact@v4
+        with: { name: rendered-manifests, path: out/ }
+  kind-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'kind'))
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with: { distribution: temurin, java-version: '21', cache: maven }
+      - uses: azure/setup-helm@v4
+        with: { version: v4.1.1 }
+      - uses: helm/kind-action@v1
+        with: { install_only: true }
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq jq
+      - name: Pull the ODM for Developers image (public registry, licence accepted by running it)
+        run: docker pull icr.io/cpopen/odm-k8s/odm:9.5.0.1-IF019_25.1.0
+      - name: kind-up (lite)
+        run: make kind-up PROFILE=lite
+      - name: Deploy the rules
+        run: make kind-deploy-rules
+      - name: "Demo (decisions > 0)"
+        run: make kind-demo
+      - name: Cluster state on failure
+        if: failure()
+        run: |
+          kubectl --context kind-cc get pods -A -o wide || true
+          kubectl --context kind-cc -n cc describe pods | tail -200 || true
+          for d in $(kubectl --context kind-cc -n cc get deploy -o name); do echo "--- $d"; kubectl --context kind-cc -n cc logs "$d" --tail=60 || true; done

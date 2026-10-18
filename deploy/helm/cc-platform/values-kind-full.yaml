@@ -1,0 +1,28 @@
+# kind with 12 GB+ for the Docker VM: the whole stack - Elasticsearch/Logstash/Filebeat, query API, MCP server, observability, UIs through ingress-nginx.
+# Use with deploy/helm/cc-infra/values-kind-full.yaml (ECK Elasticsearch and Kibana).
+global:
+  image: { registry: ghcr.io, tag: dev }
+  otel: { enabled: true }
+  monitoring: { namespace: cc } # Prometheus runs in the same namespace on kind
+  exposure: ingress
+
+odm:
+  license: accept
+apisix:
+  service: { type: NodePort, nodePort: 30443 }
+  securityContext: { runAsUser: 636 }
+  expose: { enabled: false }
+  env: { APISIX_OTEL_SAMPLER: always_on }
+  serviceMonitor: { enabled: true }
+odm-dc-mcp: { enabled: true }
+logstash: { enabled: true }
+filebeat: { enabled: true }
+cc-observability:
+  enabled: true
+  logs: { elasticsearch: { enabled: true } }
+
+txn-generator: { serviceMonitor: { enabled: true } }
+decision-orchestrator: { serviceMonitor: { enabled: true } }
+notification-svc: { serviceMonitor: { enabled: true } }
+decision-query-api: { serviceMonitor: { enabled: true } }
+application-api: { serviceMonitor: { enabled: true } }

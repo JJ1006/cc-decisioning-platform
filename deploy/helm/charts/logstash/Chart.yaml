@@ -1,0 +1,10 @@
+apiVersion: v2
+name: logstash
+description: Logstash 8.19 - Kafka to Elasticsearch ingestion with PII masking, DLQ pipelines and the Filebeat logs input (same pipelines as compose)
+type: application
+version: 0.1.0
+appVersion: "8.19.23"
+dependencies:
+  - name: cc-lib
+    version: 0.1.0
+    repository: file://../../cc-lib

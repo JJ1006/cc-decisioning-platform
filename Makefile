@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 PROFILE ?= core
-JAVA_HOME := $(shell [ -d /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home ] && echo /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home || /usr/libexec/java_home -v 21 2>/dev/null)
+# JDK 21 for the build: Homebrew's, else macOS java_home, else whatever the environment has (CI sets it with setup-java)
+JAVA_HOME := $(or $(shell [ -d /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home ] && echo /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home),$(shell /usr/libexec/java_home -v 21 2>/dev/null),$(JAVA_HOME))
 export JAVA_HOME
 
 # tracing is on only with the obs profile: the agents and the gateway export spans to the collector, which exists only there
@@ -8,7 +9,7 @@ OBS_ENV = $(if $(filter obs,$(subst $(comma), ,$(PROFILE))),APISIX_OTEL_SAMPLER=
 comma := ,
 
 .DEFAULT_GOAL := help
-.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules test-logstash lint-api api-docs test-api-docs test-mcp lint-obs up-obs grafana-shots check-dashboards api-call cert-expiry seed-kibana export-kibana kibana-shots demo kind-up ocp-render eval-rules eval-agent what-if
+.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules test-logstash lint-api api-docs test-api-docs test-mcp lint-obs up-obs grafana-shots check-dashboards api-call cert-expiry seed-kibana export-kibana kibana-shots demo kind-up kind-deploy-rules kind-demo kind-down helm-sync lint-helm ocp-render eval-rules eval-agent what-if
 
 help: ## Show targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -55,6 +56,7 @@ verify: ## Full local verification (build + tests + format check)
 	@$(MAKE) --no-print-directory lint-api
 	@scripts/lint-observability.sh
 	@scripts/test-mcp.sh
+	@scripts/lint-helm.sh
 
 test: ## Unit tests
 	@if grep -q '<module>' pom.xml; then mvn -q test; else echo "no Maven modules yet"; fi
@@ -117,11 +119,26 @@ lint-rules: ## Prohibited-grounds lint + scenario spec check (no ODM needed)
 demo: ## Deploy rules if missing, send 1000 synthetic applications, print topic and index counts (needs make up PROFILE=core)
 	@scripts/demo.sh
 
-kind-up: ## Create kind cluster + install platform
-	@echo "TODO(P10): kind-up"; exit 0
+kind-up: ## kind cluster + operators + images + the platform: make kind-up PROFILE=lite (7 GB VM, compose down) | full (12 GB+)
+	@scripts/kind.sh up $(if $(filter lite full,$(PROFILE)),$(PROFILE),lite)
 
-ocp-render: ## helm template for OpenShift values
-	@echo "TODO(P10): helm template openshift"; exit 0
+kind-deploy-rules: ## Port-forward ODM in kind and deploy the rules (scripts/deploy-dc.sh)
+	@scripts/kind.sh deploy-rules
+
+kind-demo: ## 200 synthetic applications through the gateway in kind; record counts per Kafka topic from the broker pod
+	@scripts/kind.sh demo $(or $(TOTAL),200)
+
+kind-down: ## Delete the kind cluster
+	@scripts/kind.sh down
+
+helm-sync: ## Copy the compose configuration into the charts and regenerate Kafka topics/users (never edit the copies)
+	@scripts/helm-sync.sh
+
+lint-helm: ## helm lint + template (kind-lite, kind-full, openshift) + kubeconform + kube-linter (needs kubeconform, kube-linter)
+	@scripts/lint-helm.sh
+
+ocp-render: ## helm template for OpenShift values -> out/openshift/*.yaml (add CA=path to embed the CA for re-encrypt Routes)
+	@scripts/ocp-render.sh
 
 eval-rules: ## Golden-dataset rule regression
 	@echo "TODO(P14): eval-rules"; exit 0

@@ -36,6 +36,13 @@ public class PlatformKafkaConfig {
   @Value("${platform.kafka.store-password:}")
   String storePassword;
 
+  /**
+   * Separate truststore password (Strimzi issues different ones); blank means the keystore
+   * password.
+   */
+  @Value("${platform.kafka.truststore-password:}")
+  String truststorePassword;
+
   @Value("${platform.kafka.store-type:PKCS12}")
   String storeType;
 
@@ -61,7 +68,8 @@ public class PlatformKafkaConfig {
     if (keystore.isBlank()) {
       return null;
     }
-    return new Tls(keystore, storePassword, truststore, storePassword, storeType);
+    String trustPassword = truststorePassword.isBlank() ? storePassword : truststorePassword;
+    return new Tls(keystore, storePassword, truststore, trustPassword, storeType);
   }
 
   @Bean

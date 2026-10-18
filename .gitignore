@@ -35,3 +35,6 @@ out/
 # Claude local
 .claude/settings.local.json
 tmp/
+
+# Helm: packaged dependencies are rebuilt by scripts/helm-deps.sh (Chart.lock is committed)
+deploy/helm/**/*.tgz

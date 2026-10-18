@@ -1,0 +1,10 @@
+apiVersion: v2
+name: odm-dc-mcp
+description: MCP server for AI agents (read, explain, simulate; never decides)
+type: application
+version: 0.1.0
+appVersion: "dev"
+dependencies:
+  - name: cc-lib
+    version: 0.1.0
+    repository: file://../../cc-lib

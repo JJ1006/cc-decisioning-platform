@@ -1,0 +1,77 @@
+{{- if .Values.elasticsearch.enabled }}
+# ECK Elasticsearch, one node (kind) - the same settings as compose: security on, ML off, disk watermarks off.
+# The HTTP certificate comes from cert-manager (the platform CA), so every client trusts one CA; transport TLS is ECK's own.
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: {{ .Values.elasticsearch.name }}
+spec:
+  version: {{ .Values.elasticsearch.version }}
+  http:
+    tls:
+      certificate:
+        secretName: {{ .Values.elasticsearch.name }}-es-http-cert
+  nodeSets:
+    - name: default
+      count: {{ .Values.elasticsearch.count }}
+      config:
+        node.roles: [master, data, ingest]
+        node.store.allow_mmap: false # no vm.max_map_count sysctl, so no privileged init container (kind, OpenShift restricted-v2)
+        xpack.ml.enabled: false
+        cluster.routing.allocation.disk.threshold_enabled: false
+      volumeClaimTemplates:
+        - metadata:
+            name: elasticsearch-data
+          spec:
+            accessModes: [ReadWriteOnce]
+            {{- with .Values.elasticsearch.storage.class }}
+            storageClassName: {{ . }}
+            {{- end }}
+            resources:
+              requests:
+                storage: {{ .Values.elasticsearch.storage.size }}
+      podTemplate:
+        spec:
+          containers:
+            - name: elasticsearch
+              env:
+                - name: ES_JAVA_OPTS
+                  value: {{ .Values.elasticsearch.javaOpts | quote }}
+              resources: {{- toYaml .Values.elasticsearch.resources | nindent 16 }}
+{{- end }}
+{{- if .Values.kibana.enabled }}
+---
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: {{ .Values.kibana.name }}
+spec:
+  version: {{ .Values.elasticsearch.version }}
+  count: 1
+  elasticsearchRef:
+    name: {{ .Values.elasticsearch.name }}
+  http:
+    tls:
+      certificate:
+        secretName: {{ .Values.kibana.name }}-kb-http-cert
+  config:
+    telemetry.optIn: false
+    telemetry.allowChangingOptInStatus: false
+    {{- with .Values.kibana.publicBaseUrl }}
+    server.publicBaseUrl: {{ . }}
+    {{- end }}
+  podTemplate:
+    spec:
+      containers:
+        - name: kibana
+          env:
+            - name: NODE_OPTIONS
+              value: --max-old-space-size=512
+            - name: XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY
+              valueFrom: { secretKeyRef: { name: cc-kibana-keys, key: encryption } }
+            - name: XPACK_SECURITY_ENCRYPTIONKEY
+              valueFrom: { secretKeyRef: { name: cc-kibana-keys, key: encryption } }
+            - name: XPACK_REPORTING_ENCRYPTIONKEY
+              valueFrom: { secretKeyRef: { name: cc-kibana-keys, key: encryption } }
+          resources: {{- toYaml .Values.kibana.resources | nindent 12 }}
+{{- end }}

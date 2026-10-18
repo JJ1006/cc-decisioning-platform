@@ -1,0 +1,41 @@
+{{- if and .Values.kibana.enabled (ne .Values.exposure "none") }}
+{{- if eq .Values.exposure "route" }}
+# OpenShift: re-encrypt, the router verifies Kibana's certificate against the platform CA (pki.caPem; the CA certificate is public)
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: kibana
+spec:
+  {{- with .Values.kibana.host }}
+  host: {{ . }}
+  {{- end }}
+  to: { kind: Service, name: {{ .Values.kibana.name }}-kb-http, weight: 100 }
+  port: { targetPort: https }
+  tls:
+    termination: reencrypt
+    insecureEdgeTerminationPolicy: Redirect
+    {{- with .Values.pki.caPem }}
+    destinationCACertificate: |-
+      {{- . | nindent 6 }}
+    {{- end }}
+{{- else }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kibana
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+spec:
+  ingressClassName: {{ .Values.ingressClassName }}
+  rules:
+    - host: {{ .Values.kibana.host | default "kibana.localtest.me" }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.kibana.name }}-kb-http
+                port: { number: 5601 }
+{{- end }}
+{{- end }}

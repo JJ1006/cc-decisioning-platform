@@ -1,0 +1,29 @@
+# OpenShift 4.14+ (restricted-v2 SCC). No Ingress: Routes. No fixed UIDs, GIDs or fsGroup anywhere: the namespace's range is assigned.
+#   gateway   passthrough Route - the client certificate must reach APISIX (re-encrypt would terminate the mutual TLS at the router)
+#   Kibana / Grafana  re-encrypt Routes (cc-infra / cc-observability), the router trusts the destination CA given in global.pki.caPem
+#   monitoring  the platform's own: enable user workload monitoring; the ServiceMonitors below are read by it
+# ODM here is the DEV image (Derby): for anything but a lab use the IBM ODM operator/chart, see docs/deploy-kubernetes.md.
+global:
+  image: { registry: ghcr.io, tag: dev } # set tag to a release version or commit SHA
+  exposure: route
+  monitoring: { namespace: openshift-user-workload-monitoring }
+  otel: { enabled: false }
+
+odm:
+  license: accept
+apisix:
+  service: { type: ClusterIP }
+  securityContext: {} # no runAsUser: the SCC injects one (the image user is only a name)
+  expose: { enabled: true, termination: passthrough }
+  serviceMonitor: { enabled: true }
+filebeat: { enabled: false } # root + hostPath is not allowed by restricted-v2: use OpenShift Logging (Vector) to forward to Logstash/Elasticsearch
+logstash: { enabled: true }
+odm-dc-mcp: { enabled: true }
+cc-observability:
+  enabled: false # kube-prometheus-stack would clash with the platform Prometheus; Tempo and the collector can be installed alone (see the guide)
+
+txn-generator: { serviceMonitor: { enabled: true } }
+decision-orchestrator: { serviceMonitor: { enabled: true } }
+notification-svc: { serviceMonitor: { enabled: true } }
+decision-query-api: { serviceMonitor: { enabled: true } }
+application-api: { serviceMonitor: { enabled: true } }

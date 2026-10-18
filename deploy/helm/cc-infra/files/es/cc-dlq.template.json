@@ -1,0 +1,72 @@
+{
+  "index_patterns": [
+    "cc-dlq-*"
+  ],
+  "priority": 100,
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index.lifecycle.name": "cc-dlq-30d",
+      "index.lifecycle.rollover_alias": "cc-dlq-write"
+    },
+    "mappings": {
+      "dynamic": false,
+      "properties": {
+        "@timestamp": {
+          "type": "date"
+        },
+        "eventId": {
+          "type": "keyword"
+        },
+        "correlationId": {
+          "type": "keyword"
+        },
+        "producer": {
+          "type": "keyword"
+        },
+        "topic": {
+          "type": "keyword"
+        },
+        "source": {
+          "type": "keyword"
+        },
+        "originalTopic": {
+          "type": "keyword"
+        },
+        "originalPartition": {
+          "type": "integer"
+        },
+        "originalOffset": {
+          "type": "long"
+        },
+        "originalKey": {
+          "type": "keyword"
+        },
+        "originalValue": {
+          "type": "keyword",
+          "ignore_above": 2048,
+          "doc_values": false
+        },
+        "errorClass": {
+          "type": "keyword"
+        },
+        "errorMessage": {
+          "type": "text"
+        },
+        "failedAt": {
+          "type": "date"
+        },
+        "attempts": {
+          "type": "integer"
+        }
+      }
+    },
+    "aliases": {
+      "cc-dlq": {}
+    }
+  },
+  "_meta": {
+    "description": "dead letters: service DLQ topics, unparseable events and Elasticsearch rejects (masked, truncated)"
+  }
+}

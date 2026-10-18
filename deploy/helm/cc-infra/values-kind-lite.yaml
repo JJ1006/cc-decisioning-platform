@@ -1,0 +1,9 @@
+# kind lite: Kafka only (and the platform CA issuer). No Elasticsearch / Kibana.
+kafka:
+  resources:
+    requests: { cpu: 100m, memory: 512Mi }
+    limits: { cpu: "2", memory: 768Mi }
+  storage: { ephemeral: true } # kind lite is disposable: no PVC
+elasticsearch: { enabled: false }
+kibana: { enabled: false }
+networkPolicies: { monitoringNamespace: cc }

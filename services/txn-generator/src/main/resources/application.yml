@@ -44,5 +44,6 @@ platform:
     keystore: ${KAFKA_KEYSTORE:}
     truststore: ${KAFKA_TRUSTSTORE:}
     store-password: ${KAFKA_STORE_PASSWORD:}
+    truststore-password: ${KAFKA_TRUSTSTORE_PASSWORD:} # blank: same as store-password (Strimzi issues two)
 logging:
   config: classpath:logback-spring.xml

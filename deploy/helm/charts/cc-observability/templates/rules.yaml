@@ -1,0 +1,12 @@
+{{- /* observability/prometheus/rules/*.yml become PrometheusRule objects (the operator loads them); runbooks are docs/runbooks/alerts */ -}}
+{{- range $path, $content := .Files.Glob "files/rules/*.yml" }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cc-{{ base $path | trimSuffix ".yml" }}
+  labels:
+    app.kubernetes.io/part-of: cc-platform
+    release: {{ $.Release.Name }}
+spec: {{- $content | toString | fromYaml | toYaml | nindent 2 }}
+{{- end }}

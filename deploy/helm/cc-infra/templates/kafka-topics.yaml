@@ -1,0 +1,19 @@
+{{- if .Values.kafka.enabled }}
+{{- /* generated from docs/kafka-topics.md by scripts/gen-k8s-kafka.py */ -}}
+{{- $k := .Files.Get "files/kafka.yaml" | fromYaml }}
+{{- range $k.topics }}
+---
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: {{ .name | replace "." "-" }}
+  labels:
+    strimzi.io/cluster: {{ $.Values.kafka.name }}
+spec:
+  topicName: {{ .name }}
+  partitions: {{ .partitions }}
+  replicas: {{ $.Values.kafka.replicationFactor }}
+  config:
+    retention.ms: {{ mul .retentionDays 86400000 }}
+{{- end }}
+{{- end }}

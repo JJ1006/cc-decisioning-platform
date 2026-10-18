@@ -1,0 +1,81 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  labels:
+    app.kubernetes.io/part-of: cc-platform
+data:
+  relay: |-
+    {{- .Files.Get "files/collector.yaml" | nindent 4 }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cc-grafana-datasources
+  labels:
+    grafana_datasource: "1"
+    app.kubernetes.io/part-of: cc-platform
+data:
+  cc-datasources.yaml: |-
+    apiVersion: 1
+    datasources:
+      - name: Tempo
+        uid: tempo
+        type: tempo
+        access: proxy
+        url: http://tempo:3200
+        jsonData:
+          httpMethod: GET
+          serviceMap: { datasourceUid: prometheus }
+          nodeGraph: { enabled: true }
+          tracesToMetrics:
+            datasourceUid: prometheus
+            tags: [{ key: service.name, value: service_name }]
+{{- if .Values.logs.elasticsearch.enabled }}
+      - name: Elasticsearch (logs)
+        uid: elasticsearch-logs
+        type: elasticsearch
+        access: proxy
+        url: {{ .Values.logs.elasticsearch.url }}
+        basicAuth: true
+        basicAuthUser: grafana_logs_reader
+        jsonData:
+          index: cc-logs
+          timeField: "@timestamp"
+          esVersion: 8.0.0
+          logMessageField: message
+          logLevelField: level
+          tlsAuthWithCACert: true
+        secureJsonData:
+          basicAuthPassword: $__env{GRAFANA_ES_PASSWORD}
+          tlsCACert: $__file{/etc/pki/ca.crt}
+{{- end }}
+{{- if .Values.alertmanagerConfig.enabled }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cc-alertmanager
+  labels:
+    app.kubernetes.io/part-of: cc-platform
+type: Opaque
+stringData:
+  alertmanager.yaml: |-
+    {{- .Files.Get "files/alertmanager.yml" | nindent 4 }}
+{{- end }}
+{{- if .Values.grafanaCertificate.enabled }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: grafana
+spec:
+  secretName: grafana-tls
+  commonName: grafana
+  dnsNames: [grafana, localhost, "{{ .Release.Name }}-grafana", "{{ .Release.Name }}-grafana.{{ .Release.Namespace }}.svc"{{ with .Values.grafanaCertificate.host }}, {{ . | quote }}{{ end }}]
+  usages: [digital signature, key encipherment, server auth]
+  duration: 2160h
+  renewBefore: 360h
+  privateKey: { algorithm: RSA, size: 2048, rotationPolicy: Always }
+  issuerRef: { name: {{ .Values.grafanaCertificate.issuer }}, kind: ClusterIssuer, group: cert-manager.io }
+{{- end }}

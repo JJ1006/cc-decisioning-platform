@@ -1,0 +1,10 @@
+<!-- Liberty override: Prometheus metrics of ODM at https://odm:9453/metrics (MicroProfile Metrics 5.1: JVM, thread pools, servlet and REST request
+     timers incl. the RES execution endpoints). The HTTPS port still demands a client certificate (mtls.xml), so Prometheus presents one;
+     the metrics endpoint itself needs no extra login (authentication=false). -->
+<server>
+  <featureManager>
+    <feature>mpMetrics-5.1</feature>
+    <feature>monitor-1.0</feature>
+  </featureManager>
+  <mpMetrics authentication="false"/>
+</server>

@@ -1,0 +1,58 @@
+# cc-infra: the operator-managed infrastructure of the platform (namespace cc). Operators are installed first
+# (make kind-up / docs/deploy-kubernetes.md): cert-manager, Strimzi, and ECK when elasticsearch.enabled.
+pki:
+  enabled: true
+  issuer: cc-ca # a ClusterIssuer; must match global.pki.issuer of cc-platform
+  caSecretName: cc-ca-keypair # in the cert-manager namespace, made by scripts/k8s-secrets.sh from make pki
+  caPem: "" # CA certificate (public) for re-encrypt Routes: --set-file pki.caPem=...
+
+exposure: none # ingress | route | none: Kibana
+ingressClassName: nginx
+
+operatorNamespaces:
+  strimzi: strimzi-system
+  eck: elastic-system
+
+kafka:
+  enabled: true
+  name: cc # services: cc-kafka-bootstrap:9093; secrets: cc-cluster-ca-cert, one per KafkaUser
+  version: 4.3.1 # Strimzi 1.x runs Kafka 4.x (compose runs apache/kafka 3.9.2; the Java 3.9 clients speak to both)
+  metadataVersion: 4.3-IV0
+  replicas: 1
+  replicationFactor: 1 # 3 (and minIsr 2) with three brokers
+  minIsr: 1
+  heap: 384m
+  resources:
+    requests: { cpu: 200m, memory: 640Mi }
+    limits: { cpu: "2", memory: 768Mi } # mem_limit of compose
+  storage:
+    ephemeral: false
+    size: 2Gi
+    class: ""
+    deleteClaim: true # dev: the data goes with the release
+
+elasticsearch:
+  enabled: false # kind-full and OpenShift turn it on (ECK operator required)
+  name: cc # service cc-es-http:9200
+  version: 8.19.23
+  count: 1
+  javaOpts: -Xms640m -Xmx640m
+  resources:
+    requests: { cpu: 300m, memory: 1024Mi }
+    limits: { cpu: "2", memory: 1280Mi }
+  storage:
+    size: 5Gi
+    class: ""
+
+kibana:
+  enabled: false
+  name: cc # service cc-kb-http:5601
+  host: ""
+  publicBaseUrl: ""
+  resources:
+    requests: { cpu: 100m, memory: 512Mi }
+    limits: { cpu: "1", memory: 900Mi }
+
+networkPolicies:
+  enabled: true
+  monitoringNamespace: monitoring # openshift-monitoring / openshift-user-workload-monitoring on OpenShift

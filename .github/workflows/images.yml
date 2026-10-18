@@ -1,0 +1,69 @@
+name: images
+# Multi-arch (amd64 + arm64) images of the services to GHCR: ghcr.io/jj1006/cc-<service>:<commit sha>, plus the semver tag on a release.
+# Every image is signed with cosign (keyless, GitHub OIDC - no key to keep) and carries a Syft SBOM (SPDX) as a cosign attestation.
+#   verify: cosign verify ghcr.io/jj1006/cc-txn-generator:<tag> --certificate-identity-regexp 'https://github.com/JJ1006/cc-decisioning-platform/.*' \
+#             --certificate-oidc-issuer https://token.actions.githubusercontent.com
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths: ['services/**', 'mcp/odm-dc-mcp-server/**', 'contracts/**', 'rules/xom/**', 'pom.xml', '.github/workflows/images.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write # cosign keyless
+      attestations: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { service: txn-generator, dockerfile: services/txn-generator/Dockerfile }
+          - { service: decision-orchestrator, dockerfile: services/decision-orchestrator/Dockerfile }
+          - { service: notification-svc, dockerfile: services/notification-svc/Dockerfile }
+          - { service: decision-query-api, dockerfile: services/decision-query-api/Dockerfile }
+          - { service: application-api, dockerfile: services/application-api/Dockerfile }
+          - { service: odm-dc-mcp, dockerfile: mcp/odm-dc-mcp-server/Dockerfile }
+    env:
+      IMAGE: ghcr.io/jj1006/cc-${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with: { registry: ghcr.io, username: '${{ github.actor }}', password: '${{ secrets.GITHUB_TOKEN }}' }
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=sha,format=long,prefix=
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+      - id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+      - uses: sigstore/cosign-installer@v3
+      - uses: anchore/sbom-action/download-syft@v0
+      - name: Sign, generate the SBOM and attest it (by digest)
+        env:
+          DIGEST: ${{ steps.build.outputs.digest }}
+        run: |
+          cosign sign --yes "${IMAGE}@${DIGEST}"
+          syft "${IMAGE}@${DIGEST}" -o spdx-json=sbom.spdx.json
+          cosign attest --yes --type spdxjson --predicate sbom.spdx.json "${IMAGE}@${DIGEST}"
+      - uses: actions/upload-artifact@v4
+        with: { name: 'sbom-${{ matrix.service }}', path: sbom.spdx.json }

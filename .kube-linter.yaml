@@ -1,0 +1,39 @@
+# kube-linter for the rendered charts (scripts/lint-helm.sh, CI helm.yml). Defaults plus the checks below, with the documented exceptions.
+checks:
+  addAllBuiltIn: false
+  doNotAutoAddDefaults: false
+  include:
+    - run-as-non-root
+    - no-read-only-root-fs
+    - privilege-escalation-container
+    - privileged-container
+    - drop-net-raw-capability
+    - unset-memory-requirements
+    - unset-cpu-requirements
+    - latest-tag
+    - no-liveness-probe
+    - no-readiness-probe
+    - mismatching-selector
+    - non-existent-service-account
+    - host-network
+    - host-pid
+    - host-ipc
+    - access-to-secrets
+    - cluster-admin-role-binding
+    - default-service-account
+    - docker-sock
+    - minimum-three-replicas
+    - no-anti-affinity
+    - env-var-secret
+    - read-secret-from-env-var
+    - sensitive-host-mounts
+    - writable-host-mount
+    - pdb-max-unavailable
+  exclude:
+    # one replica on kind by design (values-kind-*.yaml); production sets replicas and enables the PDB/HPA of every chart
+    - minimum-three-replicas
+    - no-anti-affinity
+    # Kubernetes secrets ARE how these workloads get their store passwords (Strimzi and cert-manager write them): documented in docs/security-mtls.md
+    - read-secret-from-env-var
+    - env-var-secret
+    # Strimzi and ECK pods are managed by their operators, which set the security context themselves

@@ -1,0 +1,6 @@
+{{- /* Liberty overrides: the same files as the compose stack (scripts/helm-sync.sh copies them into files/) */ -}}
+{{- $_ := set .Values "files" (dict "mtls.xml" (.Files.Get "files/mtls.xml") "metrics.xml" (.Files.Get "files/metrics.xml")) }}
+{{- if not (eq (toString .Values.license) "accept") }}
+{{- fail "odm.license must be accept: you accept the IBM ODM for Developers licence by running it (https://www.ibm.com/support/customer/csol/terms/?id=L-GKAN-6LD3KR)" }}
+{{- end }}
+{{- include "cc-lib.all" . }}

@@ -1,0 +1,100 @@
+# Gateway: the only entry point of the APIs. Mutual TLS with a client certificate REQUIRED (the platform CA), roles by certificate CN.
+# Runs in standalone mode: routes come from files/apisix.yaml.tmpl (copied from gateway/apisix by scripts/helm-sync.sh); the entrypoint
+# inserts the certificates at start, so no certificate is in git. mem_limit 256m in compose.
+image:
+  registry: "" # third-party image: not under global.image.registry
+  repository: apache/apisix
+  tag: 3.13.0-debian
+  pullPolicy: IfNotPresent
+replicas: 1
+port: 9443
+tls: true
+managementPort: 9091 # Prometheus exporter (plain http, inside the namespace)
+service:
+  type: ClusterIP # values-kind: NodePort 30443 (mapped to localhost:8443)
+resources:
+  requests: { cpu: 50m, memory: 128Mi }
+  limits: { cpu: "1", memory: 256Mi }
+filesMountPath: /gateway
+command: ["/bin/sh", "/gateway/entrypoint.sh"]
+env:
+  APISIX_OTEL_SAMPLER: always_off # always_on with the observability stack
+# The image's user is the name "apisix" (uid 636): a plain cluster needs a numeric one for runAsNonRoot (values-kind sets it);
+# OpenShift assigns its own UID and the paths below are group-writable there.
+securityContext: {}
+writablePaths:
+  - /tmp
+  - /usr/local/apisix/conf
+  - /usr/local/apisix/logs
+  - /usr/local/apisix/client_body_temp
+  - /usr/local/apisix/proxy_temp
+  - /usr/local/apisix/fastcgi_temp
+  - /usr/local/apisix/uwsgi_temp
+  - /usr/local/apisix/scgi_temp
+initContainers:
+  - name: conf
+    image: apache/apisix:3.13.0-debian
+    command:
+      - /bin/sh
+      - -c
+      - cp -r /usr/local/apisix/conf/. /out/ && cp /gateway/config.yaml /out/config.yaml
+    resources:
+      requests: { cpu: 10m, memory: 16Mi }
+      limits: { cpu: 100m, memory: 64Mi }
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      capabilities: { drop: [ALL] }
+    volumeMounts:
+      - { name: usr-local-apisix-conf, mountPath: /out }
+      - { name: files, mountPath: /gateway/config.yaml, subPath: config.yaml, readOnly: true }
+pki:
+  enabled: true
+  format: pem
+  sources:
+    - secret:
+        name: apisix-tls
+        items:
+          - { key: tls.crt, path: apisix.crt }
+          - { key: tls.key, path: apisix.key }
+          - { key: ca.crt, path: ca.crt }
+probes:
+  raw:
+    startupProbe:
+      exec: &probe
+        command:
+          - bash
+          - -c
+          - "exec 3<>/dev/tcp/127.0.0.1/9091 && printf 'GET /apisix/prometheus/metrics HTTP/1.0\\r\\n\\r\\n' >&3 && head -1 <&3 | grep -q ' 200 '"
+      periodSeconds: 5
+      failureThreshold: 30
+    livenessProbe:
+      exec: *probe
+      periodSeconds: 20
+      timeoutSeconds: 5
+    readinessProbe:
+      exec: *probe
+      periodSeconds: 10
+      timeoutSeconds: 5
+otel: { enabled: false }
+hpa: { enabled: false, minReplicas: 1, maxReplicas: 3, cpu: 80 }
+pdb: { enabled: false }
+serviceMonitor: { enabled: false, path: /apisix/prometheus/metrics }
+expose:
+  enabled: true
+  termination: passthrough # the client certificate must reach the gateway: never terminate TLS in front of it
+networkPolicy:
+  enabled: true
+  allowPrometheus: true
+  ingress:
+    - from: [{ ipBlock: { cidr: 0.0.0.0/0 } }] # clients; the certificate decides
+      ports: [9443]
+  egress:
+    - to:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: application-api } }
+        - podSelector: { matchLabels: { app.kubernetes.io/name: decision-query-api } }
+        - podSelector: { matchLabels: { app.kubernetes.io/name: txn-generator } }
+        - podSelector: { matchLabels: { app.kubernetes.io/name: odm-dc-mcp } }
+      ports: [{ port: 8080, protocol: TCP }, { port: 3001, protocol: TCP }]
+    - to: [{ podSelector: { matchLabels: { app.kubernetes.io/name: otel-collector } } }]
+      ports: [{ port: 4318, protocol: TCP }]

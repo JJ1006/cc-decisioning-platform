@@ -1,0 +1,3 @@
+{{- /* the declarative configuration is the same files as the compose stack (scripts/helm-sync.sh copies them into files/) */ -}}
+{{- $_ := set .Values "files" (dict "config.yaml" (.Files.Get "files/config.yaml") "apisix.yaml.tmpl" (.Files.Get "files/apisix.yaml.tmpl") "entrypoint.sh" (.Files.Get "files/entrypoint.sh")) }}
+{{- include "cc-lib.all" . }}

@@ -1,0 +1,139 @@
+{{- /* DaemonSet: it needs the node's container logs (hostPath), so it runs as root. kube-linter exceptions are listed in .kube-linter.yaml. */ -}}
+{{- $_ := set .Values "files" (dict "filebeat.yml" (.Files.Get "files/filebeat.k8s.yml")) }}
+{{- $_ := set .Values "config" (dict) }}
+{{- $name := include "cc-lib.name" . }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ $name }}
+  labels: {{- include "cc-lib.labels" . | nindent 4 }}
+automountServiceAccountToken: true
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ $name }}-{{ .Release.Namespace }}
+  labels: {{- include "cc-lib.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: [namespaces, pods, nodes]
+    verbs: [get, list, watch]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ $name }}-{{ .Release.Namespace }}
+  labels: {{- include "cc-lib.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ $name }}-{{ .Release.Namespace }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $name }}
+    namespace: {{ .Release.Namespace }}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}-files
+  labels: {{- include "cc-lib.labels" . | nindent 4 }}
+data:
+  filebeat.yml: |-
+    {{- .Files.Get "files/filebeat.k8s.yml" | nindent 4 }}
+---
+{{ include "cc-lib.certificate" . }}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ $name }}
+  labels: {{- include "cc-lib.labels" . | nindent 4 }}
+  annotations:
+    ignore-check.kube-linter.io/run-as-non-root: "Filebeat reads /var/log/containers on the node: root, documented in docs/deploy-kubernetes.md"
+    ignore-check.kube-linter.io/no-read-only-root-fs: "Filebeat keeps its registry in /usr/share/filebeat/data (a hostPath)"
+    ignore-check.kube-linter.io/host-mounts: "container logs of the node"
+    ignore-check.kube-linter.io/writable-host-mount: "the registry file (read offsets) must survive a pod restart, so it lives in a hostPath"
+spec:
+  selector:
+    matchLabels: {{- include "cc-lib.selectorLabels" . | nindent 6 }}
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels: {{- include "cc-lib.labels" . | nindent 8 }}
+      annotations:
+        checksum/files: {{ .Files.Get "files/filebeat.k8s.yml" | sha256sum }}
+    spec:
+      serviceAccountName: {{ $name }}
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: {{ $name }}
+          image: {{ include "cc-lib.image" . | quote }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          args: [filebeat, -e, --strict.perms=false]
+          env:
+            - name: NODE_NAME
+              valueFrom: { fieldRef: { fieldPath: spec.nodeName } }
+            - name: LOGSTASH_HOST
+              value: {{ .Values.logstashHost | quote }}
+          livenessProbe:
+            exec: { command: [filebeat, test, config, -c, /usr/share/filebeat/filebeat.yml] }
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 20
+          readinessProbe:
+            exec: { command: [filebeat, test, config, -c, /usr/share/filebeat/filebeat.yml] }
+            periodSeconds: 30
+            timeoutSeconds: 20
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+          securityContext:
+            runAsUser: 0
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - { name: files, mountPath: /usr/share/filebeat/filebeat.yml, subPath: filebeat.yml, readOnly: true }
+            - { name: pki, mountPath: /pki, readOnly: true }
+            - { name: data, mountPath: /usr/share/filebeat/data }
+            - { name: varlogcontainers, mountPath: /var/log/containers, readOnly: true }
+            - { name: varlogpods, mountPath: /var/log/pods, readOnly: true }
+      volumes:
+        - name: files
+          configMap: { name: {{ $name }}-files, defaultMode: 0444 }
+        - name: pki
+          projected:
+            defaultMode: 0444
+            sources:
+              - secret:
+                  name: {{ $name }}-tls
+                  items:
+                    - { key: tls.crt, path: filebeat.crt }
+                    - { key: tls.key, path: filebeat.key }
+                    - { key: ca.crt, path: ca.crt }
+        - name: data
+          hostPath: { path: /var/lib/filebeat-cc-data, type: DirectoryOrCreate }
+        - name: varlogcontainers
+          hostPath: { path: /var/log/containers }
+        - name: varlogpods
+          hostPath: { path: /var/log/pods }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ $name }}
+  labels: {{- include "cc-lib.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels: {{- include "cc-lib.selectorLabels" . | nindent 6 }}
+  policyTypes: [Ingress, Egress]
+  ingress: []
+  egress:
+    - to: [{ podSelector: { matchLabels: { app.kubernetes.io/name: logstash } } }]
+      ports: [{ port: 5044, protocol: TCP }]
+    - to: [{ ipBlock: { cidr: 0.0.0.0/0 } }] # the Kubernetes API (autodiscover) and DNS
+      ports: [{ port: 443, protocol: TCP }, { port: 6443, protocol: TCP }, { port: 53, protocol: UDP }, { port: 53, protocol: TCP }]

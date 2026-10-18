@@ -1,0 +1,10 @@
+apiVersion: v2
+name: odm
+description: IBM Operational Decision Manager for Developers (Decision Center + RES + Runner), DEV ONLY - not for production, see docs/deploy-kubernetes.md
+type: application
+version: 0.1.0
+appVersion: "9.5.0.1-IF019_25.1.0"
+dependencies:
+  - name: cc-lib
+    version: 0.1.0
+    repository: file://../../cc-lib

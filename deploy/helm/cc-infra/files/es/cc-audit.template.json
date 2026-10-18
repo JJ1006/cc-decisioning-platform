@@ -1,0 +1,71 @@
+{
+  "index_patterns": [
+    "cc-audit-*"
+  ],
+  "priority": 100,
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "dynamic": "strict",
+      "properties": {
+        "eventId": {
+          "type": "keyword"
+        },
+        "correlationId": {
+          "type": "keyword"
+        },
+        "eventType": {
+          "type": "keyword"
+        },
+        "schemaVersion": {
+          "type": "integer"
+        },
+        "occurredAt": {
+          "type": "date"
+        },
+        "producer": {
+          "type": "keyword"
+        },
+        "topic": {
+          "type": "keyword"
+        },
+        "payload": {
+          "type": "object",
+          "dynamic": "strict",
+          "properties": {
+            "actor": {
+              "type": "keyword"
+            },
+            "action": {
+              "type": "keyword"
+            },
+            "resourceType": {
+              "type": "keyword"
+            },
+            "resourceId": {
+              "type": "keyword"
+            },
+            "result": {
+              "type": "keyword"
+            },
+            "details": {
+              "type": "flattened"
+            }
+          }
+        },
+        "@timestamp": {
+          "type": "date"
+        }
+      }
+    },
+    "aliases": {
+      "cc-audit": {}
+    }
+  },
+  "_meta": {
+    "description": "cc-audit: written by Logstash (kafka-events pipeline) through the cc-audit-write alias"
+  }
+}

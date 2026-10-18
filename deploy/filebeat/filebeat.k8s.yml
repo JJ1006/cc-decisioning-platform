@@ -1,0 +1,25 @@
+# Kubernetes variant of filebeat.yml (compose watches Docker): pods labelled app.kubernetes.io/part-of=cc-platform are shipped, the rest is ignored.
+# Same output: Logstash beats input with mutual TLS. Copied into deploy/helm/charts/filebeat/files by scripts/helm-sync.sh.
+filebeat.autodiscover:
+  providers:
+    - type: kubernetes
+      node: ${NODE_NAME}
+      hints.enabled: false
+      templates:
+        - condition:
+            equals:
+              kubernetes.labels.app_kubernetes_io/part-of: cc-platform
+          config:
+            - type: container
+              paths:
+                - /var/log/containers/*-${data.kubernetes.container.id}.log
+
+output.logstash:
+  hosts: ["${LOGSTASH_HOST:logstash:5044}"]
+  ssl.certificate_authorities: ["/pki/ca.crt"]
+  ssl.certificate: "/pki/filebeat.crt"
+  ssl.key: "/pki/filebeat.key"
+
+logging.level: info
+logging.to_stderr: true
+http.enabled: false

@@ -1,0 +1,5 @@
+{
+  "cluster": ["monitor"],
+  "indices": [{ "names": ["*"], "privileges": ["monitor"] }],
+  "metadata": { "description": "elasticsearch-exporter: cluster, node and index statistics for Prometheus, no document access" }
+}

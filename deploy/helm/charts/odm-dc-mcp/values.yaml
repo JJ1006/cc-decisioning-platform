@@ -1,0 +1,72 @@
+# odm-dc-mcp: our MCP server (streamable HTTP, mutual TLS, trusts only the gateway certificate). mem_limit 256m in compose.
+# Disabled in values-kind-lite (it needs the gateway, the query API and Elasticsearch).
+image:
+  repository: jj1006/cc-odm-dc-mcp
+  pullPolicy: IfNotPresent
+replicas: 1
+port: 3001
+tls: true
+resources:
+  requests: { cpu: 50m, memory: 192Mi }
+  limits: { cpu: "1", memory: 256Mi }
+env:
+  TLS_CERT: /pki/tls.crt
+  TLS_KEY: /pki/tls.key
+  TLS_CA: /pki/ca.crt
+  CA_FILE: /pki/ca.crt
+  ALLOWED_CLIENT_CNS: apisix,odm-dc-mcp # the gateway, and the pod's own probe
+  DC_URL: https://odm:9453/decisioncenter-api
+  RES_URL: https://odm:9453
+  GATEWAY_URL: https://apisix:9443
+  MCP_RES_CERT: /pki/mcp-res.crt
+  MCP_RES_CERT_KEY: /pki/mcp-res.key
+  MCP_AGENT_CERT: /pki/mcp-agent.crt
+  MCP_AGENT_CERT_KEY: /pki/mcp-agent.key
+  ALLOW_DEPLOY: "false" # the deployment tool stays off; docs/mcp.md
+secretEnv:
+  - { name: DC_USERNAME, secret: cc-odm-credentials, key: DC_USERNAME }
+  - { name: DC_PASSWORD, secret: cc-odm-credentials, key: DC_PASSWORD }
+  - { name: RES_USERNAME, secret: cc-odm-credentials, key: RES_USERNAME }
+  - { name: RES_PASSWORD, secret: cc-odm-credentials, key: RES_PASSWORD }
+pki:
+  enabled: true
+  format: pem
+  extra: # client certificates this server presents: to ODM (mcp-res) and to the gateway (mcp-agent, role AGENT)
+    - { name: mcp-res, commonName: mcp-res }
+    - { name: mcp-agent, commonName: mcp-agent }
+kafka: { enabled: true, format: pem, userSecret: mcp-agent } # audit events on cc.audit.v1 as KafkaUser mcp-agent
+probes:
+  raw:
+    startupProbe:
+      exec: &probe
+        command:
+          - python
+          - -c
+          - "import ssl,http.client as h; c=ssl.create_default_context(cafile='/pki/ca.crt'); c.load_cert_chain('/pki/tls.crt','/pki/tls.key'); x=h.HTTPSConnection('localhost',3001,context=c,timeout=4); x.request('GET','/health'); raise SystemExit(0 if x.getresponse().status==200 else 1)"
+      periodSeconds: 5
+      failureThreshold: 40
+    livenessProbe:
+      exec: *probe
+      periodSeconds: 20
+      timeoutSeconds: 6
+    readinessProbe:
+      exec: *probe
+      periodSeconds: 10
+      timeoutSeconds: 6
+otel: { enabled: false }
+hpa: { enabled: false }
+pdb: { enabled: false }
+serviceMonitor: { enabled: false }
+expose: { enabled: false }
+networkPolicy:
+  enabled: true
+  ingress:
+    - from: [{ podSelector: { matchLabels: { app.kubernetes.io/name: apisix } } }]
+      ports: [3001]
+  egress:
+    - to: [{ podSelector: { matchLabels: { strimzi.io/cluster: cc, strimzi.io/kind: Kafka } } }]
+      ports: [{ port: 9093, protocol: TCP }]
+    - to: [{ podSelector: { matchLabels: { app.kubernetes.io/name: odm } } }]
+      ports: [{ port: 9453, protocol: TCP }]
+    - to: [{ podSelector: { matchLabels: { app.kubernetes.io/name: apisix } } }]
+      ports: [{ port: 9443, protocol: TCP }]

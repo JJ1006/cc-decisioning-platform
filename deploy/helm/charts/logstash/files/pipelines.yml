@@ -1,0 +1,23 @@
+# One pipeline per concern. The two Kafka pipelines and the logs pipeline are durable: events wait in a
+# persistent queue before they are acknowledged. Documents Elasticsearch rejects (mapping errors) land in the
+# dead letter queue and are re-indexed into cc-dlq by events-dlq.
+- pipeline.id: kafka-events
+  path.config: "/usr/share/logstash/pipeline/kafka-events/*.conf"
+  pipeline.workers: 1
+  queue.type: persisted
+  queue.max_bytes: 256mb
+  dead_letter_queue.enable: true
+  dead_letter_queue.max_bytes: 128mb
+- pipeline.id: kafka-dlq
+  path.config: "/usr/share/logstash/pipeline/kafka-dlq/*.conf"
+  pipeline.workers: 1
+  queue.type: persisted
+  queue.max_bytes: 64mb
+- pipeline.id: logs
+  path.config: "/usr/share/logstash/pipeline/logs/*.conf"
+  pipeline.workers: 1
+  queue.type: persisted
+  queue.max_bytes: 256mb
+- pipeline.id: events-dlq
+  path.config: "/usr/share/logstash/pipeline/events-dlq/*.conf"
+  pipeline.workers: 1

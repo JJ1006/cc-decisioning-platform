@@ -1,0 +1,5 @@
+{
+  "cluster": ["monitor"],
+  "indices": [{ "names": ["cc-logs"], "privileges": ["read", "view_index_metadata"] }],
+  "metadata": { "description": "Grafana: read the service logs (cc-logs) to jump from a trace to its log lines; cluster monitor only because the datasource health check reads GET /" }
+}
