@@ -4,11 +4,22 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v5
+        id: rp
         with:
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+      # tags and releases made with GITHUB_TOKEN do not start other workflows, so start the image build for the tag and the promotion pull request here
+      - name: Images and promotion for the release
+        if: steps.rp.outputs.release_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.rp.outputs.tag_name }}
+        run: |
+          gh workflow run images.yml --ref "$TAG"
+          gh workflow run promote.yml --ref main --field tag="$TAG"
