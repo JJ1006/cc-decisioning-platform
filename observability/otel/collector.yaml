@@ -15,8 +15,8 @@ receivers:
 processors:
   memory_limiter:
     check_interval: 1s
-    limit_mib: 96
-    spike_limit_mib: 24
+    limit_mib: 80 # of the 128 MB container
+    spike_limit_mib: 20
   filter/noise:
     # scrapes and probes are not user traffic: no spans for the Prometheus scrape, the actuator probes and the blackbox probes
     error_mode: ignore

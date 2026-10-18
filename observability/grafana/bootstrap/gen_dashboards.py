@@ -8,9 +8,13 @@ starting point and keeps the eight dashboards consistent (same colours, units, l
 """
 
 import json
+import os
 import pathlib
 
-OUT = pathlib.Path(__file__).resolve().parent.parent / "dashboards"
+OUT = pathlib.Path(
+    os.environ.get("DASHBOARD_OUT")
+    or pathlib.Path(__file__).resolve().parent.parent / "dashboards"
+)
 PROM = {"type": "prometheus", "uid": "prometheus"}
 TEMPO = {"type": "tempo", "uid": "tempo"}
 

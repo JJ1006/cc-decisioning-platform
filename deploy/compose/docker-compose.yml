@@ -271,7 +271,7 @@ services:
     image: docker.elastic.co/logstash/logstash:8.19.23
     profiles: [core]
     env_file: [.env.derived]
-    mem_limit: 768m
+    mem_limit: 896m # was 768m: the heap is 384 MB, the rest is off-heap (Netty, queues); it ran at 99% of 768m
     hostname: logstash
     restart: unless-stopped
     ports:
