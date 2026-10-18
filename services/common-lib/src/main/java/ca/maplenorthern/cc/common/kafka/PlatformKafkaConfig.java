@@ -36,7 +36,10 @@ public class PlatformKafkaConfig {
   @Value("${platform.kafka.store-password:}")
   String storePassword;
 
-  /** Separate truststore password (Strimzi issues different ones); blank means the keystore password. */
+  /**
+   * Separate truststore password (Strimzi issues different ones); blank means the keystore
+   * password.
+   */
   @Value("${platform.kafka.truststore-password:}")
   String truststorePassword;
 
