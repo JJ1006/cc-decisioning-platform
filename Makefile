@@ -59,8 +59,12 @@ verify: ## Full local verification (build + tests + format check)
 test: ## Unit tests
 	@if grep -q '<module>' pom.xml; then mvn -q test; else echo "no Maven modules yet"; fi
 
-pki: ## Generate private CA and certs (idempotent; make pki FORCE=1 regenerates)
+pki: ## Generate private CA and certs (idempotent; make pki FORCE=1 CONFIRM=1 regenerates)
+	@if [ -n "$(FORCE)" ] && [ "$(CONFIRM)" != "1" ]; then \
+	  echo "WARNING: FORCE=1 makes a NEW CA. Kafka and Elasticsearch state signed by the old CA stops working."; \
+	  echo "Re-run with CONFIRM=1 to go on, then run: make down V=1"; exit 1; fi
 	@JAVA_HOME=$(JAVA_HOME) scripts/pki.sh $(if $(FORCE),--force,)
+	@if [ -n "$(FORCE)" ]; then echo "New CA issued. Now run: make down V=1 (drops old volumes), then make up."; fi
 
 seed-kibana: ## Kibana as code: space, data views, dashboards, alert rules (idempotent; make up with the analytics profile runs it)
 	@scripts/seed-kibana.sh

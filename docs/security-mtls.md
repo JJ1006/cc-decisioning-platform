@@ -74,7 +74,7 @@ gitignored folder; on Kubernetes it is a cert-manager secret of the gateway name
 
 ```bash
 scripts/cert-expiry.sh            # make cert-expiry: days left on every certificate, warns below 14, exits non-zero when expired
-make pki FORCE=1                  # wipe and reissue the CA and every certificate (new CA: every hop changes at once)
+make pki FORCE=1 CONFIRM=1        # wipe and reissue the CA and every certificate (new CA: every hop changes at once)
 make down && make up PROFILE=core,analytics,edge     # containers read keystores at start
 make verify-mtls
 ```

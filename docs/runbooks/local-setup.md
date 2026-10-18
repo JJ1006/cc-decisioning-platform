@@ -59,7 +59,7 @@ Memory limits are set on every container. Measured with `core,analytics` idle on
 
 `scripts/pki.sh` creates one root CA and one certificate per component (server + client auth; SANs: component name, `localhost`, `127.0.0.1`) plus pure client certificates (`admin`, `demo-partner`, `underwriter-portal`, `mcp`).
 Per component: `security/pki/out/<name>/<name>.{crt,key,p12,jks}`; shared: `ca/ca.crt`, `truststore.p12|jks`, `kafka-client.properties`.
-`make pki FORCE=1` wipes and regenerates everything (restart the stack afterwards).
+`make pki FORCE=1 CONFIRM=1` wipes and regenerates everything, including the CA. Without `CONFIRM=1` it only prints a warning: Kafka and Elasticsearch state made under the old CA stops working, so run `make down V=1` afterwards and `make up` again.
 
 Dev trade-offs: leaf keys/keystores are world-readable so non-root container users can read bind mounts; the CA key (`ca-private/`) is `0600` and is never mounted. Kubernetes uses cert-manager instead (Phase 10).
 
@@ -78,4 +78,4 @@ The `pre_tool_guard` hook blocks commands that touch `*.key`, `*.p12`, `*.jks`, 
 | Kafka client `SSL handshake failed` | You are connecting without a client certificate, or with one not signed by this CA. Use the `admin` certificate (`kafka-client.properties`). |
 | Kafka container dies with `file does not exist` / `KAFKA_SSL_KEYSTORE_FILENAME` | A listener name ends in `SSL`; the image then expects file-based secrets. Keep names `INTERNAL`/`EXTERNAL`. |
 | Browser: `NET::ERR_CERT_AUTHORITY_INVALID` | Trust `security/pki/out/ca/ca.crt` in your OS keychain (dev only) |
-| Changed `PKI_PASSWORD` | `make pki FORCE=1`, `make down V=1`, `make up ...` |
+| Changed `PKI_PASSWORD` | `make pki FORCE=1 CONFIRM=1`, `make down V=1`, `make up ...` |
