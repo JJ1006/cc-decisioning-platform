@@ -1,5 +1,1 @@
 * @JJ1006
-# the production-like environment: a change here is a promotion and needs a deliberate review
-/deploy/argocd/apps/openshift/ @JJ1006
-/deploy/argocd/bootstrap/root/openshift.yaml @JJ1006
-/deploy/argocd/projects/ @JJ1006
