@@ -1,0 +1,10 @@
+# GitGuardian (the PR check and ggshield). No path is ignored: every file is scanned.
+# Only exact matches that are NAMES of Kubernetes secrets, not values, are ignored. GitGuardian matches literals, not patterns, so each name is listed;
+# a new secret name that trips the check is added here in the PR that introduces it, with the reason. See SECURITY.md.
+version: 2
+secret:
+  ignored-matches:
+    - name: Kubernetes secret name referenced by passwordSecret (deploy/helm values), not a password
+      match: cc-pki-password
+    - name: Kubernetes secret name of the Elasticsearch user passwords, not a password
+      match: cc-es-passwords
