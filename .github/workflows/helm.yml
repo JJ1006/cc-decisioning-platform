@@ -62,7 +62,7 @@ jobs:
         run: make kind-up PROFILE=lite
       - name: Deploy the rules
         run: make kind-deploy-rules
-      - name: Demo: decisions > 0
+      - name: "Demo (decisions > 0)"
         run: make kind-demo
       - name: Cluster state on failure
         if: failure()
