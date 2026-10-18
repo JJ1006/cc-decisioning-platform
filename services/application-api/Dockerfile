@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Build context is the repository root:  docker build -f services/application-api/Dockerfile .
-FROM maven:3.9-eclipse-temurin-21 AS build
+FROM --platform=$BUILDPLATFORM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /src
 COPY pom.xml ./
 COPY rules/xom rules/xom

@@ -68,10 +68,10 @@ spec:
             - name: NODE_OPTIONS
               value: --max-old-space-size=512
             - name: XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY
-              valueFrom: { secretKeyRef: { name: cc-kibana-keys, key: ENCRYPTION_KEY } }
+              valueFrom: { secretKeyRef: { name: cc-kibana-keys, key: encryption } }
             - name: XPACK_SECURITY_ENCRYPTIONKEY
-              valueFrom: { secretKeyRef: { name: cc-kibana-keys, key: ENCRYPTION_KEY } }
+              valueFrom: { secretKeyRef: { name: cc-kibana-keys, key: encryption } }
             - name: XPACK_REPORTING_ENCRYPTIONKEY
-              valueFrom: { secretKeyRef: { name: cc-kibana-keys, key: ENCRYPTION_KEY } }
+              valueFrom: { secretKeyRef: { name: cc-kibana-keys, key: encryption } }
           resources: {{- toYaml .Values.kibana.resources | nindent 12 }}
 {{- end }}

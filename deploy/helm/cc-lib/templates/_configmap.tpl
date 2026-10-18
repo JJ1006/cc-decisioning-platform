@@ -29,7 +29,7 @@ metadata:
   labels: {{- include "cc-lib.labels" . | nindent 4 }}
 data:
   {{- range $k, $v := .Values.files }}
-  {{ $k }}: |-
+  {{ $k }}: |
     {{- $v | nindent 4 }}
   {{- end }}
 {{- end }}

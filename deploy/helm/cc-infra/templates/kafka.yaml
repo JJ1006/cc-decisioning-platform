@@ -28,6 +28,16 @@ spec:
   jvmOptions:
     -Xms: {{ .Values.kafka.heap }}
     -Xmx: {{ .Values.kafka.heap }}
+  template:
+    # Pod Security "restricted" / OpenShift restricted-v2: no UID, GID or fsGroup is set (the image's user is numeric, the SCC assigns its own)
+    pod:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+    kafkaContainer:
+      securityContext: {{- include "cc-infra.containerSecurityContext" . | nindent 8 }}
+    initContainer:
+      securityContext: {{- include "cc-infra.containerSecurityContext" . | nindent 8 }}
 ---
 apiVersion: kafka.strimzi.io/v1
 kind: Kafka
@@ -57,4 +67,13 @@ spec:
   entityOperator:
     topicOperator: {}
     userOperator: {}
+    template:
+      pod:
+        securityContext:
+          runAsNonRoot: true
+          seccompProfile: { type: RuntimeDefault }
+      topicOperatorContainer:
+        securityContext: {{- include "cc-infra.containerSecurityContext" . | nindent 10 }}
+      userOperatorContainer:
+        securityContext: {{- include "cc-infra.containerSecurityContext" . | nindent 10 }}
 {{- end }}

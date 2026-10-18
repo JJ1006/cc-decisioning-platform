@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Chart quality gate (make lint-helm, CI helm.yml): helm lint every chart, render cc-infra and cc-platform with each values file,
 # validate the manifests with kubeconform (strict, Kubernetes 1.30, CRD schemas from the datreeio catalog) and run kube-linter.
-# Needs: helm, kubeconform, kube-linter (CI installs them). `scripts/lint-helm.sh quick` skips kubeconform and kube-linter.
+# Needs: helm, kubeconform, kube-linter (CI installs them and sets REQUIRE_HELM_TOOLS=1; locally a missing tool is skipped). `scripts/lint-helm.sh quick` skips kubeconform and kube-linter.
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 H=$ROOT/deploy/helm
@@ -28,6 +28,13 @@ for v in kind-lite kind-full openshift; do
   echo "ok  $v ($(grep -c '^kind:' "$OUT/infra-$v.yaml") + $(grep -c '^kind:' "$OUT/platform-$v.yaml") objects)"
 done
 [[ ${1:-} == quick ]] && exit 0
+for tool in kubeconform kube-linter; do
+  if ! command -v "$tool" >/dev/null; then
+    [[ -n ${REQUIRE_HELM_TOOLS:-} ]] && { echo "FAIL  $tool not found" >&2; exit 1; }
+    echo "SKIP  $tool not found (brew install $tool): manifests rendered but not validated"
+    exit 0
+  fi
+done
 
 echo "== kubeconform (strict, Kubernetes $K8S_VERSION)"
 for f in "$OUT"/*.yaml; do

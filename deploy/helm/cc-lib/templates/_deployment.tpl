@@ -183,7 +183,7 @@ spec:
               drop: [ALL]
           volumeMounts:
             {{- range .Values.writablePaths | default (list "/tmp") }}
-            - name: {{ . | trimPrefix "/" | replace "/" "-" | default "root" }}
+            - name: {{ . | trimPrefix "/" | replace "/" "-" | replace "_" "-" | default "root" }}
               mountPath: {{ . }}
             {{- end }}
             {{- if $pki.enabled }}
@@ -205,7 +205,7 @@ spec:
             {{- with .Values.extraVolumeMounts }}{{ toYaml . | nindent 12 }}{{ end }}
       volumes:
         {{- range .Values.writablePaths | default (list "/tmp") }}
-        - name: {{ . | trimPrefix "/" | replace "/" "-" | default "root" }}
+        - name: {{ . | trimPrefix "/" | replace "/" "-" | replace "_" "-" | default "root" }}
           emptyDir: {{- if $.Values.emptyDirSizeLimit }} { sizeLimit: {{ $.Values.emptyDirSizeLimit }} }{{ else }} {}{{ end }}
         {{- end }}
         {{- if $pki.enabled }}
