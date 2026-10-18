@@ -1,6 +1,7 @@
 SHELL := /bin/bash
 PROFILE ?= core
-JAVA_HOME := $(shell [ -d /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home ] && echo /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home || /usr/libexec/java_home -v 21 2>/dev/null)
+# JDK 21 for the build: Homebrew's, else macOS java_home, else whatever the environment has (CI sets it with setup-java)
+JAVA_HOME := $(or $(shell [ -d /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home ] && echo /opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home),$(shell /usr/libexec/java_home -v 21 2>/dev/null),$(JAVA_HOME))
 export JAVA_HOME
 
 # tracing is on only with the obs profile: the agents and the gateway export spans to the collector, which exists only there
