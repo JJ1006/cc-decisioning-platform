@@ -8,7 +8,7 @@ OBS_ENV = $(if $(filter obs,$(subst $(comma), ,$(PROFILE))),APISIX_OTEL_SAMPLER=
 comma := ,
 
 .DEFAULT_GOAL := help
-.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules test-logstash lint-api api-docs test-api-docs lint-obs up-obs grafana-shots check-dashboards api-call cert-expiry seed-kibana export-kibana kibana-shots demo kind-up ocp-render eval-rules eval-agent what-if
+.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules test-logstash lint-api api-docs test-api-docs test-mcp lint-obs up-obs grafana-shots check-dashboards api-call cert-expiry seed-kibana export-kibana kibana-shots demo kind-up ocp-render eval-rules eval-agent what-if
 
 help: ## Show targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -24,8 +24,12 @@ up: ## Start compose profiles: make up PROFILE=core,analytics (run make pki firs
 	@scripts/check-es-mapping.sh
 	@case ',$(PROFILE),' in *,analytics,*) scripts/seed-kibana.sh ;; esac
 
+test-mcp: ## ruff, mypy --strict and pytest of the MCP server in mcp/odm-dc-mcp-server (needs uv)
+	@scripts/test-mcp.sh
+
 lint-obs: ## Static checks of the observability config: dashboards = generator, promtool, amtool, collector validate, runbooks
 	@scripts/lint-observability.sh
+	@scripts/test-mcp.sh
 
 grafana-shots: ## Screenshots of the Grafana dashboards, the service graph and a trace waterfall (Playwright; run make demo first)
 	@scripts/grafana-shots.sh

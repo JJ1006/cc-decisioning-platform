@@ -51,6 +51,15 @@ upstreams:
     timeout: { connect: 15, send: 10, read: 30 } # connect includes the TLS handshake: the JVMs' first handshakes are slow on a busy laptop
     keepalive_pool: { size: 32, idle_timeout: 300, requests: 10000 } # reuse the mutual TLS connections
 
+  - id: odm-dc-mcp
+    type: roundrobin
+    scheme: https
+    pass_host: node
+    nodes: { "odm-dc-mcp:3001": 1 }
+    tls: { client_cert_id: upstream-client, verify: true }
+    timeout: { connect: 15, send: 60, read: 3600 } # MCP sessions stream: no short read timeout
+    keepalive_pool: { size: 8, idle_timeout: 300, requests: 10000 }
+
 # one quota per consumer, shared by all routes (group): 100 requests per minute, then 429
 plugin_configs:
   - id: quota
@@ -99,6 +108,8 @@ global_rules:
                 ["analyst"] = "ANALYST",
                 ["load-test"] = "ANALYST",
                 ["ops-admin"] = "OPS",
+                ["mcp-agent"] = "AGENT", -- the odm-dc MCP server reading decisions and statistics on behalf of an AI agent: no manual decisions, no ops
+                ["mcp-client"] = "MCP_CLIENT", -- an MCP client (Claude, the inspector) calling /mcp/dc
               }
               -- never trust what the client sends
               core.request.set_header(ctx, "X-Consumer", nil)
@@ -180,19 +191,19 @@ routes:
   - id: decisions-search
     uri: /v1/decisions
     methods: [GET]
-    labels: { roles: ANALYST }
+    labels: { roles: "ANALYST,AGENT" }
     upstream_id: decision-query-api
     plugin_config_id: quota
   - id: decisions-item
     uri: /v1/decisions/*
     methods: [GET]
-    labels: { roles: "ANALYST,UNDERWRITER" }
+    labels: { roles: "ANALYST,UNDERWRITER,AGENT" }
     upstream_id: decision-query-api
     plugin_config_id: quota
   - id: stats
     uri: /v1/stats/*
     methods: [GET]
-    labels: { roles: ANALYST }
+    labels: { roles: "ANALYST,AGENT" }
     upstream_id: decision-query-api
     plugin_config_id: quota
 
@@ -213,15 +224,22 @@ routes:
       proxy-rewrite:
         regex_uri: ["^/admin/generator/(.*)", "/admin/$1"]
 
-  # ---- MCP servers arrive in P9: the route and its roles exist, the answer is a placeholder
-  - id: mcp-placeholder
-    uri: /mcp/*
-    labels: { roles: "PARTNER,UNDERWRITER,ANALYST,OPS" }
+  # ---- MCP: the odm-dc server (streamable HTTP, mutual TLS all the way). /mcp/dc is rewritten to /mcp of the upstream.
+  - id: mcp-dc
+    uris: [/mcp/dc, /mcp/dc/*]
+    labels: { roles: MCP_CLIENT }
+    upstream_id: odm-dc-mcp
     plugin_config_id: quota
     plugins:
-      fault-injection:
-        abort:
-          http_status: 501
-          body: '{"type":"about:blank","title":"Not implemented","status":501,"detail":"MCP servers are added in phase 9"}'
-          headers: { Content-Type: application/problem+json }
+      proxy-rewrite:
+        regex_uri: ["^/mcp/dc(/.*)?$", "/mcp$1"]
+      proxy-control:
+        request_buffering: false # streamed bodies and server-sent events pass straight through
+      limit-req: # an agent loops: 5 requests per second per consumer, burst 10
+        rate: 5
+        burst: 10
+        key_type: var
+        key: ssl_client_s_dn
+        rejected_code: 429
+        nodelay: true
 #END

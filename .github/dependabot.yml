@@ -1,5 +1,4 @@
 version: 2
-# pip (mcp/odm-dc-mcp-server) is added in P9.
 updates:
   - package-ecosystem: maven
     directory: /
@@ -15,6 +14,10 @@ updates:
         update-types: [version-update:semver-major]
       - dependency-name: "net.logstash.logback:*"
         update-types: [version-update:semver-major]
+  - package-ecosystem: pip # mcp/odm-dc-mcp-server (uv.lock); paused like the others
+    directory: /mcp/odm-dc-mcp-server
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 0 # PAUSED - remove limit to re-enable
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }

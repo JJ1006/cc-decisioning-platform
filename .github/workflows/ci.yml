@@ -22,6 +22,10 @@ jobs:
           if grep -q '<module>' pom.xml; then mvn -B -ntp verify; else echo "no modules yet"; fi
       - name: OpenAPI lint (Spectral); drift of docs/api/*.yaml is checked by the OpenApiContractTest in Maven verify
         run: npx --yes @stoplight/spectral-cli@6.15.0 lint docs/api/*.yaml --fail-severity=error
+      - name: MCP server (ruff, mypy, pytest)
+        run: |
+          pip install --quiet uv
+          REQUIRE_UV=1 scripts/test-mcp.sh
       - name: Observability config (dashboards, Prometheus rules, Alertmanager, collector, runbooks)
         run: REQUIRE_DOCKER=1 scripts/lint-observability.sh
       - name: Logstash pipeline tests (PII masking, dead letters, log parsing)

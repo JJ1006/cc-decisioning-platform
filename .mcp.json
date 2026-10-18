@@ -3,9 +3,19 @@
     "playwright": {
       "type": "stdio",
       "command": "npx",
-      "args": [
-        "@playwright/mcp@latest"
-      ],
+      "args": ["@playwright/mcp@latest"],
+      "env": {}
+    },
+    "odm-res": {
+      "type": "stdio",
+      "command": "scripts/mcp/odm-res.sh",
+      "args": [],
+      "env": {}
+    },
+    "odm-dc": {
+      "type": "stdio",
+      "command": "scripts/mcp/odm-dc.sh",
+      "args": [],
       "env": {}
     }
   }

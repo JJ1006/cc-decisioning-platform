@@ -171,6 +171,33 @@ if want gateway && running apisix; then
   corr=$(gw analyst -s -I -H 'X-Correlation-Id: verify-mtls-1' /v1/stats/latency | tr -d '\r' | grep -i '^x-correlation-id:' | cut -d' ' -f2)
   [[ "$corr" == verify-mtls-1 ]] && pass "gateway: X-Correlation-Id from the client is kept and echoed" || fail "gateway: correlation id not echoed ($corr)"
 
+  # the AI agent consumers (P9): mcp-agent reads decisions and statistics, nothing else; mcp-client reaches only /mcp/dc
+  code=$(gw mcp-agent -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' \
+    --data '{"outcome":"APPROVE","creditLimit":3000,"product":"NO_FEE","reason":"agent","underwriterId":"UW-1"}' /v1/applications/NOPE/manual-decision)
+  [[ "$code" == 403 ]] && pass "gateway: mcp-agent certificate, POST manual-decision -> 403 (an agent never decides)" || fail "gateway: mcp-agent manual decision -> HTTP $code"
+  code=$(gw mcp-agent -s -o /dev/null -w '%{http_code}' /v1/ops/dlq)
+  [[ "$code" == 403 ]] && pass "gateway: mcp-agent certificate, GET /v1/ops/dlq -> 403" || fail "gateway: mcp-agent ops -> HTTP $code"
+  if running decision-query-api; then
+    code=$(gw mcp-agent -s -o /dev/null -w '%{http_code}' /v1/stats/latency)
+    [[ "$code" == 200 ]] && pass "gateway: mcp-agent certificate, GET /v1/stats/latency -> 200" || fail "gateway: mcp-agent stats -> HTTP $code"
+  else
+    skip "gateway: mcp-agent stats needs decision-query-api (analytics profile)"
+  fi
+  if curl -s --max-time 10 --cacert "$CA" -o /dev/null -X POST -H 'Content-Type: application/json' --data '{}' https://localhost:8443/mcp/dc; then
+    fail "gateway: /mcp/dc answered a request WITHOUT client certificate"
+  else
+    pass "gateway: /mcp/dc without client certificate -> TLS handshake refused"
+  fi
+  code=$(gw analyst -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' --data '{}' /mcp/dc)
+  [[ "$code" == 403 ]] && pass "gateway: analyst certificate on /mcp/dc -> 403 (role MCP_CLIENT only)" || fail "gateway: analyst on /mcp/dc -> HTTP $code"
+  if running odm-dc-mcp; then
+    code=$(gw mcp-client -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+      --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"verify-mtls","version":"0"}}}' /mcp/dc)
+    [[ "$code" == 200 ]] && pass "gateway: mcp-client certificate, MCP initialize on /mcp/dc -> 200" || fail "gateway: MCP initialize -> HTTP $code"
+  else
+    skip "gateway: MCP initialize needs the mcp profile (odm-dc-mcp)"
+  fi
+
   # spike arrest on POST /v1/applications: 5 per second per consumer, burst 5
   n429=0
   for _ in $(seq 1 40); do
