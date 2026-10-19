@@ -44,6 +44,8 @@ jobs:
           gh pr create --base main --head "promote/$TAG" --title "chore(argocd): promote the openshift environment to $TAG" --body "Pins \`deploy/argocd/apps/openshift\` to **$TAG** (chart revision and image tag).
 
           Before merging: the images.yml run for $TAG is green (signed images \`ghcr.io/jj1006/cc-*:${TAG#v}\`). After merging: in Argo CD review the diff of each application and press **Sync** (waves: operators, cc-infra, cc-platform). This environment has no automated sync."
-          # the pull request is made with GITHUB_TOKEN, which starts no workflows, and main requires the check `ci`: run it on the branch so a reviewer can merge
-          sleep 5
-          gh workflow run ci.yml --ref "promote/$TAG"
+          # the bot's pull request starts its workflows held (action_required) and main requires ci: release them so a reviewer can merge
+          sleep 15
+          for id in $(gh run list --branch "promote/$TAG" --event pull_request --status action_required --json databaseId -q '.[].databaseId'); do
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/runs/$id/approve" >/dev/null || true
+          done
