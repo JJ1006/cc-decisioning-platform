@@ -23,3 +23,10 @@ jobs:
         run: |
           gh workflow run images.yml --ref "$TAG"
           gh workflow run promote.yml --ref main --field tag="$TAG"
+      # same for the release-please pull request: it needs the check `ci` to be mergeable
+      - name: Run ci on the release pull request branch
+        if: steps.rp.outputs.prs_created == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ fromJSON(steps.rp.outputs.pr).headBranchName }}
+        run: gh workflow run ci.yml --ref "$BRANCH"

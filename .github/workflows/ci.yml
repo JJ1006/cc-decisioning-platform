@@ -2,6 +2,7 @@ name: ci
 on:
   push: { branches: [main] }
   pull_request:
+  workflow_dispatch: # bot pull requests (GITHUB_TOKEN) start no workflows: bump-kind, promote and release start this one on their branch so the required check `ci` exists
 permissions:
   contents: read
 jobs:
