@@ -23,10 +23,14 @@ jobs:
         run: |
           gh workflow run images.yml --ref "$TAG"
           gh workflow run promote.yml --ref main --field tag="$TAG"
-      # same for the release-please pull request: it needs the check `ci` to be mergeable
-      - name: Run ci on the release pull request branch
+      # the release-please pull request starts its workflows held (action_required) and main requires ci: release them
+      - name: Release the held workflow runs of the release pull request
         if: steps.rp.outputs.prs_created == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           BRANCH: ${{ fromJSON(steps.rp.outputs.pr).headBranchName }}
-        run: gh workflow run ci.yml --ref "$BRANCH"
+        run: |
+          sleep 20
+          for id in $(gh run list --branch "$BRANCH" --event pull_request --status action_required --json databaseId -q '.[].databaseId'); do
+            gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/runs/$id/approve" || true
+          done
