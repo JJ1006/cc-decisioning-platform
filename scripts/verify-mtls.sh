@@ -198,6 +198,32 @@ if want gateway && running apisix; then
     skip "gateway: MCP initialize needs the mcp profile (odm-dc-mcp)"
   fi
 
+  if running decision-query-api; then
+    # privacy and the restricted inputs (P12): the analysts cannot reach the inputs, anywhere
+    code=$(gw analyst -s -o /dev/null -w '%{http_code}' /v1/decisions/NOPE/inputs)
+    [[ "$code" == 403 ]] && pass "gateway: analyst certificate, GET /v1/decisions/{id}/inputs -> 403 (underwriters and the agent only)" || fail "gateway: analyst inputs -> HTTP $code"
+    code=$(gw underwriter-portal -s -o /dev/null -w '%{http_code}' /v1/decisions/NOPE/inputs)
+    [[ "$code" == 404 ]] && pass "gateway: underwriter certificate, GET /v1/decisions/{id}/inputs -> 404 (allowed; no such application)" || fail "gateway: underwriter inputs -> HTTP $code"
+    code=$(gw mcp-agent -s -o /dev/null -w '%{http_code}' /v1/decisions/NOPE/inputs)
+    [[ "$code" == 404 ]] && pass "gateway: mcp-agent certificate, GET /v1/decisions/{id}/inputs -> 404 (allowed; no such application)" || fail "gateway: agent inputs -> HTTP $code"
+    code=$(gw analyst -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' --data '{"applicationId":"NOPE"}' /v1/ops/privacy/erase)
+    [[ "$code" == 403 ]] && pass "gateway: analyst certificate, POST /v1/ops/privacy/erase -> 403 (OPS only)" || fail "gateway: analyst erase -> HTTP $code"
+    code=$(gw mcp-agent -s -o /dev/null -w '%{http_code}' /v1/ops/privacy/export/NOPE)
+    [[ "$code" == 403 ]] && pass "gateway: mcp-agent certificate, GET /v1/ops/privacy/export -> 403 (an agent never exports personal data)" || fail "gateway: agent export -> HTTP $code"
+    code=$(gw ops-admin -s -o /dev/null -w '%{http_code}' /v1/ops/privacy/export/NOPE)
+    [[ "$code" == 200 ]] && pass "gateway: ops certificate, GET /v1/ops/privacy/export/{id} -> 200" || fail "gateway: ops export -> HTTP $code"
+    for u in analyst ops; do
+      code=$(ES_USER=$u "$ROOT/scripts/es-curl.sh" -s -o /dev/null -w '%{http_code}' /cc-decision-inputs/_count)
+      [[ "$code" == 403 ]] && pass "elasticsearch: user $u, GET /cc-decision-inputs/_count -> 403 (restricted index)" || fail "elasticsearch: $u on the inputs index -> HTTP $code"
+      n=$(ES_USER=$u "$ROOT/scripts/es-curl.sh" -s '/cc-decision-inputs*/_search?size=0&ignore_unavailable=true' | grep -c '"hits"')
+      [[ "$n" == 0 ]] && pass "elasticsearch: user $u cannot search the inputs index by wildcard either" || fail "elasticsearch: $u searched the inputs index by wildcard"
+    done
+    code=$(ES_USER=decision-query-api "$ROOT/scripts/es-curl.sh" -s -o /dev/null -w '%{http_code}' /cc-decision-inputs/_count)
+    [[ "$code" == 200 ]] && pass "elasticsearch: user decision-query-api, GET /cc-decision-inputs/_count -> 200" || fail "elasticsearch: query api on the inputs index -> HTTP $code"
+  else
+    skip "gateway: the inputs and privacy checks need decision-query-api (analytics profile)"
+  fi
+
   # spike arrest on POST /v1/applications: 5 per second per consumer, burst 5
   n429=0
   for _ in $(seq 1 40); do

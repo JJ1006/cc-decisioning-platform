@@ -2,25 +2,25 @@
 topics:
   - { name: cc.applications.submitted.v1, partitions: 3, retentionDays: 7 }
   - { name: cc.applications.submitted.v1.retry, partitions: 3, retentionDays: 1 }
-  - { name: cc.applications.submitted.v1.dlq, partitions: 1, retentionDays: 30 }
+  - { name: cc.applications.submitted.v1.dlq, partitions: 1, retentionDays: 7 }
   - { name: cc.decisions.approved.v1, partitions: 3, retentionDays: 7 }
   - { name: cc.decisions.approved.v1.retry, partitions: 3, retentionDays: 1 }
-  - { name: cc.decisions.approved.v1.dlq, partitions: 1, retentionDays: 30 }
+  - { name: cc.decisions.approved.v1.dlq, partitions: 1, retentionDays: 7 }
   - { name: cc.decisions.declined.v1, partitions: 3, retentionDays: 7 }
   - { name: cc.decisions.declined.v1.retry, partitions: 3, retentionDays: 1 }
-  - { name: cc.decisions.declined.v1.dlq, partitions: 1, retentionDays: 30 }
+  - { name: cc.decisions.declined.v1.dlq, partitions: 1, retentionDays: 7 }
   - { name: cc.decisions.referred.v1, partitions: 3, retentionDays: 7 }
   - { name: cc.decisions.referred.v1.retry, partitions: 3, retentionDays: 1 }
-  - { name: cc.decisions.referred.v1.dlq, partitions: 1, retentionDays: 30 }
+  - { name: cc.decisions.referred.v1.dlq, partitions: 1, retentionDays: 7 }
   - { name: cc.decisions.manual.v1, partitions: 1, retentionDays: 30 }
   - { name: cc.decisions.manual.v1.retry, partitions: 3, retentionDays: 1 }
-  - { name: cc.decisions.manual.v1.dlq, partitions: 1, retentionDays: 30 }
+  - { name: cc.decisions.manual.v1.dlq, partitions: 1, retentionDays: 7 }
   - { name: cc.notifications.v1, partitions: 3, retentionDays: 7 }
   - { name: cc.notifications.v1.retry, partitions: 3, retentionDays: 1 }
-  - { name: cc.notifications.v1.dlq, partitions: 1, retentionDays: 30 }
+  - { name: cc.notifications.v1.dlq, partitions: 1, retentionDays: 7 }
   - { name: cc.audit.v1, partitions: 3, retentionDays: 30 }
   - { name: cc.audit.v1.retry, partitions: 3, retentionDays: 1 }
-  - { name: cc.audit.v1.dlq, partitions: 1, retentionDays: 30 }
+  - { name: cc.audit.v1.dlq, partitions: 1, retentionDays: 7 }
 users:
   - name: txn-generator
     acls:

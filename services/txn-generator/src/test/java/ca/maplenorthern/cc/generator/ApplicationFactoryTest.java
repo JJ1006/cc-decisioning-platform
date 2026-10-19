@@ -119,4 +119,23 @@ class ApplicationFactoryTest {
   void poisonValueIsNotJson() {
     assertThat(ApplicationFactory.poisonValue(3)).contains("not json");
   }
+
+  @Test
+  void injectionRateOnlyChangesTheEmployerAndIsOffByDefault() {
+    ApplicationFactory plain = new ApplicationFactory(7, TODAY);
+    ApplicationFactory hostile = new ApplicationFactory(7, TODAY).withInjectionRate(1.0);
+    int injected = 0;
+    for (int i = 0; i < 200; i++) {
+      Application a = plain.next();
+      Application b = hostile.next();
+      assertThat(a.getEmployment().getEmployer())
+          .isNotEqualTo(ApplicationFactory.INJECTION_TEXT); // default: none
+      if (ApplicationFactory.INJECTION_TEXT.equals(b.getEmployment().getEmployer())) {
+        injected++;
+      }
+    }
+    assertThat(injected).isGreaterThan(50); // every employed applicant
+    // a well-formed application all the same: the text is data
+    assertThat(hostile.next().getBureau().getScore()).isBetween(300, 900);
+  }
 }

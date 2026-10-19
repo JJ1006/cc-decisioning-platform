@@ -194,6 +194,13 @@ routes:
     labels: { roles: "ANALYST,AGENT" }
     upstream_id: decision-query-api
     plugin_config_id: quota
+  - id: decisions-inputs # the inputs the rules saw: underwriters and the agent only, not the analysts (restricted index cc-decision-inputs)
+    uri: /v1/decisions/:id/inputs
+    methods: [GET]
+    priority: 10 # wins over the wildcard route below
+    labels: { roles: "UNDERWRITER,AGENT" }
+    upstream_id: decision-query-api
+    plugin_config_id: quota
   - id: decisions-item
     uri: /v1/decisions/*
     methods: [GET]
@@ -214,6 +221,21 @@ routes:
     labels: { roles: OPS }
     upstream_id: decision-query-api
     plugin_config_id: quota
+  - id: privacy-erase # PIPEDA erasure: POST /v1/ops/privacy/erase {applicationId}; the export is a GET and goes through the ops route
+    uri: /v1/ops/privacy/erase
+    methods: [POST]
+    priority: 10
+    labels: { roles: OPS }
+    upstream_id: decision-query-api
+    plugin_config_id: quota
+    plugins:
+      limit-req: # an erasure is deliberate: 1 per second per consumer
+        rate: 1
+        burst: 2
+        key_type: var
+        key: ssl_client_s_dn
+        rejected_code: 429
+        nodelay: true
   - id: generator-admin # /admin/generator/start -> txn-generator /admin/start
     uri: /admin/generator/*
     methods: [GET, POST]

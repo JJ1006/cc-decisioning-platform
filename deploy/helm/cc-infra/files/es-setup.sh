@@ -10,13 +10,13 @@
 #   3. install the ILM policies (logs 7d, dlq 30d) and the index templates
 #   4. make sure every type has a current index behind its <type>-write alias:
 #        cc-decisions / cc-audit / cc-notifications  date-suffixed (cc-decisions-2026.10.17), rolled by re-running this script
-#        cc-logs / cc-dlq                            cc-logs-000001, rolled and deleted by ILM
-# Env: ELASTIC_PASSWORD, KIBANA_PASSWORD, LOGSTASH_WRITER_PASSWORD, QUERY_API_PASSWORD, ANALYST_PASSWORD, OPS_PASSWORD, OBS_EXPORTER_PASSWORD, GRAFANA_ES_PASSWORD (required); ES_URL, ES_CACERT, ES_DIR (optional).
+#        cc-logs / cc-dlq / cc-decision-inputs       <type>-000001, rolled and deleted by ILM (logs 7d, dead letters 30d, inputs 90d)
+# Env: ELASTIC_PASSWORD, PRIVACY_OPS_PASSWORD, KIBANA_PASSWORD, LOGSTASH_WRITER_PASSWORD, QUERY_API_PASSWORD, ANALYST_PASSWORD, OPS_PASSWORD, OBS_EXPORTER_PASSWORD, GRAFANA_ES_PASSWORD (required); ES_URL, ES_CACERT, ES_DIR (optional).
 set -euo pipefail
 ES_URL=${ES_URL:-https://elasticsearch:9200}
 ES_CACERT=${ES_CACERT:-/pki/ca.crt}
 ES_DIR=${ES_DIR:-/es}
-: "${ELASTIC_PASSWORD:?}" "${KIBANA_PASSWORD:?}" "${LOGSTASH_WRITER_PASSWORD:?}" "${QUERY_API_PASSWORD:?}" "${ANALYST_PASSWORD:?}" "${OPS_PASSWORD:?}" "${OBS_EXPORTER_PASSWORD:?}" "${GRAFANA_ES_PASSWORD:?}"
+: "${ELASTIC_PASSWORD:?}" "${KIBANA_PASSWORD:?}" "${LOGSTASH_WRITER_PASSWORD:?}" "${QUERY_API_PASSWORD:?}" "${ANALYST_PASSWORD:?}" "${OPS_PASSWORD:?}" "${OBS_EXPORTER_PASSWORD:?}" "${GRAFANA_ES_PASSWORD:?}" "${PRIVACY_OPS_PASSWORD:?}"
 
 es() { # es METHOD PATH [curl args...]; credentials via a curl config, never on the command line
   local method=$1 path=$2
@@ -58,18 +58,24 @@ must PUT /_security/role/grafana_logs_reader "@$ES_DIR/grafana_logs_reader.role.
 must PUT /_security/user/grafana_logs_reader \
   "{\"password\":\"$GRAFANA_ES_PASSWORD\",\"roles\":[\"grafana_logs_reader\"],\"full_name\":\"Grafana (reads cc-logs)\"}"
 echo "users metrics_exporter and grafana_logs_reader ready"
+must PUT /_security/role/privacy_ops "@$ES_DIR/privacy_ops.role.json"
+must PUT /_security/user/privacy-ops \
+  "{\"password\":\"$PRIVACY_OPS_PASSWORD\",\"roles\":[\"privacy_ops\"],\"full_name\":\"Privacy operations: erasure and access requests (query API)\"}"
+echo "role and user privacy-ops ready"
 must PUT /_index_template/cc-alerts "@$ES_DIR/cc-alerts.template.json"
 code=$(es GET "/cc-alerts" -o /dev/null -w '%{http_code}')
 [[ "$code" == 404 ]] && must PUT /cc-alerts "{}" && echo "cc-alerts index created"
 
 must PUT /_ilm/policy/cc-logs-7d "@$ES_DIR/cc-logs-7d.ilm.json"
 must PUT /_ilm/policy/cc-dlq-30d "@$ES_DIR/cc-dlq-30d.ilm.json"
+must PUT /_ilm/policy/cc-inputs-90d "@$ES_DIR/cc-inputs-90d.ilm.json"
+must PUT /_ilm/policy/cc-demo-30d "@$ES_DIR/cc-demo-30d.ilm.json"
 
 today=$(date -u +%Y.%m.%d)
-for type in cc-decisions cc-audit cc-notifications cc-dlq cc-logs; do
+for type in cc-decisions cc-decision-inputs cc-audit cc-notifications cc-dlq cc-logs; do
   must PUT "/_index_template/$type" "@$ES_DIR/$type.template.json"
   code=$(es GET "/_alias/$type-write" -o /tmp/es-alias.json -w '%{http_code}')
-  case $type in cc-logs | cc-dlq) first="$type-000001" ;; *) first="$type-$today" ;; esac
+  case $type in cc-logs | cc-dlq | cc-decision-inputs) first="$type-000001" ;; *) first="$type-$today" ;; esac
   if [[ "$code" == 404 ]]; then
     must PUT "/$first" "{\"aliases\":{\"$type-write\":{\"is_write_index\":true}}}"
     echo "$type: created $first behind $type-write"

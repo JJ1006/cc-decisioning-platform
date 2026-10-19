@@ -6,7 +6,8 @@
   "template": {
     "settings": {
       "number_of_shards": 1,
-      "number_of_replicas": 0
+      "number_of_replicas": 0,
+      "index.lifecycle.name": "cc-demo-30d"
     },
     "mappings": {
       "dynamic": "strict",
@@ -84,6 +85,15 @@
                 },
                 "annualIncome": {
                   "type": "double"
+                },
+                "scoreBand": {
+                  "type": "keyword"
+                },
+                "tdsBand": {
+                  "type": "keyword"
+                },
+                "limitBand": {
+                  "type": "keyword"
                 }
               }
             },
@@ -95,6 +105,12 @@
             },
             "originalDecisionEventId": {
               "type": "keyword"
+            },
+            "rulesetPath": {
+              "type": "keyword"
+            },
+            "rulesetDeployedAt": {
+              "type": "date"
             }
           }
         },

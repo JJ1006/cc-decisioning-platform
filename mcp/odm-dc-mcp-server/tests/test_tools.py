@@ -30,7 +30,7 @@ def dc_basics() -> None:
 @respx.mock
 def test_list_services_and_branches(server):
     dc_basics()
-    assert call(server, "dc_list_decision_services")["data"] == [{"id": "ds1", "name": "cc-approval", "description": "Cards"}]
+    assert call(server, "dc_list_decision_services")["data"] == [{"id": "ds1", "name": "cc-approval", "description": "<data>Cards</data>"}]
     branches = call(server, "dc_list_branches", service="cc-approval")["data"]
     assert [b["name"] for b in branches] == ["main", "feature-x"]
 
@@ -92,7 +92,7 @@ def test_build_report_validates_and_does_not_deploy(server):
     )
     deploy = respx.post(f"{DC}/v1/deployments/d1/deploy").mock(return_value=httpx.Response(200, json={}))
     out = call(server, "dc_build_report", service="cc-approval")["data"]
-    assert out["status"] == "COMPLETED" and out["messages"][0]["message"] == "unused variable"
+    assert out["status"] == "COMPLETED" and out["messages"][0]["message"] == "<data>unused variable</data>"
     assert build.called and not deploy.called
 
 
@@ -169,6 +169,7 @@ def test_there_is_no_tool_that_writes_a_decision_or_reads_the_database(server):
         "dc_deploy_ruleapp",
         "decision_get",
         "decision_explain",
+        "decision_inputs",
         "decisions_search",
         "stats_approval_rate",
         "stats_fairness",

@@ -31,8 +31,11 @@ jobs:
         run: REQUIRE_DOCKER=1 scripts/lint-observability.sh
       - name: Logstash pipeline tests (PII masking, dead letters, log parsing)
         run: REQUIRE_DOCKER=1 scripts/test-logstash.sh
-      - name: Prohibited-grounds lint
+      - name: Prohibited-grounds lint (and proof that it fails on a planted violation)
         run: |
-          if [ -x scripts/lint-prohibited-grounds.sh ]; then scripts/lint-prohibited-grounds.sh; else echo "lint not added yet"; fi
+          scripts/lint-prohibited-grounds.sh
+          scripts/test-lint-prohibited-grounds.sh
+      - name: Generated files are current (rules catalog resource of the explanation endpoint)
+        run: python3 scripts/gen-rules-catalog.py --check
       - name: Rules scenarios match the written spec
         run: python3 rules/tests/check_scenarios.py

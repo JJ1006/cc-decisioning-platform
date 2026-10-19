@@ -7,7 +7,8 @@
         "cc-audit",
         "cc-notifications",
         "cc-dlq",
-        "cc-logs"
+        "cc-logs",
+        "cc-decision-inputs"
       ],
       "privileges": [
         "read",

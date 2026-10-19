@@ -16,7 +16,7 @@ import org.springframework.test.web.servlet.MockMvc;
  * Controller behaviour without Elasticsearch: bad input is a 400 problem, a store failure a 503.
  */
 @WebMvcTest({DecisionsController.class, StatsController.class, OpsController.class})
-@Import(ApiSupport.class)
+@Import({ApiSupport.class, RulesCatalog.class})
 class ParameterValidationTest {
   @Autowired MockMvc mvc;
   @MockitoBean DecisionStore store;

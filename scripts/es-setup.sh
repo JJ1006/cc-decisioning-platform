@@ -69,6 +69,7 @@ code=$(es GET "/cc-alerts" -o /dev/null -w '%{http_code}')
 must PUT /_ilm/policy/cc-logs-7d "@$ES_DIR/cc-logs-7d.ilm.json"
 must PUT /_ilm/policy/cc-dlq-30d "@$ES_DIR/cc-dlq-30d.ilm.json"
 must PUT /_ilm/policy/cc-inputs-90d "@$ES_DIR/cc-inputs-90d.ilm.json"
+must PUT /_ilm/policy/cc-demo-30d "@$ES_DIR/cc-demo-30d.ilm.json"
 
 today=$(date -u +%Y.%m.%d)
 for type in cc-decisions cc-decision-inputs cc-audit cc-notifications cc-dlq cc-logs; do

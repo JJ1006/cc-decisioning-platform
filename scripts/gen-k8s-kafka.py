@@ -62,7 +62,7 @@ def topics() -> list[dict]:
     for t in rows:
         out.append(t)
         out.append({"name": t["name"] + ".retry", "partitions": 3, "retentionDays": 1})
-        out.append({"name": t["name"] + ".dlq", "partitions": 1, "retentionDays": 30})
+        out.append({"name": t["name"] + ".dlq", "partitions": 1, "retentionDays": 7})
     return out
 
 
