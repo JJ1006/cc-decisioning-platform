@@ -84,6 +84,15 @@
                 },
                 "annualIncome": {
                   "type": "double"
+                },
+                "scoreBand": {
+                  "type": "keyword"
+                },
+                "tdsBand": {
+                  "type": "keyword"
+                },
+                "limitBand": {
+                  "type": "keyword"
                 }
               }
             },
@@ -95,6 +104,12 @@
             },
             "originalDecisionEventId": {
               "type": "keyword"
+            },
+            "rulesetPath": {
+              "type": "keyword"
+            },
+            "rulesetDeployedAt": {
+              "type": "date"
             }
           }
         },

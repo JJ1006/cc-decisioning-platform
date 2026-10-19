@@ -1,0 +1,124 @@
+{
+  "index_patterns": [
+    "cc-decision-inputs-*"
+  ],
+  "priority": 100,
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0,
+      "index.lifecycle.name": "cc-inputs-90d",
+      "index.lifecycle.rollover_alias": "cc-decision-inputs-write"
+    },
+    "mappings": {
+      "dynamic": "strict",
+      "properties": {
+        "eventId": {
+          "type": "keyword"
+        },
+        "correlationId": {
+          "type": "keyword"
+        },
+        "eventType": {
+          "type": "keyword"
+        },
+        "schemaVersion": {
+          "type": "integer"
+        },
+        "occurredAt": {
+          "type": "date"
+        },
+        "producer": {
+          "type": "keyword"
+        },
+        "topic": {
+          "type": "keyword"
+        },
+        "decisionSource": {
+          "type": "keyword"
+        },
+        "@timestamp": {
+          "type": "date"
+        },
+        "payload": {
+          "type": "object",
+          "dynamic": "strict",
+          "properties": {
+            "applicationId": {
+              "type": "keyword"
+            },
+            "applicantToken": {
+              "type": "keyword"
+            },
+            "inputs": {
+              "type": "object",
+              "dynamic": "strict",
+              "properties": {
+                "age": {
+                  "type": "integer"
+                },
+                "province": {
+                  "type": "keyword"
+                },
+                "residencyStatus": {
+                  "type": "keyword"
+                },
+                "employmentStatus": {
+                  "type": "keyword"
+                },
+                "annualIncome": {
+                  "type": "double"
+                },
+                "monthsAtEmployer": {
+                  "type": "integer"
+                },
+                "monthlyHousingCost": {
+                  "type": "double"
+                },
+                "monthlyDebt": {
+                  "type": "double"
+                },
+                "tds": {
+                  "type": "double"
+                },
+                "creditScore": {
+                  "type": "integer"
+                },
+                "bankruptcyFlag": {
+                  "type": "boolean"
+                },
+                "delinquencies": {
+                  "type": "integer"
+                },
+                "inquiriesLast6Months": {
+                  "type": "integer"
+                },
+                "fileAgeMonths": {
+                  "type": "integer"
+                },
+                "existingCreditLimit": {
+                  "type": "double"
+                },
+                "requestedLimit": {
+                  "type": "double"
+                },
+                "requestedProduct": {
+                  "type": "keyword"
+                },
+                "applicantToken": {
+                  "type": "keyword"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "aliases": {
+      "cc-decision-inputs": {}
+    }
+  },
+  "_meta": {
+    "description": "cc-decision-inputs: the full inputs of automated decisions. RESTRICTED: only the query API (and, through it, underwriters and the MCP agent) may read it; no Kibana role has it. ILM cc-inputs-90d."
+  }
+}

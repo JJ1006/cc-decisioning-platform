@@ -1,0 +1,31 @@
+{
+  "cluster": [],
+  "indices": [
+    {
+      "names": [
+        "cc-decisions*",
+        "cc-decision-inputs*",
+        "cc-audit*",
+        "cc-notifications*",
+        "cc-dlq*",
+        "cc-logs*"
+      ],
+      "privileges": [
+        "read",
+        "delete",
+        "view_index_metadata"
+      ]
+    },
+    {
+      "names": [
+        "cc-audit-write"
+      ],
+      "privileges": [
+        "create_doc"
+      ]
+    }
+  ],
+  "metadata": {
+    "description": "Privacy operations of the query API (erasure and access requests): read and delete on the cc-* data, and write the erasure audit record. Used by one endpoint pair only, behind the OPS role of the gateway; production moves it into its own service."
+  }
+}

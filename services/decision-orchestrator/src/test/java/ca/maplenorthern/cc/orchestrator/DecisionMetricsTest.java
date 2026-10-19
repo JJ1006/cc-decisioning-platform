@@ -42,7 +42,7 @@ class DecisionMetricsTest {
     @SuppressWarnings("unchecked")
     KafkaTemplate<String, String> kafka = mock(KafkaTemplate.class);
     SimpleMeterRegistry registry = new SimpleMeterRegistry();
-    DecisionRouter router = new DecisionRouter(res, kafka, registry);
+    DecisionRouter router = new DecisionRouter(res, kafka, registry, "test-token-key");
 
     String event =
         Files.readString(

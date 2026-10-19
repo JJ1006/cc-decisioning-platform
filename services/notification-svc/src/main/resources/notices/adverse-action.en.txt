@@ -1,0 +1,14 @@
+Dear applicant,
+
+We were unable to approve your Maple Northern Bank credit card application {{applicationId}}.
+
+The principal reasons for this decision are:
+{{reasons}}
+
+How this decision was made: the decision was reached by our automated rules and is based on the information in your application and in your credit report from {{bureauName}}. You may ask us for a review of the decision by a person.
+
+Your credit report: you have the right to obtain a free copy of your credit report from {{bureauName}} ({{bureauContact}}) and to ask for any inaccurate information to be corrected.
+
+Questions or concerns: contact us at {{bankContact}}. If we do not resolve your concern, you may use our complaints process, and then contact the Financial Consumer Agency of Canada (fcac-acfc.gc.ca).
+
+{{signature}}

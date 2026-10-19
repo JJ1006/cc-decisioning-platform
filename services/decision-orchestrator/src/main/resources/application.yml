@@ -31,6 +31,8 @@ platform:
     group-id: decision-orchestrator
     transactional-id-prefix: ${TX_ID_PREFIX:orchestrator-tx-}
     concurrency: 1
+privacy:
+  applicant-token-key: ${APPLICANT_TOKEN_KEY:} # HMAC key of the applicant token (decision inputs); required
 res:
   base-url: ${RES_BASE_URL:https://localhost:9443}
   path: ${RES_PATH:/DecisionService/rest/ccApprovalApp/1.0/ccApproval/1.0}

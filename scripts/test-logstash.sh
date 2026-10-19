@@ -38,8 +38,8 @@ pre_of() {
 for kind in events dlq logs es-reject; do
   d="$WORK/pipe/$kind"
   mkdir -p "$d"
-  # fixture file: one JSON object per line; "raw" objects are sent as the string field "message"
-  jq -c '.[] | .input | if has("raw") then (.message = (.raw | tojson)) | del(.raw) else . end' \
+  # fixture file: one JSON object per line (a case without "input" only checks a second document the previous input produced); "raw" objects are sent as the string field "message"
+  jq -c '.[] | select(.input) | .input | if has("raw") then (.message = (.raw | tojson)) | del(.raw) else . end' \
     "$LS/test/cases/$kind.json" >"$WORK/in/$kind.jsonl"
   cat >"$d/00-in.conf" <<CONF
 input { file { path => "/work/in/$kind.jsonl" mode => "read" codec => "json" sincedb_path => "/dev/null"

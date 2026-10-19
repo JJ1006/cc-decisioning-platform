@@ -16,6 +16,7 @@ import io.github.resilience4j.retry.RetryConfig;
 import java.io.IOException;
 import java.net.http.HttpClient;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Base64;
 import java.util.function.Supplier;
 import org.springframework.http.MediaType;
@@ -147,6 +148,41 @@ public class ResClient {
    */
   public String rulesetPath() {
     return props.path().replace("/DecisionService/rest", "");
+  }
+
+  private volatile Instant deployedAt;
+  private volatile long deployedAtCheckedMillis;
+
+  /**
+   * @return when the ruleset was deployed to RES (asked from RES's management API, cached for ten
+   *     minutes, one minute after a failure), or null when RES does not say
+   */
+  public Instant rulesetDeployedAt() {
+    long now = System.currentTimeMillis();
+    long ttl = deployedAt == null ? 60_000 : 600_000;
+    if (now - deployedAtCheckedMillis < ttl) {
+      return deployedAt;
+    }
+    deployedAtCheckedMillis = now;
+    try {
+      String[] seg = props.path().replaceFirst("^/DecisionService/rest/", "").split("/");
+      String json =
+          http.get()
+              .uri("/res/api/v1/ruleapps/{a}/{av}/rulesets/{r}/{rv}", seg[0], seg[1], seg[2], seg[3])
+              .accept(MediaType.APPLICATION_JSON)
+              .retrieve()
+              .body(String.class);
+      JsonNode n = Json.mapper().readTree(json);
+      for (String f : new String[] {"creationDate", "deploymentDate", "lastModifiedDate"}) {
+        if (n.hasNonNull(f)) {
+          deployedAt = Instant.parse(n.get(f).asText());
+          break;
+        }
+      }
+    } catch (RuntimeException | IOException e) {
+      // best effort: a decision must never fail because RES cannot tell its deployment date
+    }
+    return deployedAt;
   }
 
   CircuitBreaker breaker() {

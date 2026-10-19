@@ -51,13 +51,8 @@ public final class NoticeComposer {
               Channel.MAIL,
               recipient,
               "Your Maple Northern Bank credit card application",
-              "We were unable to approve your application "
-                  + d.applicationId()
-                  + ". The principal reasons are listed below. You may ask us for a review, and you can get a"
-                  + " free copy of your credit report from the credit bureaus to check it is accurate. If you"
-                  + " have a concern about this decision you can contact us, then our complaints process, then"
-                  + " the Financial Consumer Agency of Canada. "
-                  + SIGNATURE,
+              NoticeTemplates.adverseAction(
+                  d.applicationId(), d.reasonCodes(), NoticeTemplates.Settings.DEMO),
               reasonTexts(d.reasonCodes()));
       case REFER ->
           new NotificationPayload(

@@ -8,3 +8,5 @@ secret:
       match: cc-pki-password
     - name: Kubernetes secret name of the Elasticsearch user passwords, not a password
       match: cc-es-passwords
+    - name: Kubernetes secret name of the applicant token key, not a key
+      match: cc-applicant-token

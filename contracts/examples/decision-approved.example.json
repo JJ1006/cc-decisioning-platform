@@ -28,6 +28,28 @@
       "bureauScore": 742,
       "tdsRatio": 0.35,
       "annualIncome": 85000
+    },
+    "rulesetPath": "/ccApprovalApp/1.0/ccApproval/1.0",
+    "rulesetDeployedAt": "2026-10-17T12:00:00Z",
+    "inputs": {
+      "age": 36,
+      "province": "ON",
+      "residencyStatus": "CITIZEN",
+      "employmentStatus": "EMPLOYED",
+      "annualIncome": 85000,
+      "monthsAtEmployer": 48,
+      "monthlyHousingCost": 1800,
+      "monthlyDebt": 650,
+      "tds": 0.35,
+      "creditScore": 742,
+      "bankruptcyFlag": false,
+      "delinquencies": 0,
+      "inquiriesLast6Months": 1,
+      "fileAgeMonths": 120,
+      "existingCreditLimit": 12000,
+      "requestedLimit": 8000,
+      "requestedProduct": "CASHBACK",
+      "applicantToken": "00000000000000000000000000000001"
     }
   }
 }
