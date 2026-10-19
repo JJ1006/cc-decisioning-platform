@@ -10,6 +10,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 jobs:
   bump:
     if: github.event.workflow_run.conclusion == 'success'
@@ -38,4 +39,12 @@ jobs:
           git push origin "$branch"
           gh pr create --base main --head "$branch" --title "chore(argocd): bump the kind image tag to ${SHA:0:7}" \
             --body "Images of \`$SHA\` are built and signed (images.yml). Changes only the tag in the two kind value files; the OpenShift environment is not touched."
-          gh pr merge "$branch" --squash --delete-branch --auto || gh pr merge "$branch" --squash --delete-branch
+          # a pull request made with GITHUB_TOKEN starts no workflows, and main requires the check `ci`: run it on the branch, wait, merge
+          sleep 5
+          gh workflow run ci.yml --ref "$branch"
+          for _ in $(seq 1 90); do
+            sleep 20
+            state=$(gh run list --workflow ci.yml --branch "$branch" --event workflow_dispatch --limit 1 --json status,conclusion -q '.[0].status + " " + .[0].conclusion')
+            case "$state" in "completed success") break ;; completed*) echo "ci failed: $state" >&2; exit 1 ;; esac
+          done
+          gh pr merge "$branch" --squash --delete-branch
