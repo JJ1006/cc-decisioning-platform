@@ -58,6 +58,8 @@ verify: ## Full local verification (build + tests + format check)
 	@scripts/test-mcp.sh
 	@scripts/lint-helm.sh
 	@scripts/lint-argocd.sh
+	@$(MAKE) --no-print-directory lint-rules
+	@scripts/gen-rules-catalog.py --check
 
 test: ## Unit tests
 	@if grep -q '<module>' pom.xml; then mvn -q test; else echo "no Maven modules yet"; fi
@@ -113,8 +115,9 @@ api-call: ## curl through the gateway with a client certificate: make api-call C
 test-api-docs: ## Run every curl example of docs/api/README.md against the running stack (make up PROFILE=core,analytics,edge)
 	@scripts/run-api-docs.sh
 
-lint-rules: ## Prohibited-grounds lint + scenario spec check (no ODM needed)
+lint-rules: ## Prohibited-grounds lint (+ its own test) + scenario spec check (no ODM needed)
 	@scripts/lint-prohibited-grounds.sh
+	@scripts/test-lint-prohibited-grounds.sh
 	@python3 rules/tests/check_scenarios.py
 
 demo: ## Deploy rules if missing, send 1000 synthetic applications, print topic and index counts (needs make up PROFILE=core)

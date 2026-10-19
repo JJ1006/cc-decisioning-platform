@@ -1,0 +1,15 @@
+{
+  "policy": {
+    "_meta": {
+      "description": "Demo retention of decisions, audit records and notifications: 30 days after the (daily) index was created. Production keeps them for the period the law and the model-risk policy require (docs/privacy/data-classification.md); change min_age."
+    },
+    "phases": {
+      "delete": {
+        "min_age": "30d",
+        "actions": {
+          "delete": {}
+        }
+      }
+    }
+  }
+}

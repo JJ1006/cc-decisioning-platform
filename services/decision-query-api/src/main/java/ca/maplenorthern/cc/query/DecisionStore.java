@@ -5,6 +5,7 @@ import ca.maplenorthern.cc.query.Dtos.ApprovalRates;
 import ca.maplenorthern.cc.query.Dtos.DeadLetter;
 import ca.maplenorthern.cc.query.Dtos.DeadLetters;
 import ca.maplenorthern.cc.query.Dtos.Decision;
+import ca.maplenorthern.cc.query.Dtos.DecisionInputsView;
 import ca.maplenorthern.cc.query.Dtos.DecisionPage;
 import ca.maplenorthern.cc.query.Dtos.DeclineReason;
 import ca.maplenorthern.cc.query.Dtos.DeclineReasons;
@@ -76,6 +77,8 @@ public class DecisionStore {
       List<String> reasonCodes,
       List<String> firedRules,
       String rulesetVersion,
+      String rulesetPath,
+      Instant rulesetDeployedAt,
       Instant decidedAt,
       Summary applicantSummary,
       String underwriterId,
@@ -105,7 +108,8 @@ public class DecisionStore {
   // ---------------------------------------------------------------- decisions
 
   /** A decision together with the rules that fired for it. */
-  public record Detail(Decision decision, List<String> firedRules) {}
+  public record Detail(
+      Decision decision, List<String> firedRules, String rulesetPath, Instant rulesetDeployedAt) {}
 
   /** The newest decision of the application, optionally only from one source. */
   public Optional<Decision> latest(String applicationId, String source) {
@@ -131,7 +135,13 @@ public class DecisionStore {
             Doc.class);
     return resp.hits().hits().stream()
         .map(Hit::source)
-        .map(d -> new Detail(toDecision(d), d.payload().firedRules()))
+        .map(
+            d ->
+                new Detail(
+                    toDecision(d),
+                    d.payload().firedRules(),
+                    d.payload().rulesetPath(),
+                    d.payload().rulesetDeployedAt()))
         .findFirst();
   }
 
@@ -215,8 +225,9 @@ public class DecisionStore {
 
   public static List<Reason> reasons(List<String> codes) {
     List<Reason> out = new ArrayList<>();
+    int rank = 1;
     for (String code : codes == null ? List.<String>of() : codes) {
-      out.add(new Reason(code, reasonText(code)));
+      out.add(new Reason(code, reasonText(code), rank++));
     }
     return out;
   }
@@ -227,6 +238,44 @@ public class DecisionStore {
     } catch (IllegalArgumentException e) {
       return code; // a code newer than this service
     }
+  }
+
+  // ---------------------------------------------------------------- restricted inputs
+
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  record InputsDoc(String eventId, Instant occurredAt, InputsPayload payload) {}
+
+  @JsonIgnoreProperties(ignoreUnknown = true)
+  record InputsPayload(
+      String applicationId,
+      String applicantToken,
+      com.fasterxml.jackson.databind.JsonNode inputs) {}
+
+  /**
+   * The inputs the rules saw for the newest automated decision of the application. Reads the
+   * restricted index cc-decision-inputs: only this service's Elasticsearch user may.
+   */
+  public Optional<DecisionInputsView> inputs(String applicationId) {
+    var resp =
+        search(
+            s ->
+                s.index("cc-decision-inputs")
+                    .size(1)
+                    .query(bool(b -> b.filter(term("payload.applicationId", applicationId))))
+                    .sort(sort("occurredAt", SortOrder.Desc))
+                    .sort(sort("eventId", SortOrder.Desc)),
+            InputsDoc.class);
+    return resp.hits().hits().stream()
+        .map(Hit::source)
+        .map(
+            d ->
+                new DecisionInputsView(
+                    d.payload().applicationId(),
+                    d.eventId(),
+                    d.occurredAt(),
+                    d.payload().applicantToken(),
+                    d.payload().inputs()))
+        .findFirst();
   }
 
   // ---------------------------------------------------------------- statistics
@@ -243,18 +292,24 @@ public class DecisionStore {
   }
 
   /** Approval rate per group against the overall rate (the four-fifths rule: flag below 0.8). */
-  public Fairness fairness(String by) {
+  public Fairness fairness(String by, int minGroupSize) {
     Groups g = groups(by);
     double overall = rate(g.approved, g.total);
     List<FairnessGroup> out = new ArrayList<>();
     for (Row r : g.rows) {
       double groupRate = rate(r.approved, r.total);
       Double ratio = overall == 0 ? null : round(groupRate / overall);
+      boolean small = r.total < minGroupSize; // a ratio over a handful of decisions is noise
       out.add(
           new FairnessGroup(
-              r.key, r.total, groupRate, ratio, ratio != null && ratio < FAIRNESS_THRESHOLD));
+              r.key,
+              r.total,
+              groupRate,
+              ratio,
+              !small && ratio != null && ratio < FAIRNESS_THRESHOLD,
+              small));
     }
-    return new Fairness(by, overall, FAIRNESS_THRESHOLD, out);
+    return new Fairness(by, overall, FAIRNESS_THRESHOLD, minGroupSize, out);
   }
 
   public DeclineReasons declineReasons(int top) {

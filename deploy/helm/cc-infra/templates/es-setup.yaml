@@ -51,7 +51,7 @@ spec:
             - { name: ES_DIR, value: /es }
             - name: ELASTIC_PASSWORD
               valueFrom: { secretKeyRef: { name: "{{ .Values.elasticsearch.name }}-es-elastic-user", key: elastic } }
-            {{- range tuple "KIBANA_PASSWORD" "LOGSTASH_WRITER_PASSWORD" "QUERY_API_PASSWORD" "ANALYST_PASSWORD" "OPS_PASSWORD" "OBS_EXPORTER_PASSWORD" "GRAFANA_ES_PASSWORD" }}
+            {{- range tuple "KIBANA_PASSWORD" "LOGSTASH_WRITER_PASSWORD" "QUERY_API_PASSWORD" "ANALYST_PASSWORD" "OPS_PASSWORD" "OBS_EXPORTER_PASSWORD" "GRAFANA_ES_PASSWORD" "PRIVACY_OPS_PASSWORD" }}
             - name: {{ . }}
               valueFrom: { secretKeyRef: { name: cc-es-passwords, key: {{ . }} } }
             {{- end }}

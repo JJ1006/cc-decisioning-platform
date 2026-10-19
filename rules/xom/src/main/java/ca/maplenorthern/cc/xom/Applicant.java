@@ -1,8 +1,8 @@
 package ca.maplenorthern.cc.xom;
 
 /**
- * Credit card applicant. Contains no prohibited grounds (no gender, ethnicity, marital status,
- * religion).
+ * Credit card applicant. Holds no data that is a prohibited ground of discrimination (policy and
+ * the lint that enforces it: scripts/lint-prohibited-grounds.sh, docs/compliance.md).
  *
  * <p>Plain bean: ODM generates the BOM from the getters and setters.
  */

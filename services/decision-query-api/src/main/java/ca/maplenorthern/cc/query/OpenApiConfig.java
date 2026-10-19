@@ -43,6 +43,10 @@ public class OpenApiConfig {
                 .description("Approval rates, decline reasons, fairness and latency"))
         .addTagsItem(
             new Tag().name("Operations").description("Dead letters and logs for operators"))
+        .addTagsItem(
+            new Tag()
+                .name("Privacy")
+                .description("Access and erasure requests by application (role OPS)"))
         .addServersItem(
             new Server().url("http://localhost:8085").description("local compose stack"));
   }

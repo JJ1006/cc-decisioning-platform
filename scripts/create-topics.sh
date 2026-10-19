@@ -30,10 +30,10 @@ while IFS='|' read -r _ topic _ partitions retention _; do
   business+=("$topic")
 done < <(grep -E '^\| `cc\.' "$DOC")
 
-# Every business topic also gets a retry (3 partitions, 1d) and a dlq (1 partition, 30d).
+# Every business topic also gets a retry (3 partitions, 1d) and a dlq (1 partition, 7d: it holds the unmasked original).
 for t in "${business[@]}"; do
   create "$t.retry" 3 1d
-  create "$t.dlq" 1 30d
+  create "$t.dlq" 1 7d
 done
 
 echo "topics created: $((${#business[@]} * 3))"

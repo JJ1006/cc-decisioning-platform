@@ -56,15 +56,21 @@ public class StatsController {
       summary = "Disparate impact by province or age band",
       description =
           "Approval rate per group and the ratio to the overall approval rate; a group is flagged when the ratio is below 0.8"
-              + " (the four-fifths rule). Small groups give noisy ratios: read total with it.")
+              + " (the four-fifths rule) and it has at least minGroupSize decisions (default 30). Smaller groups are"
+              + " marked insufficientSample and never flagged: their ratio is noise.")
   public Fairness fairness(
       @RequestParam(defaultValue = "province") @Schema(allowableValues = {"province", "ageBand"})
-          String by) {
+          String by,
+      @RequestParam(defaultValue = "30") int minGroupSize) {
     if (!by.equals("province") && !by.equals("ageBand")) {
       throw new ApiException(
           HttpStatus.BAD_REQUEST, "Invalid parameter", "by must be province or ageBand");
     }
-    return store.fairness(by);
+    if (minGroupSize < 1 || minGroupSize > 100_000) {
+      throw new ApiException(
+          HttpStatus.BAD_REQUEST, "Invalid parameter", "minGroupSize must be 1 to 100000");
+    }
+    return store.fairness(by, minGroupSize);
   }
 
   @GetMapping("/latency")

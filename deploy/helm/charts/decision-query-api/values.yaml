@@ -18,6 +18,7 @@ env:
   ES_CA: /pki/ca.crt # ECK serves the HTTP certificate cert-manager issued from the platform CA
 secretEnv:
   - { name: QUERY_API_PASSWORD, secret: cc-es-passwords, key: QUERY_API_PASSWORD }
+  - { name: PRIVACY_OPS_PASSWORD, secret: cc-es-passwords, key: PRIVACY_OPS_PASSWORD } # erasure and access requests only
 pkiPasswordEnv: [KEYSTORE_PASSWORD, TRUSTSTORE_PASSWORD]
 pki: { enabled: true, format: pkcs12 }
 kafka: { enabled: false }

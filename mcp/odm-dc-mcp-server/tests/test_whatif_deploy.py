@@ -96,10 +96,63 @@ def test_whatif_by_application_id_lists_its_assumptions(server):
             },
         )
     )
+    respx.get(f"{GW}/v1/decisions/A9/inputs").mock(
+        return_value=httpx.Response(404, json={"detail": "no decision inputs for application A9"})
+    )
     respx.post(RES).mock(side_effect=res_by_income)
     out = call(server, "whatif", application_id="A9", overrides={"score": 700})["data"]
     assert out["actualDecision"]["outcome"] == "REFER"
-    assert any("assumed" in a for a in out["assumptions"])
+    assert any("assumed" in a for a in out["assumptions"])  # a decision from before the inputs were kept: indicative
+
+
+INPUTS = {
+    "applicationId": "A10",
+    "decisionId": "e1",
+    "applicantToken": "00000000000000000000000000000001",
+    "inputs": {
+        "age": 36,
+        "province": "ON",
+        "residencyStatus": "CITIZEN",
+        "employmentStatus": "EMPLOYED",
+        "annualIncome": 85000,
+        "monthsAtEmployer": 48,
+        "monthlyHousingCost": 1800,
+        "monthlyDebt": 650,
+        "tds": 0.35,
+        "creditScore": 742,
+        "bankruptcyFlag": False,
+        "delinquencies": 0,
+        "inquiriesLast6Months": 1,
+        "fileAgeMonths": 120,
+        "existingCreditLimit": 12000,
+        "requestedLimit": 8000,
+        "requestedProduct": "CASHBACK",
+        "applicantToken": "00000000000000000000000000000001",
+    },
+}
+
+
+@respx.mock
+def test_whatif_by_application_id_uses_the_exact_inputs_and_has_no_assumptions(server):
+    respx.get(f"{GW}/v1/decisions/A10").mock(
+        return_value=httpx.Response(200, json={"applicationId": "A10", "outcome": "APPROVE", "decisionSource": "ODM", "creditLimit": 8000})
+    )
+    respx.get(f"{GW}/v1/decisions/A10/inputs").mock(return_value=httpx.Response(200, json=INPUTS))
+    sent = []
+
+    def res(request: httpx.Request) -> httpx.Response:
+        import json
+
+        sent.append(json.loads(request.content)["application"])
+        return res_by_income(request)
+
+    respx.post(RES).mock(side_effect=res)
+    out = call(server, "whatif", application_id="A10", overrides={"income": 20000})["data"]
+    assert out["assumptions"] == []  # exact: nothing was assumed
+    assert out["withoutOverrides"]["outcome"] == "APPROVE" and out["withOverrides"]["outcome"] == "DECLINE"
+    base = sent[0]  # the run without overrides saw the stored values, not defaults
+    assert base["employment"]["annualIncome"] == 85000 and base["bureau"]["score"] == 742 and base["bureau"]["monthlyDebtPayments"] == 650
+    assert base["monthlyHousingCost"] == 1800 and base["applicant"]["ageYears"] == 36 and base["requestedLimit"] == 8000
 
 
 @respx.mock

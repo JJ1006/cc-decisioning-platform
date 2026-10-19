@@ -23,11 +23,18 @@ public class AdminController {
       @RequestParam(defaultValue = "20") double tps,
       @RequestParam(defaultValue = "1000") long total,
       @RequestParam(defaultValue = "0") double poisonRate,
-      @RequestParam(defaultValue = "42") long seed) {
-    if (tps <= 0 || total <= 0 || poisonRate < 0 || poisonRate > 1) {
-      return ResponseEntity.badRequest().body(Map.of("error", "tps>0, total>0, 0<=poisonRate<=1"));
+      @RequestParam(defaultValue = "42") long seed,
+      @RequestParam(defaultValue = "0") double injectionRate) {
+    if (tps <= 0
+        || total <= 0
+        || poisonRate < 0
+        || poisonRate > 1
+        || injectionRate < 0
+        || injectionRate > 1) {
+      return ResponseEntity.badRequest()
+          .body(Map.of("error", "tps>0, total>0, 0<=poisonRate<=1, 0<=injectionRate<=1"));
     }
-    if (!service.start(tps, total, poisonRate, seed)) {
+    if (!service.start(tps, total, poisonRate, seed, injectionRate)) {
       return ResponseEntity.status(409).body(service.status());
     }
     return ResponseEntity.accepted().body(service.status());

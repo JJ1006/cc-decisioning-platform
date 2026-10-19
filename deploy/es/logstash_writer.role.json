@@ -9,7 +9,8 @@
         "cc-audit-write",
         "cc-notifications-write",
         "cc-dlq-write",
-        "cc-logs-write"
+        "cc-logs-write",
+        "cc-decision-inputs-write"
       ],
       "privileges": [
         "create_doc"

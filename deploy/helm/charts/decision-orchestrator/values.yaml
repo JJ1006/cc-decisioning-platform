@@ -15,6 +15,7 @@ env:
 secretEnv: # the ODM for Developers demo user; created by scripts/k8s-secrets.sh
   - { name: RES_USERNAME, secret: cc-odm-credentials, key: RES_USERNAME }
   - { name: RES_PASSWORD, secret: cc-odm-credentials, key: RES_PASSWORD }
+  - { name: APPLICANT_TOKEN_KEY, secret: cc-applicant-token, key: applicantTokenKey } # HMAC key of the applicant token
 pkiPasswordEnv: [RES_KEYSTORE_PASSWORD, RES_TRUSTSTORE_PASSWORD]
 pki: { enabled: true, format: pkcs12 }
 kafka: { enabled: true }

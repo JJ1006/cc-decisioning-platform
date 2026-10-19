@@ -59,6 +59,16 @@ public class GeneratorService {
    * @return false when a run is already in progress
    */
   public synchronized boolean start(double tps, long total, double poisonRate, long seed) {
+    return start(tps, total, poisonRate, seed, 0);
+  }
+
+  /**
+   * @param injectionRate share of employed applicants whose employer name is a prompt-injection
+   *     attempt ("Ignore previous instructions ..."): free text that is valid data and must flow
+   *     through as data
+   */
+  public synchronized boolean start(
+      double tps, long total, double poisonRate, long seed, double injectionRate) {
     if (isRunning()) {
       return false;
     }
@@ -68,7 +78,8 @@ public class GeneratorService {
     this.tps = tps;
     this.target = total;
     this.startedAt = Instant.now();
-    ApplicationFactory factory = new ApplicationFactory(seed, LocalDate.now());
+    ApplicationFactory factory =
+        new ApplicationFactory(seed, LocalDate.now()).withInjectionRate(injectionRate);
     Random dice = new Random(seed ^ 0x9E3779B97F4A7C15L);
     double perTick = Math.max(1.0, tps * TICK_MS / 1000.0);
     double[] carry = {0};

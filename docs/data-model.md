@@ -85,6 +85,10 @@ Every Kafka value is JSON with this envelope (`contracts/envelope.schema.json`):
 
 Shared definitions (enums, `application`, `decisionPayload`) live in `defs.schema.json` and mirror the XOM enums.
 `DecisionPayload.applicantSummary` carries only non-identifying attributes (province, age band, score, TDS, income) for analytics and fairness reporting.
+`DecisionPayload.inputs` (P12, optional: older events have none) is what the rules saw: age, province, residency and employment status, income, months at employer, housing cost, monthly debt, TDS, score,
+bankruptcy flag, delinquencies, inquiries, file age, existing and requested limit, requested product, and `applicantToken` (HMAC-SHA-256 of the applicant id). No direct identifier. `rulesetPath` and
+`rulesetDeployedAt` say which ruleset decided. Logstash splits the inputs into the restricted index `cc-decision-inputs` and adds `scoreBand`, `tdsBand` and `limitBand` to the summary in `cc-decisions`.
+Audit records of an MCP tool call have `eventType: cc.audit.mcp.v1` (same topic).
 
 ## Validation
 

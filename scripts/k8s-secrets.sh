@@ -60,11 +60,15 @@ k -n "$NS" create secret generic cc-odm-credentials \
   --from-literal=DC_USERNAME="$DCU" --from-literal=DC_PASSWORD="${DCP:-$DCU}" \
   --dry-run=client -o yaml | k apply -f - >/dev/null
 echo "$NS/cc-odm-credentials"
+if ! exists "$NS" cc-applicant-token; then # HMAC key of the applicant token (decision inputs); losing it breaks the link to earlier decisions, so it is never regenerated
+  k -n "$NS" create secret generic cc-applicant-token --from-literal=applicantTokenKey="$(val APPLICANT_TOKEN_KEY)" >/dev/null
+  echo "$NS/cc-applicant-token"
+fi
 
 if [[ "$PROFILE" == full ]]; then
   if ! exists "$NS" cc-es-passwords; then
     args=()
-    for n in KIBANA_PASSWORD LOGSTASH_WRITER_PASSWORD QUERY_API_PASSWORD ANALYST_PASSWORD OPS_PASSWORD OBS_EXPORTER_PASSWORD GRAFANA_ES_PASSWORD; do
+    for n in KIBANA_PASSWORD LOGSTASH_WRITER_PASSWORD QUERY_API_PASSWORD ANALYST_PASSWORD OPS_PASSWORD OBS_EXPORTER_PASSWORD GRAFANA_ES_PASSWORD PRIVACY_OPS_PASSWORD; do
       args+=("--from-literal=$n=$(val "$n")")
     done
     k -n "$NS" create secret generic cc-es-passwords "${args[@]}" >/dev/null

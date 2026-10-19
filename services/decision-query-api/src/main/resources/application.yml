@@ -48,6 +48,8 @@ es:
   ca: ${ES_CA:}
   username: ${ES_USERNAME:decision-query-api}
   password: ${QUERY_API_PASSWORD:}
+  privacy-username: privacy-ops # erasure and access requests only; blank password = those endpoints answer 503
+  privacy-password: ${PRIVACY_OPS_PASSWORD:}
 platform:
   security:
     require-client-cert: ${SERVER_SSL_ENABLED:false}

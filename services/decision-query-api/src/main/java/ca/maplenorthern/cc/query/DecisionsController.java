@@ -2,12 +2,14 @@ package ca.maplenorthern.cc.query;
 
 import ca.maplenorthern.cc.common.web.ApiException;
 import ca.maplenorthern.cc.query.Dtos.Decision;
+import ca.maplenorthern.cc.query.Dtos.DecisionInputsView;
 import ca.maplenorthern.cc.query.Dtos.DecisionPage;
 import ca.maplenorthern.cc.query.Dtos.Explanation;
 import ca.maplenorthern.cc.xom.Outcome;
 import ca.maplenorthern.cc.xom.Province;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -21,9 +23,31 @@ import org.springframework.web.bind.annotation.RestController;
 public class DecisionsController {
   static final int MAX_SIZE = 100;
   private final DecisionStore store;
+  private final RulesCatalog catalog;
 
-  public DecisionsController(DecisionStore store) {
+  public DecisionsController(DecisionStore store, RulesCatalog catalog) {
     this.store = store;
+    this.catalog = catalog;
+  }
+
+  @GetMapping("/{applicationId}/inputs")
+  @Operation(
+      operationId = "getDecisionInputs",
+      summary = "The inputs the rules saw (underwriters and the AI agent only)",
+      description =
+          "Decision-relevant values (score, income, debt, TDS, bankruptcy flag, requested limit ...) and a pseudonymous"
+              + " applicant token, no direct identifier. Comes from the restricted index cc-decision-inputs, which no"
+              + " dashboard role can read. Roles UNDERWRITER and AGENT.")
+  public DecisionInputsView inputs(@PathVariable String applicationId, HttpServletRequest request) {
+    Roles.require(request, "UNDERWRITER", "AGENT");
+    return store
+        .inputs(applicationId)
+        .orElseThrow(
+            () ->
+                new ApiException(
+                    HttpStatus.NOT_FOUND,
+                    "Inputs not found",
+                    "no decision inputs for application " + applicationId));
   }
 
   @GetMapping("/{applicationId}")
@@ -41,8 +65,9 @@ public class DecisionsController {
       operationId = "explainDecision",
       summary = "Why the rules decided as they did",
       description =
-          "Fired rules, reason codes with applicant-facing text and the ruleset version of the automated decision,"
-              + " plus the underwriter's decision when there is one.")
+          "Fired rules (with what the rules catalog says about each), reason codes ranked by how decisive they are, with"
+              + " applicant-facing text, the ruleset (path, version, deployment time) and the decision source of the"
+              + " automated decision, plus the underwriter's decision when there is one.")
   public Explanation explain(@PathVariable String applicationId) {
     var detail =
         store.latestDetail(applicationId, "ODM").orElseThrow(() -> notFound(applicationId));
@@ -51,10 +76,13 @@ public class DecisionsController {
     return new Explanation(
         applicationId,
         odm.outcome(),
+        odm.decisionSource(),
         odm.rulesetVersion(),
+        new Dtos.Ruleset(detail.rulesetPath(), odm.rulesetVersion(), detail.rulesetDeployedAt()),
         odm.decidedAt(),
         detail.firedRules(),
-        DecisionStore.reasons(odm.reasonCodes()),
+        catalog.describe(detail.firedRules()),
+        catalog.rank(odm.reasonCodes()),
         manual);
   }
 

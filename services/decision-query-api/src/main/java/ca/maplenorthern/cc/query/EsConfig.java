@@ -25,6 +25,10 @@ public class EsConfig {
       @Value("${es.ca:}") String ca,
       @Value("${es.username:}") String username,
       @Value("${es.password:}") String password) {
+    return build(url, ca, username, password);
+  }
+
+  static RestClient build(String url, String ca, String username, String password) {
     var builder = RestClient.builder(HttpHost.create(url));
     builder.setHttpClientConfigCallback(
         http -> {
@@ -42,7 +46,28 @@ public class EsConfig {
     return builder.build();
   }
 
+  /**
+   * The second Elasticsearch identity: privacy-ops, used by the erasure and access endpoints only.
+   * Without its password the privacy endpoints answer 503 and nothing else changes.
+   */
+  @Bean(destroyMethod = "close")
+  PrivacyEs privacyEs(
+      @Value("${es.url}") String url,
+      @Value("${es.ca:}") String ca,
+      @Value("${es.privacy-username:privacy-ops}") String username,
+      @Value("${es.privacy-password:}") String password) {
+    if (password.isBlank()) {
+      return new PrivacyEs(null, null);
+    }
+    RestClient rest = build(url, ca, username, password);
+    return new PrivacyEs(
+        rest,
+        new ElasticsearchClient(
+            new RestClientTransport(rest, new JacksonJsonpMapper(Json.mapper()))));
+  }
+
   @Bean
+  @org.springframework.context.annotation.Primary
   ElasticsearchClient elasticsearchClient(RestClient restClient) {
     return new ElasticsearchClient(
         new RestClientTransport(restClient, new JacksonJsonpMapper(Json.mapper())));

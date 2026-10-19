@@ -6,7 +6,7 @@
   "type": "object",
   "unevaluatedProperties": false,
   "properties": {
-    "eventType": { "const": "cc.audit.v1" },
+    "eventType": { "enum": ["cc.audit.v1", "cc.audit.mcp.v1"], "description": "cc.audit.mcp.v1: a tool call of an MCP server (P12); both go to the topic cc.audit.v1" },
     "payload": {
       "type": "object",
       "required": ["actor", "action", "resourceType", "resourceId", "result"],

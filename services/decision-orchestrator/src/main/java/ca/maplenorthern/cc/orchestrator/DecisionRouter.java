@@ -2,8 +2,10 @@ package ca.maplenorthern.cc.orchestrator;
 
 import ca.maplenorthern.cc.common.Topics;
 import ca.maplenorthern.cc.common.events.ApplicantSummary;
+import ca.maplenorthern.cc.common.events.ApplicantToken;
 import ca.maplenorthern.cc.common.events.ApplicationSubmittedPayload;
 import ca.maplenorthern.cc.common.events.AuditPayload;
+import ca.maplenorthern.cc.common.events.DecisionInputs;
 import ca.maplenorthern.cc.common.events.DecisionPayload;
 import ca.maplenorthern.cc.common.events.Envelope;
 import ca.maplenorthern.cc.common.events.EventTypes;
@@ -19,6 +21,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
@@ -35,9 +38,18 @@ public class DecisionRouter {
   private final Timer latency;
   private final Timer resCall;
   private final MeterRegistry registry;
+  private final String tokenKey;
 
   public DecisionRouter(
-      ResClient res, KafkaTemplate<String, String> kafka, MeterRegistry registry) {
+      ResClient res,
+      KafkaTemplate<String, String> kafka,
+      MeterRegistry registry,
+      @Value("${privacy.applicant-token-key:}") String tokenKey) {
+    if (tokenKey == null || tokenKey.isBlank()) {
+      throw new IllegalStateException(
+          "APPLICANT_TOKEN_KEY is not set: the applicant token needs a secret key");
+    }
+    this.tokenKey = tokenKey;
     this.res = res;
     this.kafka = kafka;
     this.registry = registry;
@@ -106,7 +118,10 @@ public class DecisionRouter {
                 ApplicantSummary.ageBand(app.getApplicant().getAgeYears()),
                 app.getBureau().getScore(),
                 Math.round(app.tdsRatio() * 1000.0) / 1000.0,
-                app.getEmployment().getAnnualIncome()));
+                app.getEmployment().getAnnualIncome()),
+            inputsOf(app),
+            res.rulesetPath(),
+            res.rulesetDeployedAt());
     send(topicFor(d.outcome()), app.getApplicationId(), eventType(d.outcome()), corr, payload);
 
     AuditPayload audit =
@@ -129,6 +144,30 @@ public class DecisionRouter {
         .tag("province", app.getAddress().getProvince().name())
         .register(registry)
         .increment();
+  }
+
+  private DecisionInputs inputsOf(Application app) {
+    var emp = app.getEmployment();
+    var bureau = app.getBureau();
+    return new DecisionInputs(
+        app.getApplicant().getAgeYears(),
+        app.getAddress().getProvince(),
+        app.getApplicant().getResidencyStatus(),
+        emp.getStatus(),
+        emp.getAnnualIncome(),
+        emp.getMonthsAtEmployer(),
+        app.getMonthlyHousingCost(),
+        bureau.getMonthlyDebtPayments(),
+        Math.round(app.tdsRatio() * 1000.0) / 1000.0,
+        bureau.getScore(),
+        bureau.isActiveBankruptcy(),
+        bureau.getDelinquencies(),
+        bureau.getInquiriesLast6Months(),
+        bureau.getFileAgeMonths(),
+        bureau.getExistingCreditLimit(),
+        app.getRequestedLimit(),
+        app.getRequestedProduct(),
+        ApplicantToken.of(tokenKey, app.getApplicant().getApplicantId()));
   }
 
   static String topicFor(Outcome o) {

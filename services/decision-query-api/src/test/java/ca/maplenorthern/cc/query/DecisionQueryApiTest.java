@@ -300,6 +300,27 @@ class DecisionQueryApiTest {
         .isEqualTo("R_BORDERLINE_SCORE");
     assertThat(explanation.path("reasons").get(0).path("text").asText()).contains("borderline");
     assertThat(explanation.path("manualDecision").path("underwriterId").asText()).isEqualTo("UW-7");
+    assertThat(explanation.path("decisionSource").asText()).isEqualTo("ODM");
+    assertThat(explanation.path("ruleset").path("version").asText()).isEqualTo("ccApproval/1.0");
+    assertThat(explanation.path("reasons").get(0).path("rank").asInt()).isEqualTo(1);
+    // an id the catalog does not know (RISK-DT-05 is a fixture) is listed with its id only
+    assertThat(explanation.path("firedRuleDetails").get(0).path("id").asText())
+        .isEqualTo("RISK-DT-05");
+  }
+
+  @Test
+  void explanationRanksDeclinesFirstAndDescribesTheRulesFromTheCatalog() throws Exception {
+    // QC-5 is a decline; the fixture lists RSN-01 as its fired rule
+    JsonNode e = json("/v1/decisions/QC-5/explanation");
+    assertThat(e.path("outcome").asText()).isEqualTo("DECLINE");
+    assertThat(e.path("firedRuleDetails").get(0).path("id").asText()).isEqualTo("RSN-01");
+    assertThat(e.path("firedRuleDetails").get(0).path("packageName").asText()).isEqualTo("reasons");
+    assertThat(e.path("firedRuleDetails").get(0).path("action").asText()).isEqualTo("APPROVE");
+    // QC-6 is a decline with two reasons, R_LOW_SCORE and R_HIGH_TDS: ranked 1 and 2
+    JsonNode d = json("/v1/decisions/QC-6/explanation");
+    assertThat(d.path("reasons").size()).isEqualTo(2);
+    assertThat(d.path("reasons").get(0).path("rank").asInt()).isEqualTo(1);
+    assertThat(d.path("reasons").get(1).path("rank").asInt()).isEqualTo(2);
   }
 
   @Test
@@ -355,7 +376,8 @@ class DecisionQueryApiTest {
 
   @Test
   void fairnessRatioAgainstOverallAndFlag() throws Exception {
-    JsonNode f = json("/v1/stats/fairness?by=province");
+    JsonNode f = json("/v1/stats/fairness?by=province&minGroupSize=5");
+    assertThat(f.path("minGroupSize").asInt()).isEqualTo(5);
     double overall = 18.0 / 31.0;
     assertThat(f.path("overallApprovalRate").asDouble())
         .isEqualTo(Math.round(overall * 10000) / 10000.0);
@@ -369,8 +391,26 @@ class DecisionQueryApiTest {
     assertThat(groups.get("BC").path("flagged").asBoolean()).isFalse();
     assertThat(groups.get("QC").path("total").asLong()).isEqualTo(10);
 
-    JsonNode byAge = json("/v1/stats/fairness?by=ageBand");
+    JsonNode byAge = json("/v1/stats/fairness?by=ageBand&minGroupSize=5");
     assertThat(byAge.path("groups").size()).isEqualTo(3);
+  }
+
+  @Test
+  void smallGroupsAreMarkedInsufficientAndNeverFlagged() throws Exception {
+    // groups of 10 against the default minGroupSize of 30: QC has a ratio of 0.69 but is noise, not
+    // a finding
+    JsonNode f = json("/v1/stats/fairness?by=province");
+    assertThat(f.path("minGroupSize").asInt()).isEqualTo(30);
+    f.path("groups")
+        .forEach(
+            g -> {
+              assertThat(g.path("insufficientSample").asBoolean())
+                  .as(g.path("key").asText())
+                  .isTrue();
+              assertThat(g.path("flagged").asBoolean()).as(g.path("key").asText()).isFalse();
+            });
+    mvc.perform(get("/v1/stats/fairness?by=province&minGroupSize=0"))
+        .andExpect(status().isBadRequest());
   }
 
   @Test

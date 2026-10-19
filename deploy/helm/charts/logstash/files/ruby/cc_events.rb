@@ -12,6 +12,37 @@ ALIASES = {
 
 def register(_params); end
 
+# Bands (coarse, for analytics and fairness) of the values the rules decide on; the boundaries are those of the decision tables in docs/rules-catalog.md.
+def score_band(score)
+  return nil unless score.is_a?(Numeric)
+  return '<560' if score < 560
+  return '560-619' if score < 620
+  return '620-679' if score < 680
+  return '680-739' if score < 740
+
+  '740+'
+end
+
+def tds_band(tds)
+  return nil unless tds.is_a?(Numeric)
+  return '<=0.35' if tds <= 0.35
+  return '0.35-0.42' if tds <= 0.42
+  return '0.42-0.50' if tds <= 0.50
+  return '0.50-0.60' if tds <= 0.60
+
+  '>0.60'
+end
+
+def limit_band(limit)
+  return nil unless limit.is_a?(Numeric)
+  return '<2500' if limit < 2500
+  return '2500-4999' if limit < 5000
+  return '5000-9999' if limit < 10_000
+  return '10000-19999' if limit < 20_000
+
+  '20000+'
+end
+
 # Turns one Kafka record (field "message", topic in [@metadata][kafka][topic]) into an indexable document.
 def filter(event)
   raw = event.get('message').to_s
@@ -39,7 +70,33 @@ def filter(event)
     event.set('decisionSource', topic == 'cc.decisions.manual.v1' ? 'MANUAL' : 'ODM')
   end
   event.set('[@metadata][target_alias]', target)
-  [event]
+  return [event] unless target == 'cc-decisions-write' && topic != 'cc.decisions.manual.v1'
+
+  split_inputs(event)
+end
+
+# An automated decision carries the inputs the rules saw. The analyst-readable cc-decisions keeps the outcome and
+# only BANDS of the inputs; the full inputs become a second document for the restricted index cc-decision-inputs
+# (readable by the query API only: Elasticsearch roles, deploy/es/query_reader.role.json).
+def split_inputs(event)
+  payload = event.get('payload')
+  return [event] unless payload.is_a?(Hash)
+
+  inputs = payload.delete('inputs')
+  summary = payload['applicantSummary']
+  if summary.is_a?(Hash)
+    summary['scoreBand'] = score_band(summary['bureauScore'])
+    summary['tdsBand'] = tds_band(summary['tdsRatio'])
+    summary['limitBand'] = limit_band(inputs['requestedLimit']) if inputs.is_a?(Hash)
+    summary.compact!
+  end
+  event.set('payload', payload)
+  return [event] unless inputs.is_a?(Hash)
+
+  extra = event.clone
+  extra.set('payload', 'applicationId' => payload['applicationId'], 'applicantToken' => inputs['applicantToken'], 'inputs' => inputs)
+  extra.set('[@metadata][target_alias]', 'cc-decision-inputs-write')
+  [event, extra]
 end
 
 def dead_letter(event, raw, topic, error)

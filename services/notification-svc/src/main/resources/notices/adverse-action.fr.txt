@@ -1,0 +1,14 @@
+Madame, Monsieur,
+
+Nous n'avons pas pu approuver votre demande de carte de crédit de la Banque Nord-Érable {{applicationId}}.
+
+Les principaux motifs de cette décision sont :
+{{reasons}}
+
+Comment la décision a été prise : elle a été rendue par nos règles automatisées, à partir des renseignements de votre demande et de votre dossier de crédit auprès de {{bureauName}}. Vous pouvez demander que la décision soit révisée par une personne.
+
+Votre dossier de crédit : vous avez le droit d'obtenir gratuitement une copie de votre dossier de crédit auprès de {{bureauName}} ({{bureauContact}}) et de demander la correction de tout renseignement inexact.
+
+Questions ou préoccupations : communiquez avec nous au {{bankContact}}. Si votre préoccupation n'est pas réglée, vous pouvez recourir à notre processus de traitement des plaintes, puis communiquer avec l'Agence de la consommation en matière financière du Canada (fcac-acfc.gc.ca).
+
+{{signatureFr}}

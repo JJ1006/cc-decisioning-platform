@@ -145,7 +145,8 @@ class EndToEndFlowTest {
         "--res.base-url=http://localhost:" + RES.port(),
         "--res.username=" + java.util.UUID.randomUUID(),
         "--res.password=" + java.util.UUID.randomUUID(),
-        "--res.retry-wait-ms=10");
+        "--res.retry-wait-ms=10",
+        "--privacy.applicant-token-key=flow-test-token-key");
     start(NotificationApplication.class, "notification-svc");
     GeneratorService generator =
         start(GeneratorApplication.class, "txn-generator").getBean(GeneratorService.class);

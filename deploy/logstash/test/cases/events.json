@@ -56,12 +56,144 @@
           "ageBand": "35-44",
           "bureauScore": 742,
           "tdsRatio": 0.35,
-          "annualIncome": 85000
+          "annualIncome": 85000,
+          "scoreBand": "740+",
+          "tdsBand": "<=0.35"
         }
       },
       "topic": "cc.decisions.approved.v1",
       "@timestamp": "2026-10-17T14:30:00.000Z",
       "_alias": "cc-decisions-write",
+      "decisionSource": "ODM"
+    }
+  },
+  {
+    "name": "decision with inputs: bands stay in cc-decisions, the full inputs leave without it",
+    "input": {
+      "topic": "cc.decisions.approved.v1",
+      "raw": {
+        "eventId": "22222222-2222-2222-2222-222222222222",
+        "correlationId": "c-12",
+        "eventType": "cc.decisions.approved.v1",
+        "schemaVersion": 1,
+        "occurredAt": "2026-10-17T14:30:00Z",
+        "producer": "decision-orchestrator",
+        "payload": {
+          "applicationId": "APP-2",
+          "outcome": "APPROVE",
+          "creditLimit": 8000,
+          "product": "CASHBACK",
+          "aprTier": "TIER_2",
+          "reasonCodes": [
+            "R_APPROVED_STANDARD"
+          ],
+          "firedRules": [
+            "RSN-01"
+          ],
+          "applicantSummary": {
+            "province": "ON",
+            "ageBand": "35-44",
+            "bureauScore": 742,
+            "tdsRatio": 0.35,
+            "annualIncome": 85000
+          },
+          "inputs": {
+            "age": 36,
+            "province": "ON",
+            "residencyStatus": "CITIZEN",
+            "employmentStatus": "EMPLOYED",
+            "annualIncome": 85000,
+            "monthsAtEmployer": 48,
+            "monthlyHousingCost": 1800,
+            "monthlyDebt": 650,
+            "tds": 0.35,
+            "creditScore": 742,
+            "bankruptcyFlag": false,
+            "delinquencies": 0,
+            "inquiriesLast6Months": 1,
+            "fileAgeMonths": 120,
+            "existingCreditLimit": 12000,
+            "requestedLimit": 8000,
+            "requestedProduct": "CASHBACK",
+            "applicantToken": "00000000000000000000000000000001"
+          },
+          "rulesetPath": "/ccApprovalApp/1.0/ccApproval/1.0"
+        }
+      }
+    },
+    "expected": {
+      "eventId": "22222222-2222-2222-2222-222222222222",
+      "correlationId": "c-12",
+      "eventType": "cc.decisions.approved.v1",
+      "schemaVersion": 1,
+      "occurredAt": "2026-10-17T14:30:00Z",
+      "producer": "decision-orchestrator",
+      "payload": {
+        "applicationId": "APP-2",
+        "outcome": "APPROVE",
+        "creditLimit": 8000,
+        "product": "CASHBACK",
+        "aprTier": "TIER_2",
+        "reasonCodes": [
+          "R_APPROVED_STANDARD"
+        ],
+        "firedRules": [
+          "RSN-01"
+        ],
+        "applicantSummary": {
+          "province": "ON",
+          "ageBand": "35-44",
+          "bureauScore": 742,
+          "tdsRatio": 0.35,
+          "annualIncome": 85000,
+          "scoreBand": "740+",
+          "tdsBand": "<=0.35",
+          "limitBand": "5000-9999"
+        },
+        "rulesetPath": "/ccApprovalApp/1.0/ccApproval/1.0"
+      },
+      "topic": "cc.decisions.approved.v1",
+      "@timestamp": "2026-10-17T14:30:00.000Z",
+      "_alias": "cc-decisions-write",
+      "decisionSource": "ODM"
+    }
+  },
+  {
+    "name": "... and the second document goes to the restricted cc-decision-inputs index",
+    "expected": {
+      "eventId": "22222222-2222-2222-2222-222222222222",
+      "correlationId": "c-12",
+      "eventType": "cc.decisions.approved.v1",
+      "schemaVersion": 1,
+      "occurredAt": "2026-10-17T14:30:00Z",
+      "producer": "decision-orchestrator",
+      "payload": {
+        "applicationId": "APP-2",
+        "applicantToken": "00000000000000000000000000000001",
+        "inputs": {
+          "age": 36,
+          "province": "ON",
+          "residencyStatus": "CITIZEN",
+          "employmentStatus": "EMPLOYED",
+          "annualIncome": 85000,
+          "monthsAtEmployer": 48,
+          "monthlyHousingCost": 1800,
+          "monthlyDebt": 650,
+          "tds": 0.35,
+          "creditScore": 742,
+          "bankruptcyFlag": false,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "fileAgeMonths": 120,
+          "existingCreditLimit": 12000,
+          "requestedLimit": 8000,
+          "requestedProduct": "CASHBACK",
+          "applicantToken": "00000000000000000000000000000001"
+        }
+      },
+      "topic": "cc.decisions.approved.v1",
+      "@timestamp": "2026-10-17T14:30:00.000Z",
+      "_alias": "cc-decision-inputs-write",
       "decisionSource": "ODM"
     }
   },

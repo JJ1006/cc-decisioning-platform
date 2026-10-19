@@ -1,0 +1,215 @@
+{
+  "source": "docs/rules-catalog.md",
+  "rules": [
+    {
+      "id": "ELIG-01",
+      "package": "eligibility",
+      "intent": "Contract capacity",
+      "condition": "age in years < age of majority of the applicant's province",
+      "action": "DECLINE",
+      "reasonCodes": [
+        "R_AGE_BELOW_MAJORITY"
+      ],
+      "severity": 3
+    },
+    {
+      "id": "ELIG-02",
+      "package": "eligibility",
+      "intent": "Residency",
+      "condition": "residency status is NON_RESIDENT or WORK_PERMIT_EXPIRED",
+      "action": "DECLINE",
+      "reasonCodes": [
+        "R_NON_RESIDENT"
+      ],
+      "severity": 3
+    },
+    {
+      "id": "ELIG-03",
+      "package": "eligibility",
+      "intent": "No active insolvency",
+      "condition": "bureau reports an active bankruptcy",
+      "action": "DECLINE",
+      "reasonCodes": [
+        "R_ACTIVE_BANKRUPTCY"
+      ],
+      "severity": 3
+    },
+    {
+      "id": "RISK-01",
+      "package": "risk",
+      "intent": "Minimum income",
+      "condition": "annual income < 15,000",
+      "action": "DECLINE",
+      "reasonCodes": [
+        "R_INSUFFICIENT_INCOME"
+      ],
+      "severity": 3
+    },
+    {
+      "id": "RISK-02",
+      "package": "risk",
+      "intent": "Payment history",
+      "condition": "delinquencies (24 months) >= 3",
+      "action": "DECLINE",
+      "reasonCodes": [
+        "R_DELINQUENCIES"
+      ],
+      "severity": 3
+    },
+    {
+      "id": "RISK-03",
+      "package": "risk",
+      "intent": "Credit-seeking behaviour",
+      "condition": "hard inquiries (6 months) > 6",
+      "action": "DECLINE",
+      "reasonCodes": [
+        "R_EXCESSIVE_INQUIRIES"
+      ],
+      "severity": 3
+    },
+    {
+      "id": "RISK-04",
+      "package": "risk",
+      "intent": "Enough history to assess",
+      "condition": "file age < 6 months",
+      "action": "REFER",
+      "reasonCodes": [
+        "R_THIN_FILE"
+      ],
+      "severity": 2
+    },
+    {
+      "id": "RISK-DT-01",
+      "package": "risk",
+      "intent": "Score x debt service (decision table `ScoreTdsOutcome`)",
+      "condition": "see table below",
+      "action": "DECLINE / REFER / none",
+      "reasonCodes": [
+        "R_LOW_SCORE",
+        "R_HIGH_TDS",
+        "R_BORDERLINE_SCORE",
+        "R_BORDERLINE_TDS"
+      ],
+      "severity": 3
+    },
+    {
+      "id": "LIM-DT-01",
+      "package": "limit",
+      "intent": "Base limit by income and score (decision table `IncomeScoreLimit`)",
+      "condition": "see table below",
+      "action": "set credit limit",
+      "reasonCodes": [],
+      "severity": 0
+    },
+    {
+      "id": "LIM-02",
+      "package": "limitcap",
+      "intent": "Never exceed what was asked for",
+      "condition": "credit limit > requested limit (requested limit is mandatory input)",
+      "action": "credit limit = requested limit",
+      "reasonCodes": [],
+      "severity": 0
+    },
+    {
+      "id": "PROD-01",
+      "package": "product",
+      "intent": "Entry product",
+      "condition": "requested product is NO_FEE or absent",
+      "action": "product NO_FEE",
+      "reasonCodes": [],
+      "severity": 0
+    },
+    {
+      "id": "PROD-02",
+      "package": "product",
+      "intent": "Cashback eligibility",
+      "condition": "requested CASHBACK, income >= 40,000, score >= 660",
+      "action": "product CASHBACK",
+      "reasonCodes": [],
+      "severity": 0
+    },
+    {
+      "id": "PROD-03",
+      "package": "product",
+      "intent": "Cashback not met",
+      "condition": "requested CASHBACK, income < 40,000 or score < 660",
+      "action": "product NO_FEE",
+      "reasonCodes": [],
+      "severity": 0
+    },
+    {
+      "id": "PROD-04",
+      "package": "product",
+      "intent": "Travel eligibility",
+      "condition": "requested TRAVEL_INFINITE, income >= 80,000, score >= 720",
+      "action": "product TRAVEL_INFINITE",
+      "reasonCodes": [],
+      "severity": 0
+    },
+    {
+      "id": "PROD-05",
+      "package": "product",
+      "intent": "Travel not met, cashback met",
+      "condition": "requested TRAVEL_INFINITE, travel not met, cashback met",
+      "action": "product CASHBACK",
+      "reasonCodes": [],
+      "severity": 0
+    },
+    {
+      "id": "PROD-06",
+      "package": "product",
+      "intent": "Neither met",
+      "condition": "requested TRAVEL_INFINITE, travel not met, cashback not met",
+      "action": "product NO_FEE",
+      "reasonCodes": [],
+      "severity": 0
+    },
+    {
+      "id": "APR-01",
+      "package": "product",
+      "intent": "Best rate",
+      "condition": "score >= 740",
+      "action": "APR tier TIER_1",
+      "reasonCodes": [],
+      "severity": 0
+    },
+    {
+      "id": "APR-02",
+      "package": "product",
+      "intent": "680 <= score <= 739",
+      "condition": "680 <= score <= 739",
+      "action": "APR tier TIER_2",
+      "reasonCodes": [],
+      "severity": 0
+    },
+    {
+      "id": "APR-03",
+      "package": "product",
+      "intent": "650 <= score <= 679",
+      "condition": "650 <= score <= 679",
+      "action": "APR tier TIER_3",
+      "reasonCodes": [],
+      "severity": 0
+    },
+    {
+      "id": "APR-04",
+      "package": "product",
+      "intent": "score <= 649",
+      "condition": "score <= 649",
+      "action": "APR tier TIER_4",
+      "reasonCodes": [],
+      "severity": 0
+    },
+    {
+      "id": "RSN-01",
+      "package": "reasons",
+      "intent": "Approve when nothing objected",
+      "condition": "no outcome set yet",
+      "action": "APPROVE",
+      "reasonCodes": [
+        "R_APPROVED_STANDARD"
+      ],
+      "severity": 1
+    }
+  ]
+}

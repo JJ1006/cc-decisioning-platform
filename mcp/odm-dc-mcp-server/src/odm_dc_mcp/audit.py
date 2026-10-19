@@ -1,4 +1,4 @@
-"""Audit trail: every tool call is one event on cc.audit.v1 (contracts/audit.schema.json), published over mutual TLS.
+"""Audit trail: every tool call is one event of type cc.audit.mcp.v1 on the topic cc.audit.v1 (contracts/audit.schema.json), published over mutual TLS.
 
 What is recorded: who called (the gateway consumer, or the local stdio caller), which tool, the outcome, the size of the result and the time it took,
 and the NAMES of the arguments plus a short hash of their values. The values themselves are never written (they may contain an application id or
@@ -19,6 +19,7 @@ from .config import Settings
 LOG = logging.getLogger("odm_dc_mcp.audit")
 PRODUCER = "odm-dc-mcp-server"
 ACTION = "MCP_TOOL_CALL"
+EVENT_TYPE = "cc.audit.mcp.v1"  # P12: a tool call of an MCP server has its own event type; the topic is still cc.audit.v1
 
 
 class Sink(Protocol):
@@ -55,7 +56,7 @@ def build_event(
     return {
         "eventId": str(uuid.uuid4()),
         "correlationId": correlation_id,
-        "eventType": "cc.audit.v1",
+        "eventType": EVENT_TYPE,
         "schemaVersion": 1,
         "occurredAt": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z",
         "producer": PRODUCER,
