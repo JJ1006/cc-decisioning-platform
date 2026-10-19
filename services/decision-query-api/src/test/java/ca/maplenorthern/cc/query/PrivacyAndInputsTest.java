@@ -121,7 +121,7 @@ class PrivacyAndInputsTest {
     p.put("rulesetPath", "/ccApprovalApp/1.0/ccApproval/1.0");
     p.put("rulesetDeployedAt", "2026-10-17T12:00:00Z");
     p.put("decidedAt", "2026-10-17T14:00:00Z");
-    p.put("applicantSummary", Map.of("province", "ON", "ageBand", "35-44", "bureauScore", 742));
+    p.put("applicantSummary", Map.of("province", "ON", "ageBand", "35-44", "scoreBand", "740-900"));
     Map<String, Object> d = envelope("dec-" + app, "cc.decisions.approved.v1", p);
     d.put("decisionSource", "ODM");
     return d;

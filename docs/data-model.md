@@ -84,10 +84,10 @@ Every Kafka value is JSON with this envelope (`contracts/envelope.schema.json`):
 | `dlq` | `DlqPayload` |
 
 Shared definitions (enums, `application`, `decisionPayload`) live in `defs.schema.json` and mirror the XOM enums.
-`DecisionPayload.applicantSummary` carries only non-identifying attributes (province, age band, score, TDS, income) for analytics and fairness reporting.
+`DecisionPayload.applicantSummary` carries only non-identifying attributes for analytics and fairness reporting: province, age band and, in `cc-decisions`, only BANDS of the rest (`scoreBand`, `tdsBand`, `incomeBand`, `limitBand`; the event itself still carries the exact `bureauScore`, `tdsRatio` and `annualIncome`, which Logstash removes before indexing).
 `DecisionPayload.inputs` (P12, optional: older events have none) is what the rules saw: age, province, residency and employment status, income, months at employer, housing cost, monthly debt, TDS, score,
 bankruptcy flag, delinquencies, inquiries, file age, existing and requested limit, requested product, and `applicantToken` (HMAC-SHA-256 of the applicant id). No direct identifier. `rulesetPath` and
-`rulesetDeployedAt` say which ruleset decided. Logstash splits the inputs into the restricted index `cc-decision-inputs` and adds `scoreBand`, `tdsBand` and `limitBand` to the summary in `cc-decisions`.
+`rulesetDeployedAt` say which ruleset decided. Logstash splits the inputs into the restricted index `cc-decision-inputs` and adds `scoreBand`, `tdsBand`, `incomeBand` and `limitBand` to the summary in `cc-decisions` and drops the exact score, TDS and income from it (exact values only in `cc-decision-inputs`; the query API reads the score from there for `bureauScore`, `minScore` and `maxScore`). Band labels are zero-padded so they sort as text.
 Audit records of an MCP tool call have `eventType: cc.audit.mcp.v1` (same topic).
 
 ## Validation

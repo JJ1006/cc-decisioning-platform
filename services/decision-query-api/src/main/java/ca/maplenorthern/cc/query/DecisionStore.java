@@ -51,6 +51,7 @@ import org.springframework.stereotype.Repository;
 public class DecisionStore {
   static final double FAIRNESS_THRESHOLD = 0.8;
   private static final String DECISIONS = "cc-decisions";
+  private static final String INPUTS = "cc-decision-inputs";
   private static final String DLQ = "cc-dlq";
   private static final String LOGS = "cc-logs";
   private static final String OUTCOME = "payload.outcome";
@@ -85,7 +86,7 @@ public class DecisionStore {
       String note) {}
 
   @JsonIgnoreProperties(ignoreUnknown = true)
-  record Summary(String province, String ageBand, Integer bureauScore) {}
+  record Summary(String province, String ageBand) {}
 
   @JsonIgnoreProperties(ignoreUnknown = true)
   record DlqDoc(
@@ -138,7 +139,7 @@ public class DecisionStore {
         .map(
             d ->
                 new Detail(
-                    toDecision(d),
+                    toDecision(d, scoreOf(applicationId)),
                     d.payload().firedRules(),
                     d.payload().rulesetPath(),
                     d.payload().rulesetDeployedAt()))
@@ -153,6 +154,13 @@ public class DecisionStore {
       int size,
       String searchAfter) {
     List<FieldValue> after = decodeToken(searchAfter);
+    // the exact score lives only in the restricted index: filter by the applications whose score is
+    // in range
+    List<String> scoreIds =
+        minScore == null && maxScore == null ? null : idsInScoreRange(minScore, maxScore);
+    if (scoreIds != null && scoreIds.isEmpty()) {
+      return new DecisionPage(List.of(), null);
+    }
     var resp =
         search(
             s -> {
@@ -167,24 +175,19 @@ public class DecisionStore {
                             if (outcome != null) {
                               b.filter(term(OUTCOME, outcome));
                             }
-                            if (minScore != null || maxScore != null) {
+                            if (scoreIds != null) {
                               b.filter(
                                   Query.of(
                                       q ->
-                                          q.range(
-                                              r ->
-                                                  r.number(
-                                                      n -> {
-                                                        n.field(
-                                                            "payload.applicantSummary.bureauScore");
-                                                        if (minScore != null) {
-                                                          n.gte(minScore.doubleValue());
-                                                        }
-                                                        if (maxScore != null) {
-                                                          n.lte(maxScore.doubleValue());
-                                                        }
-                                                        return n;
-                                                      }))));
+                                          q.terms(
+                                              t ->
+                                                  t.field("payload.applicationId")
+                                                      .terms(
+                                                          v ->
+                                                              v.value(
+                                                                  scoreIds.stream()
+                                                                      .map(FieldValue::of)
+                                                                      .toList())))));
                             }
                           }))
                   .sort(sort("occurredAt", SortOrder.Desc))
@@ -199,10 +202,87 @@ public class DecisionStore {
     boolean more = hits.size() > size;
     List<Hit<Doc>> page = more ? hits.subList(0, size) : hits;
     String next = more ? encodeToken(page.get(page.size() - 1)) : null;
-    return new DecisionPage(page.stream().map(h -> toDecision(h.source())).toList(), next);
+    var scores =
+        scoresOf(page.stream().map(h -> h.source().payload().applicationId()).distinct().toList());
+    return new DecisionPage(
+        page.stream()
+            .map(h -> toDecision(h.source(), scores.get(h.source().payload().applicationId())))
+            .toList(),
+        next);
   }
 
-  private static Decision toDecision(Doc d) {
+  private static final int SCORE_FILTER_MAX = 10_000;
+
+  private List<String> idsInScoreRange(Integer minScore, Integer maxScore) {
+    var resp =
+        search(
+            s ->
+                s.index(INPUTS)
+                    .size(SCORE_FILTER_MAX)
+                    .source(src -> src.filter(f -> f.includes("payload.applicationId")))
+                    .query(
+                        Query.of(
+                            q ->
+                                q.range(
+                                    r ->
+                                        r.number(
+                                            n -> {
+                                              n.field("payload.inputs.creditScore");
+                                              if (minScore != null) {
+                                                n.gte(minScore.doubleValue());
+                                              }
+                                              if (maxScore != null) {
+                                                n.lte(maxScore.doubleValue());
+                                              }
+                                              return n;
+                                            })))),
+            InputsDoc.class);
+    return resp.hits().hits().stream()
+        .map(h -> h.source().payload().applicationId())
+        .distinct()
+        .toList();
+  }
+
+  private Integer scoreOf(String applicationId) {
+    return scoresOf(List.of(applicationId)).get(applicationId);
+  }
+
+  /** Newest exact bureau score per application, read from the restricted inputs index. */
+  private java.util.Map<String, Integer> scoresOf(List<String> applicationIds) {
+    java.util.Map<String, Integer> out = new java.util.HashMap<>();
+    if (applicationIds.isEmpty()) {
+      return out;
+    }
+    var resp =
+        search(
+            s ->
+                s.index(INPUTS)
+                    .size(applicationIds.size() * 3)
+                    .query(
+                        Query.of(
+                            q ->
+                                q.terms(
+                                    t ->
+                                        t.field("payload.applicationId")
+                                            .terms(
+                                                v ->
+                                                    v.value(
+                                                        applicationIds.stream()
+                                                            .map(FieldValue::of)
+                                                            .toList())))))
+                    .sort(sort("occurredAt", SortOrder.Desc))
+                    .sort(sort("eventId", SortOrder.Desc)),
+            InputsDoc.class);
+    for (var h : resp.hits().hits()) {
+      var in = h.source().payload().inputs();
+      if (in != null && in.hasNonNull("creditScore")) {
+        out.putIfAbsent(h.source().payload().applicationId(), in.get("creditScore").asInt());
+      }
+    }
+    return out;
+  }
+
+  private static Decision toDecision(Doc d, Integer bureauScore) {
     Payload p = d.payload();
     Summary s = p.applicantSummary();
     return new Decision(
@@ -218,7 +298,7 @@ public class DecisionStore {
         p.decidedAt() != null ? p.decidedAt() : d.occurredAt(),
         s == null ? null : s.province(),
         s == null ? null : s.ageBand(),
-        s == null ? null : s.bureauScore(),
+        bureauScore,
         p.underwriterId(),
         p.note());
   }
@@ -259,7 +339,7 @@ public class DecisionStore {
     var resp =
         search(
             s ->
-                s.index("cc-decision-inputs")
+                s.index(INPUTS)
                     .size(1)
                     .query(bool(b -> b.filter(term("payload.applicationId", applicationId))))
                     .sort(sort("occurredAt", SortOrder.Desc))
