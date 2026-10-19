@@ -1,0 +1,27 @@
+# Namespace cc with its Pod Security level. Wave -4, not -2 as the plan has it: the operators below create Roles in cc and must find it. Never pruned.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: namespaces
+  namespace: argocd
+  labels:
+    cc/revision: follow # the root application can point every labelled application at another branch (make argocd-up REVISION=...)
+  annotations:
+    argocd.argoproj.io/sync-wave: "-4"
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cc # the project allows only cc; the Namespace object itself is cluster-scoped
+  sources:
+    - repoURL: https://github.com/JJ1006/cc-decisioning-platform.git
+      targetRevision: main
+      path: deploy/argocd/namespaces/privileged
+    - repoURL: https://github.com/JJ1006/cc-decisioning-platform.git
+      targetRevision: main
+      ref: values
+  syncPolicy:
+    automated: { prune: true, selfHeal: true } # kind: Git is the truth, drift is reverted
+    syncOptions: [ServerSideApply=true, PruneLast=true]
+    retry: { limit: 5, backoff: { duration: 15s, factor: 2, maxDuration: 3m } }

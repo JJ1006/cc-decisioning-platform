@@ -1,0 +1,32 @@
+# The umbrella chart: services, gateway, ODM (dev), Logstash. Image tag in values/cc-platform.yaml. Namespace cc only, no cluster-scoped objects (project apps).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cc-platform
+  namespace: openshift-gitops
+  labels:
+    cc/revision: follow # the root application can point every labelled application at another branch (make argocd-up REVISION=...)
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cc
+  sources:
+    - repoURL: https://github.com/JJ1006/cc-decisioning-platform.git
+      targetRevision: v0.1.2
+      path: deploy/helm/cc-platform
+      helm:
+        releaseName: cc
+        valueFiles:
+          - values-openshift.yaml
+          - $values/deploy/argocd/apps/openshift/values/cc-platform.yaml
+    - repoURL: https://github.com/JJ1006/cc-decisioning-platform.git
+      targetRevision: v0.1.2
+      ref: values
+  syncPolicy:
+    # no `automated`: a human presses Sync (or runs `argocd app sync`) after reviewing the diff - the approval gate of this environment
+    syncOptions: [ServerSideApply=true, PruneLast=true]
+    retry: { limit: 5, backoff: { duration: 15s, factor: 2, maxDuration: 3m } }

@@ -1,0 +1,45 @@
+name: promote
+# A release (release-please) moves the OpenShift environment by a pull request, never by itself: deploy/argocd/apps/openshift gets the release tag as
+# targetRevision and the release version as image tag. Gate 1: review (CODEOWNERS on deploy/argocd/apps/openshift/). Gate 2: a human syncs the
+# Applications in Argo CD (no automated sync there). release.yml dispatches this after it creates a release.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag, for example v0.2.0 (the images for that tag must exist: the images.yml run)"
+        required: true
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with: { ref: main }
+      - name: Validate the tag
+        run: |
+          [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "tag must look like v1.2.3" >&2; exit 1; }
+          git fetch --tags --quiet
+          git rev-parse -q --verify "refs/tags/$TAG" >/dev/null || { echo "no such tag" >&2; exit 1; }
+      - name: Bump the OpenShift environment
+        run: |
+          export VERSION="${TAG#v}"
+          for f in deploy/argocd/apps/openshift/20-cc-infra.yaml deploy/argocd/apps/openshift/30-cc-platform.yaml deploy/argocd/apps/openshift/10-operators.yaml deploy/argocd/bootstrap/root/openshift.yaml; do
+            yq -i '(.spec.sources[] | select(.repoURL == "https://github.com/JJ1006/cc-decisioning-platform.git") | .targetRevision) = strenv(TAG)' "$f"
+          done
+          yq -i '.global.image.tag = strenv(VERSION)' deploy/argocd/apps/openshift/values/cc-platform.yaml
+          git diff --stat
+      - name: Pull request (never merged here)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "promote/$TAG"
+          git commit -am "chore(argocd): promote the openshift environment to $TAG"
+          git push origin "promote/$TAG"
+          gh pr create --base main --head "promote/$TAG" --title "chore(argocd): promote the openshift environment to $TAG" --body "Pins \`deploy/argocd/apps/openshift\` to **$TAG** (chart revision and image tag).
+
+          Before merging: the images.yml run for $TAG is green (signed images \`ghcr.io/jj1006/cc-*:${TAG#v}\`). After merging: in Argo CD review the diff of each application and press **Sync** (waves: operators, cc-infra, cc-platform). This environment has no automated sync."

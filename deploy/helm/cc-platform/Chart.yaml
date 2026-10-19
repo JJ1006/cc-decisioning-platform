@@ -14,5 +14,3 @@ dependencies:
   - { name: apisix, version: 0.1.0, repository: "file://../charts/apisix", condition: apisix.enabled }
   - { name: odm, version: 0.1.0, repository: "file://../charts/odm", condition: odm.enabled }
   - { name: logstash, version: 0.1.0, repository: "file://../charts/logstash", condition: logstash.enabled }
-  - { name: filebeat, version: 0.1.0, repository: "file://../charts/filebeat", condition: filebeat.enabled }
-  - { name: cc-observability, version: 0.1.0, repository: "file://../charts/cc-observability", condition: cc-observability.enabled }

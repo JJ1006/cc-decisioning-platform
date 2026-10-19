@@ -1,0 +1,22 @@
+# The only Application applied by hand (make argocd-up / the OpenShift GitOps steps in docs/runbooks/gitops.md). It renders deploy/argocd/apps/kind-lite
+# (every other Application, in sync-wave order) and the AppProjects. Everything else follows from Git.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+spec:
+  project: root
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  sources:
+    - repoURL: https://github.com/JJ1006/cc-decisioning-platform.git
+      targetRevision: main
+      path: deploy/argocd/apps/kind-lite
+    - repoURL: https://github.com/JJ1006/cc-decisioning-platform.git
+      targetRevision: main
+      path: deploy/argocd/projects/kind
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions: [PruneLast=true]

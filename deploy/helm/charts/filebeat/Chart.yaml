@@ -4,7 +4,3 @@ description: "Filebeat DaemonSet shipping the logs of the cc-platform pods to Lo
 type: application
 version: 0.1.0
 appVersion: "8.19.23"
-dependencies:
-  - name: cc-lib
-    version: 0.1.0
-    repository: file://../../cc-lib

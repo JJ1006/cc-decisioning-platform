@@ -227,7 +227,7 @@ Do:
 5. Makefile w/ help + stub targets: up down logs verify test pki demo kind-up ocp-render eval-rules eval-agent what-if. `make up PROFILE=core,analytics` style.
 6. .pre-commit-config.yaml: gitleaks, ruff, yamllint, markdownlint, commitlint (conventional). Add commitlint config.
 7. .github/: PULL_REQUEST_TEMPLATE (what/why/test/risk/checklist), ISSUE_TEMPLATE bug/feature/rule-change, CODEOWNERS `* @<GH_USER>`, dependabot (maven, pip, docker, github-actions weekly), workflows: ci.yml (mvn verify, skip if no modules), security.yml (gitleaks, trivy fs, codeql java+python), release.yml (release-please). Pin action versions by SHA or major.
-8. docs/adr/ MADR format: 0001-odm-dev-licence 0002-kafka-kraft-strimzi 0003-custom-es-indexer (superseded by 0009) 0004-apisix-instead-of-apigee 0005-lgtm-instead-of-dynatrace 0006-mcp-strategy 0007-llm-never-decides 0008-mtls-everywhere 0009-elk-ingestion 0010-api-tier 0011-gateway-identity 0012-agent-access 0013-kubernetes-deployment.
+8. docs/adr/ MADR format: 0001-odm-dev-licence 0002-kafka-kraft-strimzi 0003-custom-es-indexer (superseded by 0009) 0004-apisix-instead-of-apigee 0005-lgtm-instead-of-dynatrace 0006-mcp-strategy 0007-llm-never-decides 0008-mtls-everywhere 0009-elk-ingestion 0010-api-tier 0011-gateway-identity 0012-agent-access 0013-kubernetes-deployment 0014-gitops-argocd.
 9. .claude/: CLAUDE.md, settings.json, hooks/:
    - pre_tool_guard.sh (PreToolUse Bash|Read|Edit|Write): block *.key *.p12 *.pem-private .env* security/pki/out/**, git push --force, rm -rf /, kubectl delete ns, git commit on main after P0. exit 2 + reason.
    - post_edit_fmt.sh (PostToolUse Edit|Write): java->spotless apply file module, py->ruff format, yaml->yamllint, contracts/*.json->schema validate.
@@ -431,6 +431,11 @@ Phase 11. Branch feat/p11-argocd. Read CLAUDE.md.
 3. docs/runbooks/gitops.md + OpenShift GitOps operator steps.
 Verify: argocd app list all Synced/Healthy (show), change replica in git -> auto-sync shown. PR flow.
 ```
+
+Delivered in PR feat/p11-argocd (deltas to the runbook above, see docs/runbooks/gitops.md and ADR-0014): app of apps per environment (kind-lite, kind-full, openshift) with
+sync waves (namespaces -4, operators -3, cc-infra -1, cc-platform 0, observability 1); AppProjects root, platform, apps (apps = namespace cc, no cluster-scoped kinds). kind: automated
+sync, prune, selfHeal; openshift: pinned to a release tag, no automated sync, operators from OLM. The workload charts embed the cc-lib templates (Argo builds only top-level dependencies);
+Filebeat and cc-observability are separate Applications. bump-kind.yml, promote.yml, release.yml dispatch, CODEOWNERS; `make argocd-up|ui|status|down`, `lint-argocd`.
 
 ### P12 — guardrails + explainability
 ```

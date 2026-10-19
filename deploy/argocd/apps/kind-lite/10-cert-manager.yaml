@@ -1,0 +1,38 @@
+# cert-manager (pinned chart). The ClusterIssuer cc-ca in cc-infra needs the CA secret from scripts/k8s-secrets.sh.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  source:
+    repoURL: https://charts.jetstack.io
+    chart: cert-manager
+    targetRevision: v1.21.2
+    helm:
+      releaseName: cert-manager
+      valuesObject:
+        crds: { enabled: true }
+        resources: { requests: { cpu: 20m, memory: 64Mi } }
+        cainjector: { resources: { requests: { cpu: 10m, memory: 64Mi } } }
+        webhook: { resources: { requests: { cpu: 10m, memory: 32Mi } } }
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      name: cert-manager-webhook
+      jqPathExpressions: [".webhooks[]?.clientConfig.caBundle"] # injected by cert-manager's cainjector
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      name: cert-manager-webhook
+      jqPathExpressions: [".webhooks[]?.clientConfig.caBundle"]
+  syncPolicy:
+    automated: { prune: true, selfHeal: true } # kind: Git is the truth, drift is reverted
+    syncOptions: [ServerSideApply=true, PruneLast=true, CreateNamespace=true]
+    retry: { limit: 5, backoff: { duration: 15s, factor: 2, maxDuration: 3m } }

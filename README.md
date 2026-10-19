@@ -67,7 +67,7 @@ Stop with `make down` (`make down V=1` also deletes the volumes).
 ## Kubernetes and OpenShift
 
 The same platform as Helm charts ([docs/deploy-kubernetes.md](docs/deploy-kubernetes.md)): `make kind-up PROFILE=lite` (7 GB Docker VM, compose stopped) then
-`make kind-deploy-rules` and `make kind-demo`; `PROFILE=full` needs 12 GB or more. `make ocp-render` writes the OpenShift manifests to `out/openshift/`.
+`make kind-deploy-rules` and `make kind-demo`; `PROFILE=full` needs 12 GB or more. `make ocp-render` writes the OpenShift manifests to `out/openshift/`. GitOps with Argo CD: `make argocd-up ENV=kind-lite` ([runbook](docs/runbooks/gitops.md)).
 
 ## Contributing
 

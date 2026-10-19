@@ -1,0 +1,27 @@
+# cert-manager Operator for Red Hat OpenShift, Strimzi and ECK from OperatorHub (OLM Subscriptions), pinned by startingCSV. On OpenShift operators come from OLM, not from Helm.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: operators
+  namespace: openshift-gitops
+  labels:
+    cc/revision: follow # the root application can point every labelled application at another branch (make argocd-up REVISION=...)
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openshift-operators
+  sources:
+    - repoURL: https://github.com/JJ1006/cc-decisioning-platform.git
+      targetRevision: v0.1.2
+      path: deploy/argocd/operators/openshift
+    - repoURL: https://github.com/JJ1006/cc-decisioning-platform.git
+      targetRevision: v0.1.2
+      ref: values
+  syncPolicy:
+    # no `automated`: a human presses Sync (or runs `argocd app sync`) after reviewing the diff - the approval gate of this environment
+    syncOptions: [ServerSideApply=true, PruneLast=true]
+    retry: { limit: 5, backoff: { duration: 15s, factor: 2, maxDuration: 3m } }

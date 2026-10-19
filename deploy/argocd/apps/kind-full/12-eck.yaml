@@ -1,0 +1,36 @@
+# ECK operator (pinned chart), manages the namespace cc only.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: eck
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "-3"
+  finalizers: [resources-finalizer.argocd.argoproj.io]
+spec:
+  project: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: elastic-system
+  source:
+    repoURL: https://helm.elastic.co
+    chart: eck-operator
+    targetRevision: 3.5.0
+    helm:
+      releaseName: eck
+      valuesObject:
+        managedNamespaces: [cc]
+        resources: { requests: { cpu: 50m, memory: 128Mi } }
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      name: elastic-webhook.k8s.elastic.co
+      jqPathExpressions: [".webhooks[]?.clientConfig.caBundle"] # injected by the operator's certificate rotation
+    - group: ""
+      kind: Secret
+      name: elastic-webhook-server-cert
+      jqPathExpressions: [".data"] # generated and rotated by the operator
+  syncPolicy:
+    automated: { prune: true, selfHeal: true } # kind: Git is the truth, drift is reverted
+    syncOptions: [ServerSideApply=true, PruneLast=true, CreateNamespace=true]
+    retry: { limit: 5, backoff: { duration: 15s, factor: 2, maxDuration: 3m } }

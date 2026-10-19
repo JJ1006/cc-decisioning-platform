@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# helm dependency build for every chart, in order: the workload charts (cc-lib), cc-observability (upstream charts), then the umbrella.
+# helm dependency build: cc-observability (upstream charts), then the umbrella (file:// subcharts).
 set -euo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 H=$ROOT/deploy/helm
@@ -7,9 +7,8 @@ H=$ROOT/deploy/helm
 helm repo add prometheus-community https://prometheus-community.github.io/helm-charts >/dev/null 2>&1 || true
 helm repo add grafana https://grafana.github.io/helm-charts >/dev/null 2>&1 || true
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts >/dev/null 2>&1 || true
-for c in "$H"/charts/*/; do
-  helm dependency build "$c" >/dev/null
-  echo "deps: ${c#"$ROOT"/}"
-done
+# the workload charts carry cc-lib as copied templates (scripts/helm-sync.sh) and have no dependencies; cc-observability wraps upstream charts
+helm dependency build "$H/charts/cc-observability" >/dev/null
+echo "deps: deploy/helm/charts/cc-observability"
 helm dependency build "$H/cc-platform" >/dev/null
 echo "deps: deploy/helm/cc-platform"

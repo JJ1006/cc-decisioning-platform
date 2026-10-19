@@ -1,0 +1,17 @@
+# apps: the platform workloads. Namespace cc only, no cluster-scoped resources at all, only this repository as a source.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: apps
+  namespace: argocd
+spec:
+  description: cc-platform (services, gateway, ODM dev, Logstash)
+  sourceRepos:
+    - https://github.com/JJ1006/cc-decisioning-platform.git # the charts are here; their dependencies are file:// inside this repository
+  destinations:
+    - { server: https://kubernetes.default.svc, namespace: cc }
+  clusterResourceWhitelist: []
+  namespaceResourceBlacklist: # a workload chart has no business creating these
+    - { group: "", kind: ResourceQuota }
+    - { group: "", kind: LimitRange }
+  orphanedResources: { warn: true }

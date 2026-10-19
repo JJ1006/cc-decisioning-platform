@@ -1,0 +1,41 @@
+name: bump-kind
+# After images.yml pushed the images of a commit on main, the kind environments follow it: a pull request changes ONLY the image tag in
+# deploy/argocd/apps/kind-*/values/cc-platform.yaml and is merged at once. Nothing else is touched (checked), and the openshift environment is not:
+# it moves only by promote.yml, a reviewed pull request and a manual sync.
+on:
+  workflow_run:
+    workflows: [images]
+    types: [completed]
+    branches: [main]
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  bump:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    env:
+      SHA: ${{ github.event.workflow_run.head_sha }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with: { ref: main }
+      - name: Set the tag
+        run: |
+          for e in kind-lite kind-full; do yq -i '.global.image.tag = strenv(SHA)' "deploy/argocd/apps/$e/values/cc-platform.yaml"; done
+          git diff --quiet && { echo "already at $SHA"; exit 0; }
+          # only the two kind value files may change
+          if git diff --name-only | grep -vE '^deploy/argocd/apps/kind-(lite|full)/values/cc-platform\.yaml$'; then echo "unexpected change" >&2; exit 1; fi
+          echo "changed=true" >> "$GITHUB_ENV"
+      - name: Pull request and merge
+        if: env.changed == 'true'
+        run: |
+          branch="bot/kind-image-tag-${SHA:0:7}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git commit -am "chore(argocd): bump the kind image tag to ${SHA:0:7}"
+          git push origin "$branch"
+          gh pr create --base main --head "$branch" --title "chore(argocd): bump the kind image tag to ${SHA:0:7}" \
+            --body "Images of \`$SHA\` are built and signed (images.yml). Changes only the tag in the two kind value files; the OpenShift environment is not touched."
+          gh pr merge "$branch" --squash --delete-branch --auto || gh pr merge "$branch" --squash --delete-branch

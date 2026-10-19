@@ -49,7 +49,7 @@ flowchart TB
 | `scripts/kind.sh`, `scripts/k8s-secrets.sh`, `scripts/ocp-render.sh` | what the `make kind-*` and `make ocp-render` targets run |
 | `scripts/helm-sync.sh`, `scripts/gen-k8s-kafka.py` | copy the compose configuration into the charts; generate topics and users. CI fails when a copy is stale |
 
-Each service chart is a few lines: `templates/all.yaml` includes `cc-lib.all`, `values.yaml` holds the image, port, limits, probes, certificate,
+Each service chart is a few lines: `templates/all.yaml` includes `cc-lib.all` (the `cc-lib` templates are copied into every workload chart by `scripts/helm-sync.sh`, so the charts have no dependencies and Argo CD can render them; [GitOps](runbooks/gitops.md)), `values.yaml` holds the image, port, limits, probes, certificate,
 Kafka user and network policy of that workload. A change to how every workload is deployed is one change in `cc-lib`.
 
 ### Compose to Kubernetes
@@ -62,7 +62,7 @@ Kafka user and network policy of that workload. A change to how every workload i
 | `odm` | `charts/odm`: the same dev image and Liberty overrides (`mtls.xml`, `metrics.xml`) |
 | `apisix` | `charts/apisix`: the same declarative `apisix.yaml.tmpl`, `entrypoint.sh` and `config.yaml`, certificates inserted at start |
 | `logstash`, `filebeat` | `charts/logstash` (same pipelines, endpoints from the environment), `charts/filebeat` (DaemonSet, Kubernetes autodiscover) |
-| `obs` profile | `charts/cc-observability`: kube-prometheus-stack, Tempo, the OTel collector with the same pipeline, the 8 dashboards and the alert rules as `PrometheusRule` |
+| `obs` profile | `charts/cc-observability` (its own release, with Filebeat): kube-prometheus-stack, Tempo, the OTel collector with the same pipeline, the 8 dashboards and the alert rules as `PrometheusRule` |
 | `mcp` profile | `charts/odm-dc-mcp` (the official ODM MCP server stays a local stdio tool, [mcp](mcp.md)) |
 | `mem_limit` | `resources.limits.memory`; requests are about 60-75 % of it so everything schedules on a small cluster |
 | healthcheck | `startupProbe`, `livenessProbe`, `readinessProbe` on the management port |

@@ -4,6 +4,7 @@
 #   values-openshift.yaml   OpenShift 4.14+: Routes, restricted-v2 SCC, platform monitoring
 # Install order: operators (cert-manager, Strimzi, ECK) -> secrets (scripts/k8s-secrets.sh) -> cc-infra -> cc-platform. docs/deploy-kubernetes.md
 global:
+  imagePullSecrets: [] # [{name: ghcr-pull}] when the GHCR packages are private (scripts/argocd-pull-secret.sh)
   image:
     registry: ghcr.io # our images: ghcr.io/jj1006/cc-<service>:<tag> (CI: .github/workflows/images.yml, multi-arch, cosign-signed, SBOM)
     tag: dev # a commit SHA or the release version
@@ -36,5 +37,3 @@ odm:
   enabled: true
   license: "" # you must set accept (values-kind-*.yaml and values-openshift.yaml do, for the dev install)
 logstash: { enabled: false }
-filebeat: { enabled: false }
-cc-observability: { enabled: false }

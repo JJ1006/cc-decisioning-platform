@@ -1,0 +1,10 @@
+# Namespace cc. Never pruned or deleted by Argo CD: the secrets of scripts/k8s-secrets.sh live in it (they are not in git and not tracked by Argo).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cc
+  annotations:
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+  labels:
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/warn: restricted

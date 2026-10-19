@@ -20,6 +20,8 @@ for c in "$H"/cc-lib "$H"/cc-infra "$H"/charts/*/ "$H"/cc-platform; do
 done
 
 echo "== helm template"
+helm template filebeat "$H/charts/filebeat" --namespace cc >"$OUT/filebeat.yaml"
+helm template obs "$H/charts/cc-observability" -f "$H/charts/cc-observability/values-kind-full.yaml" --namespace cc >"$OUT/obs-kind-full.yaml"
 for v in kind-lite kind-full openshift; do
   helm template infra "$H/cc-infra" -f "$H/cc-infra/values-$v.yaml" --namespace cc >"$OUT/infra-$v.yaml"
   helm template cc "$H/cc-platform" -f "$H/cc-platform/values-$v.yaml" --namespace cc >"$OUT/platform-$v.yaml"
@@ -46,4 +48,4 @@ for f in "$OUT"/*.yaml; do
 done
 
 echo "== kube-linter"
-kube-linter lint --config "$ROOT/.kube-linter.yaml" "$OUT"/infra-*.yaml "$OUT"/own-*.yaml
+kube-linter lint --config "$ROOT/.kube-linter.yaml" "$OUT"/infra-*.yaml "$OUT"/own-*.yaml "$OUT"/filebeat.yaml

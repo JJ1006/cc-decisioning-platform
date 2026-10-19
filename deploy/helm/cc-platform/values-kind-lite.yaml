@@ -8,8 +8,6 @@ global:
 decision-query-api: { enabled: false }
 odm-dc-mcp: { enabled: false }
 logstash: { enabled: false }
-filebeat: { enabled: false }
-cc-observability: { enabled: false }
 
 odm:
   license: accept # ODM for Developers: running it means you accept the IBM licence

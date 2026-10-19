@@ -1,0 +1,14 @@
+# the same projects in the OpenShift GitOps namespace; the platform project also lets Subscriptions into openshift-operators
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: openshift-gitops
+resources: [../base]
+patches:
+  - target: { kind: AppProject, name: platform }
+    patch: |-
+      - op: add
+        path: /spec/destinations/-
+        value: { server: https://kubernetes.default.svc, namespace: openshift-operators }
+      - op: add
+        path: /spec/destinations/-
+        value: { server: https://kubernetes.default.svc, namespace: cert-manager-operator }

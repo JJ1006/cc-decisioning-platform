@@ -20,6 +20,13 @@ copy() { # copy SRC DEST  (file or directory; DEST is replaced)
 }
 STALE=0
 
+# the library templates are copied into every workload chart (not a dependency): Argo CD builds only the top-level chart's dependencies, so a
+# nested file:// library would be missing there. deploy/helm/cc-lib stays the one place they are written (and a library chart, so it lints).
+for c in apisix application-api decision-orchestrator decision-query-api filebeat logstash notification-svc odm-dc-mcp odm txn-generator; do
+  for t in "$ROOT"/deploy/helm/cc-lib/templates/_*.tpl; do
+    copy "$t" "$H/charts/$c/templates/_cc-lib$(basename "$t")"
+  done
+done
 copy "$ROOT/gateway/apisix/config.yaml" "$H/charts/apisix/files/config.yaml"
 copy "$ROOT/gateway/apisix/apisix.yaml.tmpl" "$H/charts/apisix/files/apisix.yaml.tmpl"
 copy "$ROOT/gateway/apisix/entrypoint.sh" "$H/charts/apisix/files/entrypoint.sh"
