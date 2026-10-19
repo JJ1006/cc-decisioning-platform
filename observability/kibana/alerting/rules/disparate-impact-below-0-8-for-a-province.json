@@ -21,7 +21,7 @@
     "size": 100,
     "excludeHitsFromPreviousRun": false,
     "esqlQuery": {
-      "esql": "FROM cc-decisions | WHERE decisionSource == \"ODM\" AND @timestamp >= NOW() - 24 hours | EVAL approved = CASE(payload.outcome == \"APPROVE\", 1.0, 0.0) | INLINESTATS overall = AVG(approved) | STATS n = COUNT(*), rate = AVG(approved), overall = MAX(overall) BY grp = payload.applicantSummary.province | WHERE n >= 30 AND overall > 0 AND rate / overall < 0.8"
+      "esql": "FROM cc-decisions | WHERE decisionSource == \"ODM\" AND @timestamp >= NOW() - 24 hours | EVAL approved = CASE(payload.outcome == \"APPROVE\", 1.0, 0.0) | STATS n = COUNT(*), rate = AVG(approved) BY grp = payload.applicantSummary.province | WHERE n >= 30 | STATS lowest = MIN(rate), highest = MAX(rate), groups = COUNT(*) | WHERE groups >= 2 AND highest > 0 AND lowest / highest < 0.8"
     },
     "aggType": "count",
     "groupBy": "all"

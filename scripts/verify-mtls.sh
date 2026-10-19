@@ -215,7 +215,7 @@ if want gateway && running apisix; then
     for u in analyst ops; do
       code=$(ES_USER=$u "$ROOT/scripts/es-curl.sh" -s -o /dev/null -w '%{http_code}' /cc-decision-inputs/_count)
       [[ "$code" == 403 ]] && pass "elasticsearch: user $u, GET /cc-decision-inputs/_count -> 403 (restricted index)" || fail "elasticsearch: $u on the inputs index -> HTTP $code"
-      n=$(ES_USER=$u "$ROOT/scripts/es-curl.sh" -s '/cc-decision-inputs*/_search?size=0&ignore_unavailable=true' | grep -c '"hits"')
+      n=$(ES_USER=$u "$ROOT/scripts/es-curl.sh" -s '/cc-decision-inputs*/_search?size=0&ignore_unavailable=true' | jq -r '.hits.total.value // 0')
       [[ "$n" == 0 ]] && pass "elasticsearch: user $u cannot search the inputs index by wildcard either" || fail "elasticsearch: $u searched the inputs index by wildcard"
     done
     code=$(ES_USER=decision-query-api "$ROOT/scripts/es-curl.sh" -s -o /dev/null -w '%{http_code}' /cc-decision-inputs/_count)

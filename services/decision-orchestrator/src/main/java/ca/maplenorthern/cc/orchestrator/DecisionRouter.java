@@ -2,8 +2,8 @@ package ca.maplenorthern.cc.orchestrator;
 
 import ca.maplenorthern.cc.common.Topics;
 import ca.maplenorthern.cc.common.events.ApplicantSummary;
-import ca.maplenorthern.cc.common.events.ApplicationSubmittedPayload;
 import ca.maplenorthern.cc.common.events.ApplicantToken;
+import ca.maplenorthern.cc.common.events.ApplicationSubmittedPayload;
 import ca.maplenorthern.cc.common.events.AuditPayload;
 import ca.maplenorthern.cc.common.events.DecisionInputs;
 import ca.maplenorthern.cc.common.events.DecisionPayload;

@@ -100,8 +100,8 @@ shown on the operations dashboard). A rule notifies when it becomes active, not 
 | More than 10 error log lines in 5 minutes | index threshold on `cc-logs` (`level: ERROR`), every 1 min | count > 10 |
 | Decision latency p95 above 300 ms | Elasticsearch query (ES\|QL) on `cc-decisions`, every 1 min, 5 min window | p95 of `payload.processingMillis` > 300 with at least 5 decisions |
 | Approval rate fell more than 20% against the last hour | Elasticsearch query (ES\|QL), every 5 min, 65 min window | the last 5 minutes (at least 20 decisions) have an approval rate below 80% of the earlier hour |
-| Disparate impact below 0.8 for a province (24h, n >= 30) | Elasticsearch query (ES\|QL), every 15 min, 24 h window | a province with at least 30 automated decisions has an approval rate below 0.8 times the overall rate |
-| Disparate impact below 0.8 for an age band (24h, n >= 30) | the same by age band | likewise |
+| Disparate impact below 0.8 for a province (24h, n >= 30) | Elasticsearch query (ES\|QL), every 15 min, 24 h window | among provinces with at least 30 automated decisions each (24 h), the lowest approval rate is below 0.8 times the highest (the four-fifths rule against the best-treated group; the API endpoint compares each group with the overall rate instead) |
+| Disparate impact below 0.8 for an age band (24h, n >= 30) | the same by age band | likewise by age band |
 
 The latency rule fires after a cold start (the first rules calls take seconds); that is real behaviour, not noise to silence.
 

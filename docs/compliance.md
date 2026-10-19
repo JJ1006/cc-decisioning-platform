@@ -35,7 +35,7 @@
   (a proxy for where a person lives). `scripts/test-lint-prohibited-grounds.sh` plants each violation in a copy and proves the lint fails. Both run in `make verify` and CI.
 * **Monitoring.** `GET /v1/stats/fairness?by=province|ageBand&minGroupSize=30` gives the approval rate per group, the ratio to the overall rate and a flag below 0.8 (the four-fifths
   rule of thumb). A group below `minGroupSize` is `insufficientSample` and never flagged. Kibana rules "Disparate impact below 0.8 for a province / an age band (24h, n >= 30)" write to
-  `cc-alerts`. A flag is a prompt to investigate, not a finding of discrimination; the ratio is computed over *automated* decisions only.
+  `cc-alerts`. The Kibana rules compare the lowest group with the highest (the classic four-fifths comparison) among groups of at least 30 in 24 hours; the endpoint compares each group with the overall rate. On the demo data the province rule fires (the generator's synthetic mix) - a flag is a prompt to investigate, not a finding of discrimination; the ratios are computed over *automated* decisions only.
 * **Not covered:** province and age band are the only groups available (no protected characteristic is collected, by design, so disparate impact on the others cannot be measured; a bank
   that must measure it needs a lawful, separate, voluntary data source).
 

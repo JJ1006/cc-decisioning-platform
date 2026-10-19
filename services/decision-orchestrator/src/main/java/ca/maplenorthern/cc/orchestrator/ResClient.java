@@ -166,16 +166,17 @@ public class ResClient {
     deployedAtCheckedMillis = now;
     try {
       String[] seg = props.path().replaceFirst("^/DecisionService/rest/", "").split("/");
+      // the management API lists the rulesets of a RuleApp with their creation date
       String json =
           http.get()
-              .uri("/res/api/v1/ruleapps/{a}/{av}/rulesets/{r}/{rv}", seg[0], seg[1], seg[2], seg[3])
+              .uri("/res/api/v1/ruleapps/{a}/{av}/rulesets", seg[0], seg[1])
               .accept(MediaType.APPLICATION_JSON)
               .retrieve()
               .body(String.class);
-      JsonNode n = Json.mapper().readTree(json);
-      for (String f : new String[] {"creationDate", "deploymentDate", "lastModifiedDate"}) {
-        if (n.hasNonNull(f)) {
-          deployedAt = Instant.parse(n.get(f).asText());
+      String id = seg[0] + "/" + seg[1] + "/" + seg[2] + "/" + seg[3];
+      for (JsonNode n : Json.mapper().readTree(json)) {
+        if (id.equals(n.path("id").asText()) && n.hasNonNull("creationDate")) {
+          deployedAt = Instant.parse(n.get("creationDate").asText());
           break;
         }
       }

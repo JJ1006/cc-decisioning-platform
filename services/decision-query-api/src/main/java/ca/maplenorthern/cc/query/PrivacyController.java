@@ -85,7 +85,6 @@ public class PrivacyController {
                 d ->
                     d.index(set.getValue())
                         .query(matching(id))
-                        .refresh(true)
                         .conflicts(co.elastic.clients.elasticsearch._types.Conflicts.Proceed));
         long n = r.deleted() == null ? 0 : r.deleted();
         deleted.put(set.getKey(), n);

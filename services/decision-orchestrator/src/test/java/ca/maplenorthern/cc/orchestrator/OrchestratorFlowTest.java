@@ -213,14 +213,22 @@ class OrchestratorFlowTest {
     assertThat(d.applicantSummary().ageBand()).isEqualTo("35-44");
     assertThat(d.applicantSummary().province()).isEqualTo(Province.ON);
     assertThat(d.processingMillis()).isGreaterThanOrEqualTo(0);
-    // the inputs the rules saw: decision-relevant values and a pseudonym, nothing that names the applicant
+    // the inputs the rules saw: decision-relevant values and a pseudonym, nothing that names the
+    // applicant
     assertThat(d.inputs()).isNotNull();
     assertThat(d.inputs().province()).isEqualTo(Province.ON);
     assertThat(d.inputs().creditScore()).isBetween(300, 900);
     assertThat(d.inputs().applicantToken()).hasSize(32).matches("[0-9a-f]{32}");
     assertThat(d.rulesetPath()).isEqualTo("/ccApprovalApp/1.0/ccApproval/1.0");
     String wire = Json.mapper().writeValueAsString(d.inputs());
-    assertThat(wire).doesNotContain("firstName", "lastName", "sin", "dateOfBirth", "postalCode", "employer");
+    assertThat(wire)
+        .doesNotContain(
+            "\"firstName\"",
+            "\"lastName\"",
+            "\"sin\"",
+            "\"dateOfBirth\"",
+            "\"postalCode\"",
+            "\"employer\"");
     assertThat(new String(approved.headers().lastHeader("correlationId").value()))
         .isEqualTo("corr-ok-1");
 

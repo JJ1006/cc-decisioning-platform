@@ -20,6 +20,8 @@ tags:
   name: Statistics
 - description: Dead letters and logs for operators
   name: Operations
+- description: Access and erasure requests by application (role OPS)
+  name: Privacy
 paths:
   /v1/decisions:
     get:
