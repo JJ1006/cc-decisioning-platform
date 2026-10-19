@@ -14,11 +14,7 @@ source scripts/res-env.sh
 export PROFILE=core
 
 # 1. the ruleset must be deployed
-list=$(res_curl "$RES_URL/res/apiauth/v1/ruleapps/$RULEAPP/$RULEAPP_VERSION/rulesets" -H 'Accept: application/json' 2>/dev/null || true)
-if ! jq -e --arg rs "$RULESET" '.. | objects | select(.id? == $rs or .name? == $rs)' >/dev/null 2>&1 <<<"$list"; then
-  echo "RuleApp missing: running deploy-rules"
-  scripts/deploy-dc.sh
-fi
+scripts/ensure-rules.sh
 # a freshly deployed (or just restarted) ODM takes a moment to execute the ruleset: wait until RES stops answering 404 for it, whether we deployed or not
 for _ in $(seq 1 60); do
   code=$(res_curl -o /dev/null -w '%{http_code}' -X POST "$RES_URL/DecisionService/rest/$RULEAPP/$RULEAPP_VERSION/$RULESET/$RULESET_VERSION" \
@@ -124,6 +120,11 @@ check "notifications: Elasticsearch = topic" "$es_not" "$notif_topic"
 check "dlq: Elasticsearch = all dlq topics (poison included)" "$es_dlq" "$dlq_topics"
 check "dlq: this run added the poison messages" "$((es_dlq - base_dlq))" "$poison"
 check "no raw SIN anywhere in cc-*" "$leaks" "0"
+# the analyst-readable cc-decisions keeps bands only; the exact score, TDS and income live in the restricted cc-decision-inputs
+exact=$(ES_USER=analyst es -X POST -H 'Content-Type: application/json' \
+  -d '{"query":{"bool":{"should":[{"exists":{"field":"payload.applicantSummary.bureauScore"}},{"exists":{"field":"payload.applicantSummary.tdsRatio"}},{"exists":{"field":"payload.applicantSummary.annualIncome"}}]}}}' \
+  /cc-decisions/_count | jq -r '.count // "error"')
+check "analyst: no exact score, TDS or income in cc-decisions" "$exact" "0"
 check "no sin field in audit details" "$sin_fields" "0"
 check "canary name reduced to initials" "$(jq -r '[.firstInitial, .lastInitial, .fsa, .ageBand] | join(" ")' <<<"$canary_doc")" "A. T. M5V 35-44"
 [[ "$es_log" -gt 0 ]] && echo "PASS  container logs reach cc-logs ($es_log)" || { echo "FAIL  no logs in cc-logs" >&2; fail=1; }

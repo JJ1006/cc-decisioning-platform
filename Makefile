@@ -23,6 +23,7 @@ up: ## Start compose profiles: make up PROFILE=core,analytics (run make pki firs
 	@$(OBS_ENV) PROFILE=$(PROFILE) scripts/compose.sh up -d --remove-orphans
 	@$(OBS_ENV) PROFILE=$(PROFILE) scripts/wait-healthy.sh
 	@scripts/check-es-mapping.sh
+	@scripts/ensure-rules.sh
 	@case ',$(PROFILE),' in *,analytics,*) scripts/seed-kibana.sh ;; esac
 
 test-mcp: ## ruff, mypy --strict and pytest of the MCP server in mcp/odm-dc-mcp-server (needs uv)

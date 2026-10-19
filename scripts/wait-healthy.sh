@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Waits until every container of the selected profiles is healthy and every one-shot job
-# (topic-init, es-setup) exited 0. Exit 1 on timeout or a failed job.
+# (topic-init, acl-init, es-setup) exited 0. Exit 1 on timeout or a failed job.
 #   PROFILE=core,analytics scripts/wait-healthy.sh [timeout-seconds]
 set -uo pipefail
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 TIMEOUT=${1:-600}
-ONESHOT=" topic-init es-setup "
+ONESHOT=" topic-init acl-init es-setup "
 deadline=$((SECONDS + TIMEOUT))
 # only the services of the selected profiles: stopped containers of other profiles are not our business
 WANTED=" $("$ROOT/scripts/compose.sh" config --services 2>/dev/null | tr '\n' ' ') "

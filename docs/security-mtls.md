@@ -42,7 +42,7 @@ flowchart LR
 | 1 | API client | APISIX `:8443` (the only published API port) | its certificate (`security/pki/out/<name>/`) | our CA, depth 2; no certificate or another CA: handshake refused | CN becomes the consumer; the global rule maps it to a role and the route's `labels.roles` must contain it, else 403; quota 100 per minute per consumer (429); spike arrest on `POST /v1/applications` (429) |
 | 2 | APISIX | application-api, decision-query-api, txn-generator (`:8080`) | `apisix` certificate (client cert of the upstream) | Tomcat `client-auth=need` against our CA, then the filter: CN must be in `platform.security.allowed-client-cns` (`apisix`; decision-query-api also `application-api`) | only CN=apisix may assert `X-Consumer` and `X-Role`; the gateway deletes whatever the client sent and sets them from the certificate; APISIX verifies the service certificate (SAN = service name) against our CA |
 | 3 | application-api | decision-query-api | `application-api` certificate | same filter; CN=application-api is a SERVICE caller (headers ignored) | role SERVICE |
-| 4 | every service, Logstash, kafka-ui, topic-init | Kafka `:9093` | its own certificate (`<service>.p12`, `logstash.p12`, `kafka-ui.p12`, `admin` for topic-init and the CLI) | `ssl.client.auth=required`, our CA | principal = certificate subject; ACLs are not enabled locally (see below) |
+| 4 | every service, Logstash, kafka-ui, topic-init | Kafka `:9093` | its own certificate (`<service>.p12`, `logstash.p12`, `kafka-ui.p12`, `admin` for topic-init and the CLI) | `ssl.client.auth=required`, our CA | principal = the CN of the certificate; ACLs are enforced locally (default deny, see below) |
 | 5 | decision-orchestrator | ODM RES `:9453` | `decision-orchestrator` certificate **and** HTTP basic auth (`resAdmin`) | Liberty `clientAuthentication=true` against our CA | ODM user (basic auth) |
 | 6 | Logstash, decision-query-api | Elasticsearch `:9200` | password of a least-privilege user over TLS that verifies our CA | HTTPS, user and role (`logstash_writer`: create documents on the write aliases; `decision-query-api`: read on the read aliases) | ES role. The PKI realm (login by certificate) needs a paid licence: `security.realms.pki.available` is `false` on the basic licence, so no certificate login |
 | 7 | Filebeat | Logstash beats input `:5044` | `filebeat` certificate | TLS, client certificate required, our CA | n/a |
@@ -94,9 +94,16 @@ make verify-mtls
 * **Debugging a service directly**: `COMPOSE_DEBUG=1 make up PROFILE=core,analytics,edge` publishes the service ports (still mutual TLS) and ODM's
   plain port 9060; see the comments in `deploy/compose/compose.debug.yml` for presenting the gateway certificate.
 
-## Kafka clients and ACLs (ready for Strimzi in P10)
+## Kafka clients and ACLs
 
-Locally the broker authenticates by certificate but authorizes everything (no `authorizer.class.name`). Under Strimzi each row becomes a
+Locally the broker authenticates by certificate and authorizes with the KRaft `StandardAuthorizer` (`allow.everyone.if.no.acl.found=false`: default deny). The principal is the
+CN of the client certificate (`ssl.principal.mapping.rules`, so `User:notification-svc`). Super users: `admin` (topic-init, acl-init, the CLI), `kafka` (the broker's own certificate on the
+inter-broker listener) and `ANONYMOUS` (the plaintext KRaft controller listener, which is not published and has no client certificate). The one-shot `acl-init` service applies the rules
+of the table below (`deploy/compose/kafka-acls.args`, generated) after `topic-init`, and every service waits for it. `make verify-mtls` proves it: `notification-svc` cannot read or write
+`cc.applications.submitted.v1`, `txn-generator` cannot read the decision topics, and `notification-svc` still reads its own topics.
+
+The table is the single source: `scripts/gen-k8s-kafka.py` generates both the Strimzi `KafkaUser`s (`deploy/helm/cc-infra/files/kafka.yaml`) and the compose rules, and
+`scripts/helm-sync.sh --check` (CI) fails when either generated file is stale. Under Strimzi each row becomes a
 `KafkaUser` of type `tls` (principal `CN=<name>,O=Maple Northern Bank (demo)` with `authentication: tls`, or a cert-manager issued
 certificate) with `authorization: simple` ACLs. The retry and dead-letter topics follow `<topic>.retry` / `<topic>.dlq`.
 
@@ -109,6 +116,7 @@ certificate) with `authorization: simple` ACLs. The retry and dead-letter topics
 | `logstash` | `cc.decisions.*.v1`, `cc.audit.v1`, `cc.notifications.v1` (`logstash-indexer`); every `*.dlq` (`logstash-dlq`) | | |
 | `mcp-agent` (odm-dc-mcp audit trail) | | `cc.audit.v1` | |
 | `kafka-ui` | all topics, describe | | operator tool; read-only in production |
+| `kafka-exporter` | | | metrics only: describe all topics and groups, no read |
 | `admin` (topic-init, CLI) | | | create, alter, describe topics and groups |
 
 ## On Kubernetes (P10)

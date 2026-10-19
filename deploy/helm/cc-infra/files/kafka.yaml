@@ -82,6 +82,10 @@ users:
     acls:
       - { type: topic, name: "*", patternType: literal, operations: [Read, Describe] }
       - { type: group, name: "*", patternType: literal, operations: [Read, Describe] }
+  - name: kafka-exporter
+    acls:
+      - { type: topic, name: "*", patternType: literal, operations: [Describe] }
+      - { type: group, name: "*", patternType: literal, operations: [Describe] }
   - name: admin
     acls:
       - { type: topic, name: "*", patternType: literal, operations: [Create, Alter, Describe, Read] }
