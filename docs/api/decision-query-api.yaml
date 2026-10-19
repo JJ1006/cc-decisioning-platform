@@ -124,9 +124,10 @@ paths:
       - Decisions
   /v1/decisions/{applicationId}/explanation:
     get:
-      description: "Fired rules, reason codes with applicant-facing text and the ruleset\
-        \ version of the automated decision, plus the underwriter's decision when\
-        \ there is one."
+      description: "Fired rules (with what the rules catalog says about each), reason\
+        \ codes ranked by how decisive they are, with applicant-facing text, the ruleset\
+        \ (path, version, deployment time) and the decision source of the automated\
+        \ decision, plus the underwriter's decision when there is one."
       operationId: explainDecision
       parameters:
       - in: path
@@ -148,6 +149,35 @@ paths:
                 $ref: "#/components/schemas/Problem"
           description: Problem
       summary: Why the rules decided as they did
+      tags:
+      - Decisions
+  /v1/decisions/{applicationId}/inputs:
+    get:
+      description: "Decision-relevant values (score, income, debt, TDS, bankruptcy\
+        \ flag, requested limit ...) and a pseudonymous applicant token, no direct\
+        \ identifier. Comes from the restricted index cc-decision-inputs, which no\
+        \ dashboard role can read. Roles UNDERWRITER and AGENT."
+      operationId: getDecisionInputs
+      parameters:
+      - in: path
+        name: applicationId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DecisionInputsView"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Problem
+      summary: The inputs the rules saw (underwriters and the AI agent only)
       tags:
       - Decisions
   /v1/ops/dlq:
@@ -216,6 +246,62 @@ paths:
       summary: Log lines of one correlation id across services
       tags:
       - Operations
+  /v1/ops/privacy/erase:
+    post:
+      description: "Deletes decisions, decision inputs, notifications, audit records,\
+        \ dead letters and log lines that carry the application id, and records PRIVACY_ERASURE\
+        \ in the audit trail (with a hash of the id). Role OPS."
+      operationId: erasePrivacyData
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EraseRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivacyErasure"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Problem
+      summary: Erase everything stored about an application in Elasticsearch
+      tags:
+      - Privacy
+  /v1/ops/privacy/export/{applicationId}:
+    get:
+      description: "All documents that carry the application id, by data set, as stored\
+        \ (personal data is masked before it is stored). Records PRIVACY_EXPORT in\
+        \ the audit trail. Role OPS."
+      operationId: exportPrivacyData
+      parameters:
+      - in: path
+        name: applicationId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivacyExport"
+          description: OK
+        default:
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+          description: Problem
+      summary: Everything stored about an application (access request)
+      tags:
+      - Privacy
   /v1/stats/approval-rate:
     get:
       description: "Approved divided by all automated decisions, overall and per group."
@@ -279,8 +365,9 @@ paths:
   /v1/stats/fairness:
     get:
       description: "Approval rate per group and the ratio to the overall approval\
-        \ rate; a group is flagged when the ratio is below 0.8 (the four-fifths rule).\
-        \ Small groups give noisy ratios: read total with it."
+        \ rate; a group is flagged when the ratio is below 0.8 (the four-fifths rule)\
+        \ and it has at least minGroupSize decisions (default 30). Smaller groups\
+        \ are marked insufficientSample and never flagged: their ratio is noise."
       operationId: fairness
       parameters:
       - in: query
@@ -292,6 +379,13 @@ paths:
           enum:
           - province
           - ageBand
+      - in: query
+        name: minGroupSize
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 30
       responses:
         "200":
           content:
@@ -414,6 +508,23 @@ components:
           type: string
         underwriterId:
           type: string
+    DecisionInputsView:
+      type: object
+      description: "The inputs the rules saw for an application: decision-relevant\
+        \ values and a pseudonym, no direct identifier"
+      properties:
+        applicantToken:
+          type: string
+          description: "HMAC of the applicant id: the same applicant, the same token"
+        applicationId:
+          type: string
+        decidedAt:
+          type: string
+          format: date-time
+        decisionId:
+          type: string
+        inputs:
+          $ref: "#/components/schemas/JsonNode"
     DecisionPage:
       type: object
       properties:
@@ -445,6 +556,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/DeclineReason"
+    EraseRequest:
+      type: object
+      properties:
+        applicationId:
+          type: string
     Explanation:
       type: object
       properties:
@@ -453,6 +569,16 @@ components:
         decidedAt:
           type: string
           format: date-time
+        decisionSource:
+          type: string
+          enum:
+          - ODM
+          - MANUAL
+        firedRuleDetails:
+          type: array
+          description: The fired rules with what the catalog says about each
+          items:
+            $ref: "#/components/schemas/FiredRule"
         firedRules:
           type: array
           items:
@@ -463,8 +589,11 @@ components:
           type: string
         reasons:
           type: array
+          description: "Reason codes, most decisive first"
           items:
             $ref: "#/components/schemas/Reason"
+        ruleset:
+          $ref: "#/components/schemas/Ruleset"
         rulesetVersion:
           type: string
     Fairness:
@@ -476,6 +605,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/FairnessGroup"
+        minGroupSize:
+          type: integer
+          format: int32
+          description: Groups smaller than this are marked insufficientSample
         overallApprovalRate:
           type: number
           format: double
@@ -494,12 +627,39 @@ components:
           description: Group approval rate divided by the overall approval rate
         flagged:
           type: boolean
-          description: True when the ratio is below the 0.8 threshold
+          description: True when the ratio is below the 0.8 threshold and the group
+            is large enough to say so
+        insufficientSample:
+          type: boolean
+          description: "True when the group has fewer decisions than minGroupSize:\
+            \ its ratio is noise and is never flagged"
         key:
           type: string
         total:
           type: integer
           format: int64
+    FiredRule:
+      type: object
+      description: "A rule that fired, from the rules catalog (docs/rules-catalog.md)"
+      properties:
+        action:
+          type: string
+        id:
+          type: string
+        intent:
+          type: string
+        packageName:
+          type: string
+          description: "Rule package: eligibility, risk, limit, limitcap, product,\
+            \ reasons"
+        reasonCodes:
+          type: array
+          items:
+            type: string
+    JsonNode:
+      type: object
+      description: "Everything stored about the application, by data set; personal\
+        \ data is masked as stored"
     Latency:
       type: object
       properties:
@@ -538,6 +698,39 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/LogLine"
+    PrivacyErasure:
+      type: object
+      properties:
+        applicationId:
+          type: string
+        auditEventId:
+          type: string
+        deleted:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+        total:
+          type: integer
+          format: int64
+    PrivacyExport:
+      type: object
+      properties:
+        applicationId:
+          type: string
+        data:
+          type: object
+          additionalProperties:
+            type: array
+            description: "Everything stored about the application, by data set; personal\
+              \ data is masked as stored"
+            items:
+              $ref: "#/components/schemas/JsonNode"
+          description: "Everything stored about the application, by data set; personal\
+            \ data is masked as stored"
+        exportedAt:
+          type: string
+          format: date-time
     Problem:
       type: object
       description: RFC 7807 problem details
@@ -582,9 +775,26 @@ components:
           format: int64
     Reason:
       type: object
-      description: A reason code with its applicant-facing text
+      description: A reason code with its applicant-facing text and its rank
       properties:
         code:
           type: string
+        rank:
+          type: integer
+          format: int32
+          description: 1 = the most decisive reason (declines before referrals)
         text:
+          type: string
+    Ruleset:
+      type: object
+      description: Where the decision came from
+      properties:
+        deployedAt:
+          type: string
+          format: date-time
+          description: When RES says the ruleset was deployed; absent when it did
+            not say
+        path:
+          type: string
+        version:
           type: string

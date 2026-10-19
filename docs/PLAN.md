@@ -446,6 +446,12 @@ Tests: add gender to BOM -> lint fails (test script, revert). MCP response SIN m
 Verify + PR flow.
 ```
 
+Delivered in PR feat/p12-guardrails (deltas to the runbook above, see docs/compliance.md, docs/security/threat-model.md, docs/privacy/data-classification.md): decision events carry `inputs` (+ applicant
+token, ruleset path and deployment time); Logstash splits them into the restricted index `cc-decision-inputs` (ILM 90d, query API only) and adds score/TDS/limit bands to `cc-decisions`; `GET /v1/decisions/{id}/inputs`
+(UNDERWRITER, AGENT), a fuller explanation (catalog, ranked reasons, ruleset), fairness `minGroupSize`, OPS `erase` and `export`; exact what-if; bilingual adverse-action notice; prohibited-grounds lint
+widened (age only in ELIG-01, no postal code in rules) with a test that plants violations; Kibana disparate-impact rules; MCP audit `cc.audit.mcp.v1`, untrusted-text wrapping and the injection test data; threat model,
+compliance mapping with an OWASP API Top 10 self-check (findings F-1 to F-5 in the backlog). Not built: crypto-shredding, MCP/fairness dashboard panels.
+
 ### P13 — AI tooling (MCPs, skills, agents)
 ```
 /caveman
