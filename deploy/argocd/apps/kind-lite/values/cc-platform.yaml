@@ -1,4 +1,4 @@
 # Image tag of the cc-platform workloads. Bumped by .github/workflows/bump-kind.yml after images.yml pushes a main commit (kind only).
 global:
   image:
-    tag: 984f132029130ed3c993ee618f2536bdf434d54f
+    tag: 3dec1ec12dc12c97c217c5e0878aafcd7f2bff92
