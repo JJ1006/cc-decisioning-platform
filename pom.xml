@@ -44,10 +44,10 @@
     <jackson-bom.version>2.21.7</jackson-bom.version>
     <!-- Override Boot's managed Tomcat: fixes CVE-2026-65182/65905/68525 (fixed in 10.1.58) -->
     <tomcat.version>10.1.61</tomcat.version>
-    <datafaker.version>2.4.2</datafaker.version>
-    <resilience4j.version>2.2.0</resilience4j.version>
-    <springdoc.version>2.8.9</springdoc.version>
-    <wiremock.version>3.13.1</wiremock.version>
+    <datafaker.version>2.7.0</datafaker.version>
+    <resilience4j.version>2.4.0</resilience4j.version>
+    <springdoc.version>2.9.1</springdoc.version>
+    <wiremock.version>3.13.2</wiremock.version>
     <spotless.version>2.46.1</spotless.version>
     <jacoco.version>0.8.15</jacoco.version>
     <google-java-format.version>1.25.2</google-java-format.version>

@@ -276,6 +276,7 @@ components:
         creditLimit:
           type: number
           description: "CAD; positive for APPROVE, 0 for DECLINE"
+          minimum: 0
         outcome:
           type: string
           description: APPROVE or DECLINE; REFER is refused
