@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.0.0](https://github.com/JJ1006/cc-decisioning-platform/compare/v0.1.3...v1.0.0) (2026-10-22)
+
+
+### Features
+
+* **evals:** golden dataset, regression gate, what-if, agent evals, load and chaos (P14) ([#56](https://github.com/JJ1006/cc-decisioning-platform/issues/56)) ([74900c2](https://github.com/JJ1006/cc-decisioning-platform/commit/74900c2e54b33252465073cc3b0cc79a122dfdcb))
+
+
+### Bug Fixes
+
+* **odm:** cap the JVM heap at about 65% of the container limit ([#54](https://github.com/JJ1006/cc-decisioning-platform/issues/54)) ([c1112b7](https://github.com/JJ1006/cc-decisioning-platform/commit/c1112b74b35ff5dd9a611fbaa5b7179a3a0ee4be))
+
+
+### Miscellaneous Chores
+
+* phase 15 hardening and 1.0 release prep ([#57](https://github.com/JJ1006/cc-decisioning-platform/issues/57)) ([78a3467](https://github.com/JJ1006/cc-decisioning-platform/commit/78a346712300cbec43b2b580cccbae9d517b70a8))
+
 ## [0.1.3](https://github.com/JJ1006/cc-decisioning-platform/compare/v0.1.2...v0.1.3) (2026-10-22)
 
 
