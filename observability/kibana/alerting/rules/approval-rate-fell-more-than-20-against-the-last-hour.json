@@ -32,7 +32,7 @@
       "id": "6d6f2f5e-0a6c-4f0a-9d10-4d4e5c000001",
       "params": {
         "level": "warn",
-        "message": "[{{rule.name}}] {{context.message}}"
+        "message": "[{{rule.name}}] {{context.message}} runbook: docs/runbooks/kibana-alerts/ApprovalRateDrop.md"
       },
       "frequency": {
         "summary": false,
