@@ -13,6 +13,7 @@ Output: tmp/cc-approval.zip   (one decision service project "cc-approval")
 """
 
 import csv
+import os
 import pathlib
 import re
 import sys
@@ -23,7 +24,9 @@ from xml.sax.saxutils import escape
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 XOM_SRC = ROOT / "rules/xom/src/main/java/ca/maplenorthern/cc/xom"
 XOM_CLASSES = ROOT / "rules/xom/target/classes"
-RULES = ROOT / "rules/cc-approval-rules"
+RULES = pathlib.Path(
+    os.environ.get("RULES_SRC") or ROOT / "rules/cc-approval-rules"
+)  # RULES_SRC: a copy with a changed rule (evals)
 DS = ROOT / "rules/cc-approval-ds"
 PKG = "ca.maplenorthern.cc.xom"
 PROJECT = "cc-approval"
@@ -566,7 +569,7 @@ def ds_properties():
 def dep_xml():
     base = {
         "ruleset.bom.enabled": "true",
-        "ruleset.version": "1.0",
+        "ruleset.version": os.environ.get("RULESET_VERSION", "1.0"),
         "com.ibm.rules.engine.bytecode.generation": "true",
         "ruleset.trace.enabled": "false",
         "ruleset.debug.enabled": "false",

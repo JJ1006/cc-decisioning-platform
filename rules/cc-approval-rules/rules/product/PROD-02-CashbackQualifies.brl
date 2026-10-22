@@ -1,5 +1,6 @@
 if
-    the requested product of 'the application' is CASHBACK
+    the requested product of 'the application' is not null
+    and the requested product of 'the application' is CASHBACK
     and the annual income of the employment of 'the application' is at least 40000
     and the bureau score of the bureau report of 'the application' is at least 660
 then
