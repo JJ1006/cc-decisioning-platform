@@ -683,7 +683,7 @@ services:
       logstash: { condition: service_healthy }
 
   blackbox-exporter:
-    image: prom/blackbox-exporter:v0.26.0@sha256:92e05d5fe0df01d3980518dc42f07b778a8997048b57392ebc7f7391ebd7bb06
+    image: prom/blackbox-exporter:v0.29.0@sha256:9613f2884689b6fad9f1939f6a3b0388c93a022cfaededb19545b329b5c83dea
     profiles: [obs]
     mem_limit: 32m
     restart: unless-stopped
