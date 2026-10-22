@@ -65,7 +65,7 @@ plugin_configs:
   - id: quota
     plugins:
       limit-count:
-        count: 100
+        count: @QUOTA_PER_MINUTE@ # 100; raised only for a load test (evals/k6)
         time_window: 60
         key_type: var
         key: ssl_client_s_dn
@@ -166,9 +166,9 @@ routes:
     upstream_id: application-api
     plugin_config_id: quota
     plugins:
-      limit-req: # spike arrest: 5 requests per second per consumer, burst 5, beyond that 429
-        rate: 5
-        burst: 5
+      limit-req: # spike arrest: 5 requests per second per consumer, burst 5, beyond that 429 (raised only for a load test)
+        rate: @SUBMIT_RATE@
+        burst: @SUBMIT_BURST@
         key_type: var
         key: ssl_client_s_dn
         rejected_code: 429
