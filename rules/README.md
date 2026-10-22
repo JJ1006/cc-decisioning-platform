@@ -9,7 +9,7 @@ rules/xom/                  Java execution model (Maven module, built in CI)
 rules/cc-approval-rules/    sources: rules/<package>/*.brl (BAL text), bom/ (spec), decision-tables/*.csv, ruleflow/ccApproval.md
 rules/cc-approval-ds/       decision service descriptor + ruleset.properties (agent.enabled, agent.description)
 rules/dc-export/            what Decision Center holds, exported and unpacked (committed; refresh with make dc-export)
-rules/tests/                scenarios.json (30 cases) + check_scenarios.py (spec check, no ODM needed)
+rules/tests/                scenarios.json (31 cases) + check_scenarios.py (spec check, no ODM needed)
 rules/ruleapps/             ccApprovalApp.jar written by make deploy-rules (gitignored, regenerate any time)
 docs/rules-catalog.md       the human spec: rule id, intent, condition, action, reason code
 docs/runbooks/dc-api.md     the DC and RES endpoints we use, from the live OpenAPI document
@@ -21,7 +21,7 @@ docs/runbooks/dc-api.md     the DC and RES endpoints we use, from the live OpenA
 make pki                      # once
 make up PROFILE=core          # ODM at https://localhost:9443 (container port 9453, client certificate required); wait until healthy
 make deploy-rules             # generate, import to DC, build (fails on errors), deploy to RES, save the jar
-make test-rules               # spec check + 30 scenarios against /DecisionService/rest/ccApprovalApp/1.0/ccApproval/1.0
+make test-rules               # spec check + 31 scenarios against /DecisionService/rest/ccApprovalApp/1.0/ccApproval/1.0
 make lint-rules               # prohibited-grounds lint + spec check, no ODM needed
 make dc-export                # refresh rules/dc-export after editing in the Business Console
 ```

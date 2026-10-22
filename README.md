@@ -35,7 +35,7 @@ flowchart LR
   OTEL[OTel] --> LGTM[Grafana: metrics + traces]
 ```
 
-Full plan: [docs/PLAN.md](docs/PLAN.md). Decisions: [docs/adr](docs/adr).
+Evals (golden dataset, rule regression gate, what-if, agent evals, load, chaos): [docs/evals.md](docs/evals.md). Full plan: [docs/PLAN.md](docs/PLAN.md). Decisions: [docs/adr](docs/adr).
 
 ## Quickstart
 

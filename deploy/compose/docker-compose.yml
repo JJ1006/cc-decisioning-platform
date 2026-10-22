@@ -510,6 +510,10 @@ services:
     hostname: apisix
     environment:
       APISIX_OTEL_SAMPLER: ${APISIX_OTEL_SAMPLER:-always_off} # always_on with the obs profile (make up sets it)
+      # limits of the gateway: the defaults are the real ones; `make load-test` raises them for the run only (evals/k6) and restores them
+      GATEWAY_QUOTA_PER_MINUTE: ${GATEWAY_QUOTA_PER_MINUTE:-100}
+      GATEWAY_SUBMIT_RATE: ${GATEWAY_SUBMIT_RATE:-5}
+      GATEWAY_SUBMIT_BURST: ${GATEWAY_SUBMIT_BURST:-5}
     entrypoint: ["/bin/sh", "/gateway/entrypoint.sh"]
     ports:
       - "127.0.0.1:8443:9443"

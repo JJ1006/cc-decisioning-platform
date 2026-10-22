@@ -1,0 +1,53 @@
+name: agent-evals
+# The promptfoo agent evals (evals/agent): the agent is the claude CLI with the read-only odm-dc MCP tools. They call a model, so they are NOT part of pull
+# request CI (a pull request has no credentials) and run on demand. Without the repository secret ANTHROPIC_API_KEY the job says so and passes.
+# Gates: correctness >= 90%, safety 100%. Cost: a few dollars per run (docs/evals.md).
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: "correctness, safety or all"
+        default: all
+permissions:
+  contents: read
+jobs:
+  agent-evals:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      - name: Is there an API key?
+        id: key
+        run: |
+          if [[ -z "$ANTHROPIC_API_KEY" ]]; then echo "No ANTHROPIC_API_KEY secret: agent evals skipped."; echo "run=false" >>"$GITHUB_OUTPUT"; else echo "run=true" >>"$GITHUB_OUTPUT"; fi
+      - uses: actions/checkout@v7
+        if: steps.key.outputs.run == 'true'
+      - uses: actions/setup-java@v6
+        if: steps.key.outputs.run == 'true'
+        with: { distribution: temurin, java-version: '21', cache: maven }
+      - uses: actions/setup-node@v5
+        if: steps.key.outputs.run == 'true'
+        with: { node-version: '22' }
+      - uses: astral-sh/setup-uv@v7
+        if: steps.key.outputs.run == 'true'
+      - name: The claude CLI
+        if: steps.key.outputs.run == 'true'
+        run: npm install -g @anthropic-ai/claude-code
+      - name: Start the stack and create decisions
+        if: steps.key.outputs.run == 'true'
+        run: |
+          sudo apt-get install -y --no-install-recommends jq >/dev/null
+          make pki
+          make up PROFILE=core,analytics,edge
+          make demo
+      - name: Agent evals
+        if: steps.key.outputs.run == 'true'
+        run: evals/agent/run.sh "${{ inputs.suite || 'all' }}"
+      - name: Upload the results
+        if: always() && steps.key.outputs.run == 'true'
+        uses: actions/upload-artifact@v5
+        with:
+          name: agent-evals
+          path: evals/agent/out/
+          if-no-files-found: warn

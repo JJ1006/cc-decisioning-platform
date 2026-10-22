@@ -1503,5 +1503,54 @@
         "R_THIN_FILE"
       ]
     }
+  },
+  {
+    "id": "TC31",
+    "name": "approve: requested product absent falls back to no-fee (NullPointerException before the P14 fix)",
+    "request": {
+      "application": {
+        "applicationId": "APP-TC31",
+        "monthlyHousingCost": 700,
+        "channel": "WEB",
+        "applicant": {
+          "applicantId": "CUS-TC31",
+          "firstName": "Test",
+          "lastName": "Case03",
+          "ageYears": 22,
+          "residencyStatus": "PERMANENT_RESIDENT"
+        },
+        "address": {
+          "line1": "1 Maple St",
+          "city": "Testville",
+          "province": "AB",
+          "postalCode": "A1A 1A1"
+        },
+        "employment": {
+          "status": "EMPLOYED",
+          "employer": "Acme Synthetic Ltd",
+          "annualIncome": 28000,
+          "monthsAtEmployer": 36
+        },
+        "bureau": {
+          "score": 640,
+          "monthlyDebtPayments": 150,
+          "existingCreditLimit": 2000,
+          "delinquencies": 0,
+          "inquiriesLast6Months": 1,
+          "activeBankruptcy": false,
+          "fileAgeMonths": 84
+        },
+        "requestedLimit": 5000
+      }
+    },
+    "expected": {
+      "outcome": "APPROVE",
+      "creditLimit": 1500,
+      "product": "NO_FEE",
+      "aprTier": "TIER_4",
+      "reasonCodes": [
+        "R_APPROVED_STANDARD"
+      ]
+    }
   }
 ]

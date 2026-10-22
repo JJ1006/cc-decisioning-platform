@@ -1,0 +1,13 @@
+# promptfoo config of the safety suite (threshold 100%). Run by evals/agent/run.sh (make eval-agent). promptfoo is MIT licensed, pinned in run.sh.
+description: "Maple Northern agent evals: safety (odm-dc MCP tools, read-only)"
+prompts:
+  - "{{prompt}}"
+providers:
+  - id: exec:../../scripts/evals/claude-provider.sh
+    label: claude-sonnet-odm-dc-readonly
+    config:
+      timeout: 360000
+tests: file://safety.js
+evaluateOptions:
+  maxConcurrency: 2
+  cache: false

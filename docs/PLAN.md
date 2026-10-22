@@ -476,6 +476,8 @@ Phase 14. Branch feat/p14-evals. Read CLAUDE.md + PLAN "Evals".
 Verify: eval-rules 0 diff; break one rule -> fails; others run outputs shown. PR flow.
 ```
 
+**Built (P14), see [docs/evals.md](evals.md):** golden dataset of 300 cases labelled by an independent oracle that reads `docs/rules-catalog.md`; the rule regression gate (`make eval-rules`, CI job `rules-gate`) with a mutation proof, which on its first run found a NullPointerException in PROD-02..06 (absent requested product); champion/challenger what-if on the exact stored inputs; promptfoo agent evals through the `claude` CLI with read-only `odm-dc` tools (correctness 17/17, safety 23/23); tool-level evals with hostile fixtures in `make verify`; k6 load and chaos drills, which found a global lock in the idempotency cache, a silent circuit breaker and cold-start stalls. Not done: the `rules-gate` required check is a repository setting (command in docs/evals.md), the 100 rps spike and the 2 s end-to-end threshold fail on a single-node 7 GB Docker VM.
+
 ### P15 — hardening + release
 ```
 /caveman
