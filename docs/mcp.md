@@ -4,13 +4,14 @@ Rule of this platform ([ADR-0007](adr/0007-llm-never-decides.md)): **an LLM neve
 record, a human underwriter records manual decisions. The MCP servers let an AI agent *read, explain and simulate*; none of their tools can approve,
 decline, change a limit or publish a decision. Strategy: [ADR-0006](adr/0006-mcp-strategy.md); how agents are identified: [ADR-0012](adr/0012-agent-access.md).
 
-`.mcp.json` (project scope, committed, no secrets) registers three servers for Claude Code. Claude Code asks for approval the first time each is used.
+`.mcp.json` (project scope, committed, no secrets) registers our two servers and the development servers vetted in P13 (below). Claude Code asks for approval the first time each is used.
 
 | Server | Command | What it is |
 |---|---|---|
 | `odm-res` | `scripts/mcp/odm-res.sh` | The **official IBM ODM Decision MCP server** ([DecisionsDev/ibm-odm-decision-mcp-server](https://github.com/DecisionsDev/ibm-odm-decision-mcp-server), Apache-2.0) at a pinned commit. Every ruleset with `agent.enabled=true` becomes a tool: ours is `ccapprovaloperation`. Runs the ruleset in RES. |
 | `odm-dc` | `scripts/mcp/odm-dc.sh` | **Our server** (`mcp/odm-dc-mcp-server`): Decision Center (read-only), decisions, explanations and statistics through the API gateway, what-if, PII masking, audit. |
-| `playwright` | `npx @playwright/mcp@latest` | Browser checks of local UIs (dev tool, localhost only; not part of the platform runtime). |
+| `playwright` | `npx @playwright/mcp@0.0.83` | Browser checks of local UIs (dev tool, localhost only; not part of the platform runtime). |
+| `context7`, `github`, `grafana`, `kubernetes`, `argocd` | see [Development MCP servers](#development-mcp-servers-vetted-in-p13) | Developer and SRE tooling, all read-only, all pinned. |
 
 ## Try it in Claude Code
 
@@ -128,8 +129,33 @@ This server does **not** mask or audit: it runs the ruleset on whatever it is gi
 fail-closed, rate limit, size cap, deploy disabled / wrong token / plan only / execute, what-if publishes nothing, and the certificate rules of the remote mode.
 `make verify-mtls` adds the gateway checks for the agent consumers. Dependabot has the `pip` ecosystem for the server, paused like the others.
 
-## Development MCP servers (Playwright)
+## Development MCP servers (vetted in P13)
 
-* Dev tool only: browser checks of local UIs (Kibana, Grafana, Decision Center). Localhost only; never enter credentials for anything else.
-* `@latest` is unpinned on purpose while we explore. Pin an exact version here and in `.mcp.json` before P15 (hardening).
-* Third-party development MCP servers are vetted in P13 (ADR-0006).
+Checked on 2026-10-19 with `gh api` (repo, licence, last push, stars, releases), `npm view` / PyPI (versions) and the MCP inspector (`tools/list`, below). Rule: open source licence,
+a commit in the last six months, a read-only switch, an exact version (never `@latest`). None of them can decide a credit decision: they touch code, clusters and dashboards, not the decision path.
+
+| Server | Repo, licence | Last push, stars | Pinned version | Read-only switch | Verdict | Check run |
+|---|---|---|---|---|---|---|
+| `github` | [github/github-mcp-server](https://github.com/github/github-mcp-server), MIT | 2026-10-15, 33.7k, maintained by GitHub | image `ghcr.io/github/github-mcp-server:v2.0.2` | `--read-only`, `--toolsets repos,issues,pull_requests,actions` | **adopt** | inspector `tools/list`: 25 tools, all `readOnlyHint` (dummy token) |
+| `grafana` | [grafana/mcp-grafana](https://github.com/grafana/mcp-grafana), Apache-2.0 | 2026-10-19, 3.6k, maintained by Grafana Labs | PyPI `mcp-grafana==2.0.2` (`scripts/mcp/grafana.sh`) | `--disable-write` + a **Viewer** service-account token | **adopt** | inspector `tools/list`: 62 tools, all `readOnlyHint` (dummy token); live run against Grafana **skipped** (needs `make up-obs`) |
+| `kubernetes` | [containers/kubernetes-mcp-server](https://github.com/containers/kubernetes-mcp-server), Apache-2.0 | 2026-10-19, 2.2k, Red Hat / containers org | npm `kubernetes-mcp-server@0.0.67` (pre-1.0) | `--read-only`; the kubeconfig is exported from the kind cluster `cc` only | **adopt, optional** (needs kind) | inspector `tools/list` against a dummy kubeconfig: 14 tools, all `readOnlyHint`; live kind **skipped** |
+| `argocd` | [argoproj-labs/mcp-for-argocd](https://github.com/argoproj-labs/mcp-for-argocd), Apache-2.0 | 2026-10-16, 590, an Argo Labs (incubating) project | npm `argocd-mcp@0.9.0` (pre-1.0) | `MCP_READ_ONLY=true` | **adopt, optional** (needs Argo CD on kind) | inspector `tools/list` (dummy token): 11 tools, all `get_*` / `list_*`; no `readOnlyHint` annotations, so read-only is by tool names only; live **skipped** |
+| `context7` | [upstash/context7](https://github.com/upstash/context7), MIT | 2026-10-17, 63k, Upstash | npm `@upstash/context7-mcp@4.4.2` | 2 tools, both `readOnlyHint` | **adopt** with a rule: it is a cloud service, **the query text leaves the machine**: library names and generic questions only, never repo content, rules, applicant data or secrets | inspector `tools/list`: `resolve-library-id`, `query-docs` (no secret needed: run) |
+| `playwright` | [microsoft/playwright-mcp](https://github.com/microsoft/playwright-mcp), Apache-2.0 | 2026-10-16, 38k, Microsoft | npm `@playwright/mcp@0.0.83` (was `@latest`) | n/a: it drives a browser; localhost only | keep, now pinned | n/a |
+| Elasticsearch MCP | [elastic/mcp-server-elasticsearch](https://github.com/elastic/mcp-server-elasticsearch), Apache-2.0 | 2026-10-16, 0.7k, last release v0.4.6 (2025-10-24) | n/a | none that masks | **skipped on purpose** | least privilege: an agent must read decisions through our masked query API (role AGENT, PII masking, audit), never raw `cc-decisions`, `cc-decision-inputs` or `cc-audit`. An Elasticsearch MCP would need an Elasticsearch credential, which bypasses masking, the restricted index and the audit trail. Nothing failed the vetting: it is a design decision ([ADR-0012](adr/0012-agent-access.md)) |
+
+Nothing was dropped for a failing criterion. Pin bumps: change the version in `.mcp.json` (or the wrapper in `scripts/mcp/`) and this table together, after reading the release notes.
+
+### Setup
+
+Secrets come from your shell through `${ENV}` expansion in `.mcp.json`; the file holds none. Start Claude Code from the shell that has them, then `/mcp` to approve.
+
+| Server | Setup |
+|---|---|
+| `context7` | nothing (needs `node`). |
+| `github` | Docker running. Create a **fine-grained personal access token** (GitHub > Settings > Developer settings), repository `JJ1006/cc-decisioning-platform` only, permissions all **read-only**: Contents, Issues, Pull requests, Actions, Metadata. `export GITHUB_PERSONAL_ACCESS_TOKEN=...`. The server also runs with `--read-only`, so even a broader token cannot write through it. |
+| `grafana` | `make up-obs` (or `PROFILE=core,edge,obs`), `uv` installed, then `eval "$(scripts/mcp/grafana-token.sh)"`: creates the service account `claude-mcp` with role **Viewer** through the Grafana API and exports `GRAFANA_SA_TOKEN` (valid 24 h, `GRAFANA_TOKEN_TTL_HOURS` to change; not written to disk). `GRAFANA_URL` defaults to `https://localhost:3000`; the wrapper trusts our CA. |
+| `kubernetes` (optional) | `make kind-up PROFILE=lite`, `kind` and `node` installed. `scripts/mcp/kubernetes.sh` exports the kubeconfig of the kind cluster `cc` only into a temporary file, so no other context is reachable. Without kind the server fails to start with a clear message: leave it unapproved or disable it in `/mcp`. |
+| `argocd` (optional) | `make argocd-up ENV=kind-lite`, `make argocd-ui` in another terminal. Create a local account with the read-only role (`argocd account` / `argocd-cm` and `argocd-rbac-cm`, [gitops runbook](runbooks/gitops.md)), `export ARGOCD_API_TOKEN=...` (and `ARGOCD_INSECURE_LOCAL=1` to accept the self-signed certificate of `https://localhost:8080`, accepted for localhost only). Never point it at the OpenShift Argo CD: that sync is manual and human ([ADR-0014](adr/0014-gitops-argocd.md)). |
+
+Claude Desktop and other clients can use the same wrappers; the commands in `.mcp.json` show the exact arguments.

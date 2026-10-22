@@ -3,7 +3,7 @@
     "playwright": {
       "type": "stdio",
       "command": "npx",
-      "args": ["@playwright/mcp@latest"],
+      "args": ["-y", "@playwright/mcp@0.0.83"],
       "env": {}
     },
     "odm-res": {
@@ -17,6 +17,46 @@
       "command": "scripts/mcp/odm-dc.sh",
       "args": [],
       "env": {}
+    },
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp@4.4.2"],
+      "env": {}
+    },
+    "github": {
+      "type": "stdio",
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
+        "ghcr.io/github/github-mcp-server:v2.0.2",
+        "stdio", "--read-only", "--toolsets", "repos,issues,pull_requests,actions"
+      ],
+      "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}" }
+    },
+    "grafana": {
+      "type": "stdio",
+      "command": "scripts/mcp/grafana.sh",
+      "args": [],
+      "env": {
+        "GRAFANA_URL": "${GRAFANA_URL:-https://localhost:3000}",
+        "GRAFANA_SERVICE_ACCOUNT_TOKEN": "${GRAFANA_SA_TOKEN}"
+      }
+    },
+    "kubernetes": {
+      "type": "stdio",
+      "command": "scripts/mcp/kubernetes.sh",
+      "args": [],
+      "env": {}
+    },
+    "argocd": {
+      "type": "stdio",
+      "command": "scripts/mcp/argocd.sh",
+      "args": [],
+      "env": {
+        "ARGOCD_BASE_URL": "${ARGOCD_BASE_URL:-https://localhost:8080}",
+        "ARGOCD_API_TOKEN": "${ARGOCD_API_TOKEN}"
+      }
     }
   }
 }
