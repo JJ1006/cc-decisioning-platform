@@ -10,7 +10,7 @@ PW=$ROOT/tmp/pw
 if [[ ! -d "$PW/node_modules/playwright" ]]; then
   echo "installing Playwright into tmp/pw (once)"
   mkdir -p "$PW"
-  (cd "$PW" && npm init -y >/dev/null && npm i playwright >/dev/null && npx playwright install chromium)
+  (cd "$PW" && npm init -y >/dev/null && npm i playwright@1.64.1 >/dev/null && npx playwright install chromium)
 fi
 pw=$(grep -E '^GRAFANA_ADMIN_PASSWORD=' "$ROOT/.env" | tail -1 | cut -d= -f2-)
 GRAFANA_PASSWORD=$pw NODE_PATH=$PW/node_modules node observability/grafana/screenshots.cjs "$@"

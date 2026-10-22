@@ -2,7 +2,7 @@
 image:
   registry: "" # third-party image: not under global.image.registry
   repository: docker.elastic.co/beats/filebeat
-  tag: 8.19.23
+  tag: 8.19.23@sha256:2122adc42e6aa4b2fcb81d1c38725dbe27957d1b9d5cc058a18375c2eab62d52
   pullPolicy: IfNotPresent
 logstashHost: logstash:5044
 resources:

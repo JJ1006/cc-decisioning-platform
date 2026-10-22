@@ -9,7 +9,7 @@ OBS_ENV = $(if $(filter obs,$(subst $(comma), ,$(PROFILE))),APISIX_OTEL_SAMPLER=
 comma := ,
 
 .DEFAULT_GOAL := help
-.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules lint-claude test-logstash lint-api api-docs test-api-docs test-mcp lint-obs up-obs grafana-shots check-dashboards api-call cert-expiry seed-kibana export-kibana kibana-shots demo kind-up kind-deploy-rules kind-demo kind-down helm-sync lint-helm argocd-up argocd-ui argocd-status argocd-down lint-argocd ocp-render eval-rules eval-rules-mutation eval-agent eval-agent-fixtures test-evals load-test chaos what-if
+.PHONY: help check-diagrams bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules lint-claude test-logstash lint-api api-docs test-api-docs test-mcp lint-obs up-obs grafana-shots check-dashboards api-call cert-expiry seed-kibana export-kibana kibana-shots demo kind-up kind-deploy-rules kind-demo kind-down helm-sync lint-helm argocd-up argocd-ui argocd-status argocd-down lint-argocd ocp-render eval-rules eval-rules-mutation eval-agent eval-agent-fixtures test-evals load-test chaos what-if
 
 help: ## Show targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -51,7 +51,9 @@ ps: ## Compose status
 	@PROFILE=core,analytics,edge,obs,mcp scripts/compose.sh ps
 
 verify: ## Full local verification (build + tests + format check)
-	@uv run --quiet --with jsonschema python scripts/validate-contracts.py
+	@scripts/check-pins.sh
+	@scripts/check-runbooks.sh
+	@uv run --quiet --with jsonschema==4.26.0 python scripts/validate-contracts.py
 	@if grep -q '<module>' pom.xml; then mvn -B -ntp -q verify; else echo "no Maven modules yet"; fi
 	@scripts/test-logstash.sh
 	@$(MAKE) --no-print-directory lint-api
@@ -64,8 +66,11 @@ verify: ## Full local verification (build + tests + format check)
 	@$(MAKE) --no-print-directory lint-claude
 	@scripts/test-evals.sh
 
+check-diagrams: ## Render every Mermaid diagram of the docs with the pinned mermaid-cli (needs node; downloads Chromium once)
+	@scripts/check-diagrams.sh
+
 lint-claude: ## Skills, agents, commands, hooks and .mcp.json: frontmatter, unique names, read-only agents, pinned servers; hook tests with fake stdin
-	@uv run --quiet --with pyyaml python scripts/lint-claude-config.py
+	@uv run --quiet --with pyyaml==6.0.3 python scripts/lint-claude-config.py
 	@scripts/test-claude-hooks.sh
 
 test: ## Unit tests

@@ -115,7 +115,7 @@ certificate) with `authorization: simple` ACLs. The retry and dead-letter topics
 | `notification-svc` | `cc.decisions.{approved,declined,referred,manual}.v1` (`notification-svc`) | `cc.notifications.v1`, the `.dlq` topics it consumes | |
 | `logstash` | `cc.decisions.*.v1`, `cc.audit.v1`, `cc.notifications.v1` (`logstash-indexer`); every `*.dlq` (`logstash-dlq`) | | |
 | `mcp-agent` (odm-dc-mcp audit trail) | | `cc.audit.v1` | |
-| `kafka-ui` | all topics, describe | | operator tool; read-only in production |
+| `kafka-ui` | all topics, describe; cluster describe | | operator tool; read-only in production (the cluster describe lets it show the brokers and the quorum without `ClusterAuthorizationException`) |
 | `kafka-exporter` | | | metrics only: describe all topics and groups, no read |
 | `admin` (topic-init, CLI) | | | create, alter, describe topics and groups |
 

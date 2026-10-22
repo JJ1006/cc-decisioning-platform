@@ -2,7 +2,7 @@
 image:
   registry: "" # third-party image: not under global.image.registry
   repository: docker.elastic.co/logstash/logstash
-  tag: 8.19.23
+  tag: 8.19.23@sha256:a77c29e406ddc6311b302703889f0953b5620dd5aa2445b0cdbcf7f88e285766
   pullPolicy: IfNotPresent
 replicas: 1
 port: 5044 # Filebeat input, mutual TLS

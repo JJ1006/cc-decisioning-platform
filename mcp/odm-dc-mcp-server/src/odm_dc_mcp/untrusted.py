@@ -15,6 +15,7 @@ approve (ADR-0007, ADR-0012) - it makes the text visible as text.
 from __future__ import annotations
 
 import re
+import unicodedata
 from typing import Any
 
 MAX_TEXT = 400
@@ -45,13 +46,20 @@ FREE_TEXT_KEYS = frozenset(
 TRUSTED_KEYS = frozenset({"SIMULATION", "assumptions", "note_from_server"})
 
 # C0/C1 controls except tab and newline; zero-width and joiner characters; bidirectional embeddings, overrides and isolates; BOM
-_INVISIBLE = re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f​-‏  ‪-‮⁠-⁯﻿]")
+# control (Cc), format (Cf: zero-width, bidirectional overrides, tag characters) and line/paragraph separator (Zl, Zp) characters, except tab, newline and carriage return
+_HIDDEN = frozenset(("Cc", "Cf", "Zl", "Zp"))
+
+
+def _strip(text: str) -> str:
+    return "".join(c for c in text if c in "\t\n\r" or unicodedata.category(c) not in _HIDDEN)
+
+
 _WRAPPER = re.compile(r"</?\s*data\s*>", re.IGNORECASE)
 
 
 def clean(text: str, limit: int = MAX_TEXT) -> str:
     """Control characters out, wrapper tags defanged, length capped."""
-    text = _INVISIBLE.sub("", text)
+    text = _strip(text)
     text = _WRAPPER.sub("[data-tag]", text)
     if len(text) > limit:
         text = text[:limit] + "...[cut]"
@@ -74,8 +82,8 @@ def untrusted(node: Any, key: str | None = None) -> Any:
         return [untrusted(v, key) for v in node]
     if isinstance(node, str):
         if key in TRUSTED_KEYS:
-            return _INVISIBLE.sub("", node)
+            return _strip(node)
         if key in FREE_TEXT_KEYS or _looks_like_prose(node):
             return wrap(node)
-        return _INVISIBLE.sub("", node)
+        return _strip(node)
     return node

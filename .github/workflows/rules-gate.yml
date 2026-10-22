@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with: { fetch-depth: 0 }
       - name: Did a gated path change?
         id: scope
@@ -33,16 +33,16 @@ jobs:
             echo "run=false" >>"$GITHUB_OUTPUT"
             echo "No rules, catalog or golden change: nothing to gate."
           fi
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         if: steps.scope.outputs.run == 'true'
         with: { distribution: temurin, java-version: '21', cache: maven }
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         if: steps.scope.outputs.run == 'true'
         with: { python-version: '3.13' }
       - name: Oracle tests and the golden file is current
         if: steps.scope.outputs.run == 'true'
         run: |
-          pip install --quiet pytest
+          pip install --quiet pytest==9.1.1
           python -m pytest evals/golden -q
           python evals/golden/generate.py --check
           python rules/tests/check_scenarios.py
@@ -68,7 +68,7 @@ jobs:
         run: python3 evals/rule-regression/run.py
       - name: Upload the report
         if: always() && steps.scope.outputs.run == 'true'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: rule-regression-report
           path: evals/rule-regression/out/

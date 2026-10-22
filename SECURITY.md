@@ -4,7 +4,9 @@ This is a demo project with synthetic data only. No real customer data, credenti
 
 ## Reporting a vulnerability
 
-Open a [private security advisory](https://github.com/JJ1006/cc-decisioning-platform/security/advisories/new). Do not file public issues for vulnerabilities.
+Open a [private security advisory](https://github.com/JJ1006/cc-decisioning-platform/security/advisories/new) (preferred), or write to the maintainer, [@JJ1006](https://github.com/JJ1006), through the contact on their GitHub profile. Do not file public issues for vulnerabilities. Expect an acknowledgement within 7 days; this is a demo project maintained in spare time, so there is no bounty and no SLA beyond best effort.
+
+Supported: the latest release and `main`. Known weaknesses are listed, not hidden: [docs/limitations.md](docs/limitations.md), [docs/backlog.md](docs/backlog.md), and accepted scanner findings with an expiry in `.trivyignore`.
 
 ## Rules
 

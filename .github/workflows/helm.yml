@@ -19,8 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request' || github.event.action != 'labeled'
     steps:
-      - uses: actions/checkout@v7
-      - uses: azure/setup-helm@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4
         with: { version: v4.1.1 }
       - name: kubeconform and kube-linter
         run: |
@@ -29,7 +29,7 @@ jobs:
           curl -sSL "https://github.com/yannh/kubeconform/releases/download/${KC}/kubeconform-linux-amd64.tar.gz" | tar xz -C /usr/local/bin kubeconform
           KL=v0.8.3
           curl -sSL "https://github.com/stackrox/kube-linter/releases/download/${KL}/kube-linter-linux.tar.gz" | tar xz -C /usr/local/bin kube-linter
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with: { python-version: '3.13' }
       - name: helm repositories
         run: |
@@ -41,19 +41,19 @@ jobs:
         run: REQUIRE_HELM_TOOLS=1 scripts/lint-helm.sh
       - name: OpenShift manifests render
         run: scripts/ocp-render.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with: { name: rendered-manifests, path: out/ }
   kind-smoke:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     if: github.event_name == 'workflow_dispatch' || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'kind'))
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         with: { distribution: temurin, java-version: '21', cache: maven }
-      - uses: azure/setup-helm@v4
+      - uses: azure/setup-helm@1a275c3b69536ee54be43f2070a358922e12c8d4 # v4
         with: { version: v4.1.1 }
-      - uses: helm/kind-action@v1
+      - uses: helm/kind-action@ef37e7f390d99f746eb8b610417061a60e82a6cc # v1
         with: { install_only: true }
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq jq
       - name: Pull the ODM for Developers image (public registry, licence accepted by running it)

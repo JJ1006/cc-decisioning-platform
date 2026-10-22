@@ -1,0 +1,8 @@
+# Accepted findings, each with a reason and an expiry (trivy ignores an entry only until the exp: date; after it the scan fails again and the entry must be renewed or removed).
+# Review: docs/limitations.md, docs/backlog.md ("Spring Framework 7 / Boot 4").
+
+# spring-webmvc 6.2.19: the fix exists only in Spring Framework 7.0.9; 6.2.x is out of open-source maintenance (19 is the last release), and Spring Boot 3.5 is built on 6.2.
+# Not exploitable here: the services return JSON through @RestController only. There is no XsltView, no view resolver and no server-sent events endpoint.
+# Real fix: move to Spring Boot 4 (backlog, post-1.0).
+CVE-2026-47884 exp:2026-12-31
+CVE-2026-47890 exp:2026-12-31

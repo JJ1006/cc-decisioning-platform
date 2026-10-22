@@ -30,7 +30,9 @@ def main(argv: list[str] | None = None) -> None:
         level=logging.INFO, stream=sys.stderr, format='{"level":"%(levelname)s","logger":"%(name)s","message":"%(message)s"}'
     )
     settings = config.load()
-    guard = Guard(settings, KafkaSink(settings))
+    sink = KafkaSink(settings)
+    sink.warm()
+    guard = Guard(settings, sink)
 
     if args.transport == "stdio":
         build_server(settings, guard).run(transport="stdio")

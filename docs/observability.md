@@ -59,7 +59,7 @@ flowchart LR
   classDef s fill:#eef;
 ```
 
-* **Traces.** The OpenTelemetry Java agent (2.17.0, checksum pinned in each Dockerfile) is in the five Java services; APISIX has its own plugin. One
+* **Traces.** The OpenTelemetry Java agent (2.26.1, checksum pinned in each Dockerfile) is in the five Java services; APISIX has its own plugin. One
   application is **one trace**: gateway, application-api, the Kafka publish, the orchestrator's consume (trace context travels in the Kafka record
   headers, the agent does it), the HTTP call to ODM, the Kafka publish of the decision, the notification service. ODM itself is not instrumented:
   its time is the orchestrator's client span. Sampling is `parentbased_always_on` locally (`always_on` at the gateway); in production use

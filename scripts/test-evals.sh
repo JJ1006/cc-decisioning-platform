@@ -13,7 +13,7 @@ fi
 fail=0
 step() { printf '%s ... ' "$1"; shift; if out=$("$@" 2>&1); then echo ok; else echo FAIL; echo "$out" | tail -25; fail=1; fi; }
 step "golden.json is current (oracle + generator)" python3 evals/golden/generate.py --check
-step "oracle, regression runner and what-if analysis tests" uv run --quiet --with pytest python -m pytest evals/golden evals/rule-regression evals/what-if -q -p no:cacheprovider
+step "oracle, regression runner and what-if analysis tests" uv run --quiet --with pytest==9.1.1 python -m pytest evals/golden evals/rule-regression evals/what-if -q -p no:cacheprovider
 step "tool-level evals of the odm-dc MCP server" bash -c "cd mcp/odm-dc-mcp-server && uv run --frozen pytest ../../evals/tools -q -p no:cacheprovider"
 command -v node >/dev/null && step "graders of the agent evals (node --test)" node --test evals/agent/asserts.test.js
 exit $fail

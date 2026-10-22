@@ -39,6 +39,9 @@ plugins:
 nginx_config:
   worker_processes: 1 # demo sizing (mem_limit 256m)
   error_log_level: warn
+  # OWASP F-4: no request body over 64 KiB (an application is about 1 KiB; the nginx default is 1 MiB, the Tomcat behind it 2 MB). Answers 413.
+  http_server_configuration_snippet: |
+    client_max_body_size 64k;
 
 plugin_attr:
   prometheus:

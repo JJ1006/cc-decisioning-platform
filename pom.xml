@@ -42,6 +42,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- Override Boot's managed Jackson: fixes CVE-2026-68497/91776/91777 (needs >= 2.21.7) -->
     <jackson-bom.version>2.21.7</jackson-bom.version>
+    <!-- Override Boot's managed Tomcat: fixes CVE-2026-65182/65905/68525 (fixed in 10.1.58) -->
+    <tomcat.version>10.1.61</tomcat.version>
     <datafaker.version>2.4.2</datafaker.version>
     <resilience4j.version>2.2.0</resilience4j.version>
     <springdoc.version>2.8.9</springdoc.version>

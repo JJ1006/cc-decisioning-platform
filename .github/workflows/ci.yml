@@ -9,14 +9,14 @@ jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         with: { distribution: temurin, java-version: '21', cache: maven }
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
         with: { python-version: '3.13' }
       - name: Validate contracts
         run: |
-          pip install --quiet jsonschema
+          pip install --quiet jsonschema==4.26.0
           python scripts/validate-contracts.py
       - name: Maven verify (skipped when no modules)
         run: |
@@ -25,7 +25,7 @@ jobs:
         run: npx --yes @stoplight/spectral-cli@6.15.0 lint docs/api/*.yaml --fail-severity=error
       - name: MCP server (ruff, mypy, pytest)
         run: |
-          pip install --quiet uv
+          pip install --quiet uv==0.13.5
           REQUIRE_UV=1 scripts/test-mcp.sh
       - name: Observability config (dashboards, Prometheus rules, Alertmanager, collector, runbooks)
         run: REQUIRE_DOCKER=1 scripts/lint-observability.sh

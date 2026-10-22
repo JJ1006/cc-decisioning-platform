@@ -4,7 +4,7 @@
 image:
   registry: "" # third-party image: not under global.image.registry
   repository: apache/apisix
-  tag: 3.13.0-debian
+  tag: 3.13.0-debian@sha256:c5c7a55ebb5c07abc210dbb963a37f41030e12c91d23bacedbaa168fec633bd7
   pullPolicy: IfNotPresent
 replicas: 1
 port: 9443
@@ -33,7 +33,7 @@ writablePaths:
   - /usr/local/apisix/scgi_temp
 initContainers:
   - name: conf
-    image: apache/apisix:3.13.0-debian
+    image: apache/apisix:3.13.0-debian@sha256:c5c7a55ebb5c07abc210dbb963a37f41030e12c91d23bacedbaa168fec633bd7
     command:
       - /bin/sh
       - -c

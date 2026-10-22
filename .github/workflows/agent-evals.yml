@@ -21,19 +21,21 @@ jobs:
         id: key
         run: |
           if [[ -z "$ANTHROPIC_API_KEY" ]]; then echo "No ANTHROPIC_API_KEY secret: agent evals skipped."; echo "run=false" >>"$GITHUB_OUTPUT"; else echo "run=true" >>"$GITHUB_OUTPUT"; fi
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         if: steps.key.outputs.run == 'true'
-      - uses: actions/setup-java@v6
+        with: { version: '0.13.5' }
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6
         if: steps.key.outputs.run == 'true'
         with: { distribution: temurin, java-version: '21', cache: maven }
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         if: steps.key.outputs.run == 'true'
         with: { node-version: '22' }
-      - uses: astral-sh/setup-uv@v7
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         if: steps.key.outputs.run == 'true'
+        with: { version: '0.13.5' }
       - name: The claude CLI
         if: steps.key.outputs.run == 'true'
-        run: npm install -g @anthropic-ai/claude-code
+        run: npm install -g @anthropic-ai/claude-code@2.1.308
       - name: Start the stack and create decisions
         if: steps.key.outputs.run == 'true'
         run: |
@@ -46,7 +48,7 @@ jobs:
         run: evals/agent/run.sh "${{ inputs.suite || 'all' }}"
       - name: Upload the results
         if: always() && steps.key.outputs.run == 'true'
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         with:
           name: agent-evals
           path: evals/agent/out/
