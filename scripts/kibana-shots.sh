@@ -11,7 +11,7 @@ PW=$ROOT/tmp/pw
 if [[ ! -d "$PW/node_modules/playwright" ]]; then
   echo "installing Playwright into tmp/pw (once)"
   mkdir -p "$PW"
-  (cd "$PW" && npm init -y >/dev/null && npm i playwright >/dev/null && npx playwright install chromium)
+  (cd "$PW" && npm init -y >/dev/null && npm i playwright@1.64.1 >/dev/null && npx playwright install chromium)
 fi
 set -a
 . "$ROOT/.env"

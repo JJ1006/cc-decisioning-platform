@@ -9,16 +9,17 @@ jobs:
   gitleaks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with: { fetch-depth: 0 }
-      - uses: gitleaks/gitleaks-action@v3
+      - uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3
         env: { GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}' }
   trivy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: aquasecurity/trivy-action@v0.36.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
+          version: v0.76.1
           scan-type: fs
           severity: HIGH,CRITICAL
           exit-code: '1'
@@ -31,9 +32,9 @@ jobs:
     strategy:
       matrix: { language: [java-kotlin, python] }
     steps:
-      - uses: actions/checkout@v7
-      - uses: github/codeql-action/init@v3
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: github/codeql-action/init@4bfa242aa49c5f7c6770b98670d354a7dfac05f8 # v3
         with: { languages: '${{ matrix.language }}', build-mode: none }
-      - uses: github/codeql-action/analyze@v3
+      - uses: github/codeql-action/analyze@4bfa242aa49c5f7c6770b98670d354a7dfac05f8 # v3
         # no sources yet in phase 0; analysis step tolerates empty repos
         continue-on-error: true

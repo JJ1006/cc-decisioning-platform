@@ -1,4 +1,4 @@
-"""Unit tests of the golden-dataset oracle. No ODM needed.  uv run --quiet --with pytest python -m pytest evals/golden -q"""
+"""Unit tests of the golden-dataset oracle. No ODM needed.  uv run --quiet --with pytest==9.1.1 python -m pytest evals/golden -q"""
 
 import json
 import sys

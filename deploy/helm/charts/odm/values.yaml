@@ -6,7 +6,7 @@ license: "" # must be set to "accept" (values-kind-*.yaml and values-openshift.y
 image:
   registry: "" # third-party image: not under global.image.registry
   repository: icr.io/cpopen/odm-k8s/odm
-  tag: 9.5.0.1-IF019_25.1.0
+  tag: 9.5.0.1-IF019_25.1.0@sha256:90e19335932a386e057beb16759c4e5985c55eb7bd06e57dd86ec3fc7d81773d
   pullPolicy: IfNotPresent
 replicas: 1 # Derby is per pod: never scale this
 port: 9453 # https, client certificate REQUIRED (files/mtls.xml)

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Lints the Claude Code project setup: .claude/skills, agents, commands, hooks, settings.json and .mcp.json.
 
-  uv run --quiet --with pyyaml python scripts/lint-claude-config.py     (make lint-claude, part of make verify)
+  uv run --quiet --with pyyaml==6.0.3 python scripts/lint-claude-config.py     (make lint-claude, part of make verify)
 
 Checks: every SKILL.md / agent / command has valid YAML frontmatter with the required keys, names are unique per kind, a skill's name equals its
 folder, a skill or agent description has trigger words (is long enough), agents declare read-only tools (no Edit, Write, NotebookEdit; Bash only with

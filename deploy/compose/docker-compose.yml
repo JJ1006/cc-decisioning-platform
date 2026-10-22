@@ -14,7 +14,7 @@ name: ${COMPOSE_PROJECT_NAME:-ccplatform}
 services:
   # ---------------------------------------------------------------- core
   kafka:
-    image: apache/kafka:3.9.2
+    image: apache/kafka:3.9.2@sha256:05b4616e0702ef2729327705d54ad6b50ea70b271c4b730fabd2320789fb7b02
     profiles: [core]
     env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
     mem_limit: 768m
@@ -63,7 +63,7 @@ services:
       start_period: 30s
 
   topic-init:
-    image: apache/kafka:3.9.2
+    image: apache/kafka:3.9.2@sha256:05b4616e0702ef2729327705d54ad6b50ea70b271c4b730fabd2320789fb7b02
     profiles: [core]
     mem_limit: 256m
     restart: "no"
@@ -84,7 +84,7 @@ services:
 
   # applies the generated ACLs (default deny: only the super users may do anything until this has run); idempotent
   acl-init:
-    image: apache/kafka:3.9.2
+    image: apache/kafka:3.9.2@sha256:05b4616e0702ef2729327705d54ad6b50ea70b271c4b730fabd2320789fb7b02
     profiles: [core]
     mem_limit: 256m
     restart: "no"
@@ -104,7 +104,7 @@ services:
       - ${PKI_DIR:-../../security/pki/out}/kafka-client.properties:/pki/kafka-client.properties:ro
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.23
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.23@sha256:4d0724bb8d78d7a2330693623e26ca4d621079d062ecc8a30b3e1fc180ec14c1
     profiles: [core]
     env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
     mem_limit: 1280m # 1.25 GB: heap 640 MB plus off-heap
@@ -143,7 +143,7 @@ services:
       start_period: 40s
 
   es-setup:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.23
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.19.23@sha256:4d0724bb8d78d7a2330693623e26ca4d621079d062ecc8a30b3e1fc180ec14c1
     profiles: [core]
     env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
     mem_limit: 128m
@@ -160,7 +160,7 @@ services:
   odm:
     # ODM for Developers 9.5.x all-in-one (Decision Center + RES + Decision Runner). NOT open
     # source, dev/eval only: you accept the IBM licence by running it. Pulled, never redistributed.
-    image: icr.io/cpopen/odm-k8s/odm:9.5.0.1-IF019_25.1.0
+    image: icr.io/cpopen/odm-k8s/odm:9.5.0.1-IF019_25.1.0@sha256:90e19335932a386e057beb16759c4e5985c55eb7bd06e57dd86ec3fc7d81773d
     profiles: [core]
     env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
     mem_limit: ${ODM_MEM:-2560m}
@@ -301,7 +301,7 @@ services:
   logstash:
     # Kafka -> Elasticsearch ingestion with PII masking (replaces the custom es-indexer, ADR-0009), DLQ topics,
     # Filebeat logs. Pinned to the Elasticsearch version. Elastic licence (free basic tier).
-    image: docker.elastic.co/logstash/logstash:8.19.23
+    image: docker.elastic.co/logstash/logstash:8.19.23@sha256:a77c29e406ddc6311b302703889f0953b5620dd5aa2445b0cdbcf7f88e285766
     profiles: [core]
     env_file: [.env.derived]
     mem_limit: 896m # was 768m: the heap is 384 MB, the rest is off-heap (Netty, queues); it ran at 99% of 768m
@@ -334,7 +334,7 @@ services:
       start_period: 60s
 
   filebeat:
-    image: docker.elastic.co/beats/filebeat:8.19.23
+    image: docker.elastic.co/beats/filebeat:8.19.23@sha256:2122adc42e6aa4b2fcb81d1c38725dbe27957d1b9d5cc058a18375c2eab62d52
     profiles: [core]
     mem_limit: 128m
     restart: unless-stopped
@@ -353,7 +353,7 @@ services:
 
   # ----------------------------------------------------------- analytics
   kibana:
-    image: docker.elastic.co/kibana/kibana:8.19.23
+    image: docker.elastic.co/kibana/kibana:8.19.23@sha256:920b24f689833d34205f426f5359864378a572e829c53016073f0a6837c2e995
     profiles: [analytics]
     env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
     mem_limit: 900m
@@ -386,7 +386,7 @@ services:
       start_period: 60s
 
   kafka-ui:
-    image: kafbat/kafka-ui:v1.5.0
+    image: kafbat/kafka-ui:v1.5.0@sha256:7cda86a33344160309fdb65146332e4da65db81a945614f2fe32e210803f6fd1
     profiles: [analytics]
     env_file: [.env.derived] # generated from the root env file by scripts/compose.sh
     mem_limit: 512m
@@ -498,7 +498,7 @@ services:
   apisix:
     # Apache APISIX 3.x, standalone (declarative gateway/apisix/apisix.yaml.tmpl, no etcd). The only published port of the
     # APIs: 8443, mutual TLS, client certificate required. Replaces Apigee (docs/apigee-mapping.md).
-    image: apache/apisix:3.13.0-debian
+    image: apache/apisix:3.13.0-debian@sha256:c5c7a55ebb5c07abc210dbb963a37f41030e12c91d23bacedbaa168fec633bd7
     profiles: [edge]
     labels:
       co.elastic.logs/enabled: "true" # Filebeat ships this container's logs
@@ -538,7 +538,7 @@ services:
 
   # ----------------------------------------------------------- obs: metrics, traces, alerts, dashboards (logs stay in ELK)
   otel-collector:
-    image: otel/opentelemetry-collector-contrib:0.123.0
+    image: otel/opentelemetry-collector-contrib:0.123.0@sha256:e39311df1f3d941923c00da79ac7ba6269124a870ee87e3c3ad24d60f8aee4d2
     profiles: [obs]
     mem_limit: 128m
     restart: unless-stopped
@@ -549,7 +549,7 @@ services:
       - ../../observability/otel/collector.yaml:/etc/otelcol/collector.yaml:ro
 
   tempo:
-    image: grafana/tempo:2.7.2
+    image: grafana/tempo:2.7.2@sha256:4b0277a9b572a4b1fa43b01468e58911ec214dd69d033f2cd476596d14de9fe3
     profiles: [obs]
     mem_limit: 320m # 256m was too tight (it ran at 99%)
     restart: unless-stopped
@@ -560,7 +560,7 @@ services:
       - tempo-data:/var/tempo
 
   prometheus:
-    image: prom/prometheus:v3.2.1
+    image: prom/prometheus:v3.2.1@sha256:6927e0919a144aa7616fd0137d4816816d42f6b816de3af269ab065250859a62
     profiles: [obs]
     mem_limit: 256m
     restart: unless-stopped
@@ -582,7 +582,7 @@ services:
       - prometheus-data:/prometheus
 
   alertmanager:
-    image: prom/alertmanager:v0.28.1
+    image: prom/alertmanager:v0.28.1@sha256:27c475db5fb156cab31d5c18a4251ac7ed567746a2483ff264516437a39b15ba
     profiles: [obs]
     mem_limit: 64m
     restart: unless-stopped
@@ -593,7 +593,7 @@ services:
       - ../../observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
 
   grafana:
-    image: grafana/grafana-oss:11.5.2
+    image: grafana/grafana-oss:11.5.2@sha256:163be84f32fdf9d204c6b8b2f2cccb04628baa365cf973eb1c32d1faaa8fbfc3
     profiles: [obs]
     mem_limit: 192m
     restart: unless-stopped
@@ -634,7 +634,7 @@ services:
       start_period: 20s
 
   kafka-exporter:
-    image: danielqsj/kafka-exporter:v1.9.0
+    image: danielqsj/kafka-exporter:v1.9.0@sha256:4150e46b2e9697ac30e4be8de03ec1704b4bdc7037577b83b8d35a32be298c16
     profiles: [obs]
     mem_limit: 64m
     restart: unless-stopped
@@ -652,7 +652,7 @@ services:
       - ${PKI_DIR:-../../security/pki/out}/kafka-exporter/kafka-exporter.key:/pki/kafka-exporter.key:ro
 
   elasticsearch-exporter:
-    image: quay.io/prometheuscommunity/elasticsearch-exporter:v1.8.0
+    image: quay.io/prometheuscommunity/elasticsearch-exporter:v1.8.0@sha256:073dd360de2c9d2a13b00e22793b2d2b06f5245e029bdce76d8f80da731a2faa
     profiles: [obs]
     mem_limit: 64m
     restart: unless-stopped
@@ -672,7 +672,7 @@ services:
 
   logstash-exporter:
     # amd64 only image: runs under Rosetta emulation on Apple Silicon (docs/observability.md)
-    image: ghcr.io/kuskoman/logstash-exporter:v1.8.2
+    image: ghcr.io/kuskoman/logstash-exporter:v1.8.2@sha256:aeb7af626cae119688f3487b8bf04fff4b14d0e1b3e4837f0208fe1aecb94e55
     platform: linux/amd64
     profiles: [obs]
     mem_limit: 64m
@@ -683,7 +683,7 @@ services:
       logstash: { condition: service_healthy }
 
   blackbox-exporter:
-    image: prom/blackbox-exporter:v0.26.0
+    image: prom/blackbox-exporter:v0.26.0@sha256:92e05d5fe0df01d3980518dc42f07b778a8997048b57392ebc7f7391ebd7bb06
     profiles: [obs]
     mem_limit: 32m
     restart: unless-stopped
