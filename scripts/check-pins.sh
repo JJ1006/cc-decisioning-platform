@@ -50,6 +50,6 @@ done < <(git ls-files '.github/*' 'scripts/*' 'Makefile' | grep -v '^scripts/che
 while IFS= read -r l; do err "uv --with without ==: $l"
 done < <(git ls-files '.github/*' 'scripts/*' 'Makefile' 'evals/*' | grep -v '^scripts/check-pins.sh$' | xargs grep -nE '\-\-with [a-z]' 2>/dev/null | grep -vE '\-\-with [a-z0-9_.-]+==')
 while IFS= read -r l; do err "npm install -g without version: $l"
-done < <(git ls-files '.github/*' 'scripts/*' | xargs grep -nE 'npm (install -g|i -g)' 2>/dev/null | grep -vE '@[0-9]+\.[0-9]+')
+done < <(git ls-files '.github/*' 'scripts/*' | grep -v '^scripts/check-pins.sh$' | xargs grep -nE 'npm (install -g|i -g)' 2>/dev/null | grep -vE '@[0-9]+\.[0-9]+')
 
 if [ $fail -eq 0 ]; then echo "OK  actions by SHA, images by digest, tools by version"; else echo "check-pins: FAILED"; exit 1; fi
