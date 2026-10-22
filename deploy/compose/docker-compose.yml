@@ -32,6 +32,13 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER # internal, not published
       KAFKA_SSL_CLIENT_AUTH: required
+      # ACLs (docs/security-mtls.md, generated into kafka-acls.args): the principal is the CN of the client certificate. Default deny.
+      # kafka: the broker's own certificate (inter-broker listener); admin: topic-init, acl-init and the CLI; ANONYMOUS: the plaintext KRaft
+      # controller listener, which is not published and has no client certificate to map.
+      KAFKA_SSL_PRINCIPAL_MAPPING_RULES: "RULE:^.*CN=([^,]+).*$$/$$1/,DEFAULT"
+      KAFKA_AUTHORIZER_CLASS_NAME: org.apache.kafka.metadata.authorizer.StandardAuthorizer
+      KAFKA_ALLOW_EVERYONE_IF_NO_ACL_FOUND: "false"
+      KAFKA_SUPER_USERS: "User:admin;User:kafka;User:ANONYMOUS"
       KAFKA_SSL_KEYSTORE_TYPE: PKCS12
       KAFKA_SSL_KEYSTORE_LOCATION: /pki/kafka.p12
       KAFKA_SSL_TRUSTSTORE_TYPE: PKCS12
@@ -71,6 +78,27 @@ services:
     volumes:
       - ../../scripts/create-topics.sh:/scripts/create-topics.sh:ro
       - ../../docs/kafka-topics.md:/docs/kafka-topics.md:ro
+      - ${PKI_DIR:-../../security/pki/out}/truststore.p12:/pki/truststore.p12:ro
+      - ${PKI_DIR:-../../security/pki/out}/admin/admin.p12:/pki/admin/admin.p12:ro
+      - ${PKI_DIR:-../../security/pki/out}/kafka-client.properties:/pki/kafka-client.properties:ro
+
+  # applies the generated ACLs (default deny: only the super users may do anything until this has run); idempotent
+  acl-init:
+    image: apache/kafka:3.9.2
+    profiles: [core]
+    mem_limit: 256m
+    restart: "no"
+    depends_on:
+      topic-init: { condition: service_completed_successfully }
+    entrypoint: ["/bin/bash", "/scripts/apply-kafka-acls.sh"]
+    environment:
+      KAFKA_HEAP_OPTS: -Xmx128m
+      BOOTSTRAP: kafka:9093
+      COMMAND_CONFIG: /pki/kafka-client.properties
+      ACLS_FILE: /acls/kafka-acls.args
+    volumes:
+      - ../../scripts/apply-kafka-acls.sh:/scripts/apply-kafka-acls.sh:ro
+      - ./kafka-acls.args:/acls/kafka-acls.args:ro
       - ${PKI_DIR:-../../security/pki/out}/truststore.p12:/pki/truststore.p12:ro
       - ${PKI_DIR:-../../security/pki/out}/admin/admin.p12:/pki/admin/admin.p12:ro
       - ${PKI_DIR:-../../security/pki/out}/kafka-client.properties:/pki/kafka-client.properties:ro
@@ -170,7 +198,7 @@ services:
     restart: unless-stopped
     depends_on:
       kafka: { condition: service_healthy }
-      topic-init: { condition: service_completed_successfully }
+      acl-init: { condition: service_completed_successfully }
     environment:
       OTEL_SERVICE_NAME: txn-generator
       OTEL_RESOURCE_ATTRIBUTES: deployment.environment=local,service.namespace=cc
@@ -208,7 +236,7 @@ services:
     restart: unless-stopped
     depends_on:
       kafka: { condition: service_healthy }
-      topic-init: { condition: service_completed_successfully }
+      acl-init: { condition: service_completed_successfully }
       odm: { condition: service_healthy }
     environment:
       OTEL_SERVICE_NAME: decision-orchestrator
@@ -246,7 +274,7 @@ services:
     restart: unless-stopped
     depends_on:
       kafka: { condition: service_healthy }
-      topic-init: { condition: service_completed_successfully }
+      acl-init: { condition: service_completed_successfully }
     environment:
       OTEL_SERVICE_NAME: notification-svc
       OTEL_RESOURCE_ATTRIBUTES: deployment.environment=local,service.namespace=cc
@@ -279,7 +307,7 @@ services:
       - "127.0.0.1:9600:9600" # monitoring API (Prometheus scrapes it in P8)
     depends_on:
       kafka: { condition: service_healthy }
-      topic-init: { condition: service_completed_successfully }
+      acl-init: { condition: service_completed_successfully }
       es-setup: { condition: service_completed_successfully }
     environment:
       LS_JAVA_OPTS: -Xms384m -Xmx384m
@@ -362,7 +390,7 @@ services:
       - "127.0.0.1:8080:8080"
     depends_on:
       kafka: { condition: service_healthy }
-      topic-init: { condition: service_completed_successfully }
+      acl-init: { condition: service_completed_successfully }
     environment:
       JAVA_OPTS: -Xms128m -Xmx320m
       KAFKA_CLUSTERS_0_NAME: local
@@ -436,7 +464,7 @@ services:
     restart: unless-stopped
     depends_on:
       kafka: { condition: service_healthy }
-      topic-init: { condition: service_completed_successfully }
+      acl-init: { condition: service_completed_successfully }
       decision-query-api: { condition: service_healthy, required: false } # analytics profile
     environment:
       OTEL_SERVICE_NAME: application-api
@@ -676,7 +704,7 @@ services:
     hostname: odm-dc-mcp
     depends_on:
       kafka: { condition: service_healthy }
-      topic-init: { condition: service_completed_successfully }
+      acl-init: { condition: service_completed_successfully }
       odm: { condition: service_healthy }
     environment:
       TLS_CERT: /pki/server.crt

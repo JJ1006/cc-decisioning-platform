@@ -75,13 +75,6 @@ data_view(
         "isDeclined": outcome_flag("DECLINE"),
         "isReferred": outcome_flag("REFER"),
         # buckets as sortable text: Lens interval buckets label themselves badly in bars, text buckets sort and read well
-        "scoreBand": {
-            "type": "keyword",
-            "script": {
-                "source": "if (doc['payload.applicantSummary.bureauScore'].size() == 0) return; "
-                "long lo = (doc['payload.applicantSummary.bureauScore'].value / 25) * 25; emit(lo + '-' + (lo + 24));"
-            },
-        },
         "limitBand": {
             "type": "keyword",
             "script": {
@@ -89,15 +82,6 @@ data_view(
                 "long lo = ((long) (doc['payload.creditLimit'].value / 2500)) * 2500; "
                 "String a = Long.toString(lo); while (a.length() < 5) { a = '0' + a; } "
                 "String b = Long.toString(lo + 2499); while (b.length() < 5) { b = '0' + b; } emit(a + '-' + b);"
-            },
-        },
-        "tdsBand": {
-            "type": "keyword",
-            "script": {
-                "source": "if (doc['payload.applicantSummary.tdsRatio'].size() == 0) return; "
-                "long k = (long) (doc['payload.applicantSummary.tdsRatio'].value * 20); if (k >= 20) { emit('100%+'); return; } "
-                "long lo = k * 5; String a = Long.toString(lo); if (a.length() < 2) { a = '0' + a; } "
-                "String b = Long.toString(lo + 5); if (b.length() < 2) { b = '0' + b; } emit(a + '-' + b + '%');"
             },
         },
     },
@@ -243,6 +227,8 @@ def formula_columns(prefix, label, text, tree, leaves, fmt=None):
     def rename(node):
         if isinstance(node, str):
             return ids[node]
+        if isinstance(node, (int, float)):
+            return node
         return {**node, "args": [rename(a) for a in node["args"]]}
 
     cols = {
@@ -281,6 +267,8 @@ def formula_columns(prefix, label, text, tree, leaves, fmt=None):
 def _used(node):
     if isinstance(node, str):
         return {node}
+    if isinstance(node, (int, float)):
+        return set()
     out = set()
     for a in node["args"]:
         out |= _used(a)
@@ -421,7 +409,16 @@ def metric(id_, title, description, view, column, color=None, subtitle=None):
 
 
 def table(
-    id_, title, description, view, columns, order=None, sort=None, row_height="auto"
+    id_,
+    title,
+    description,
+    view,
+    columns,
+    order=None,
+    sort=None,
+    row_height="auto",
+    flag_col=None,
+    query=None,
 ):
     cols = [
         {"columnId": c, "isTransposed": False}
@@ -437,6 +434,33 @@ def table(
     }
     if sort:
         vis["sorting"] = {"columnId": sort[0], "direction": sort[1]}
+    if flag_col:  # 0/1 column: a red cell for 1
+        for c in vis["columns"]:
+            if c["columnId"] == flag_col:
+                c["colorMode"] = "cell"
+                c["palette"] = {
+                    "name": "custom",
+                    "type": "palette",
+                    "params": {
+                        "name": "custom",
+                        "reverse": False,
+                        "rangeType": "number",
+                        "rangeMin": 0,
+                        "rangeMax": 1,
+                        "progression": "fixed",
+                        "stops": [
+                            {"color": "#ffffff", "stop": 0.5},
+                            {"color": RED, "stop": 1.5},
+                        ],
+                        "steps": 2,
+                        "colorStops": [
+                            {"color": "#ffffff", "stop": 0},
+                            {"color": RED, "stop": 0.5},
+                        ],
+                        "continuity": "none",
+                        "maxSteps": 5,
+                    },
+                }
     return lens(
         id_,
         title,
@@ -444,6 +468,7 @@ def table(
         "lnsDatatable",
         vis,
         {"l1": (view, columns, ordered(columns))},
+        query=query,
     )
 
 
@@ -815,7 +840,7 @@ xy(
     legend=False,
 )
 cols = {
-    "x": col_terms("scoreBand", "Bureau score", size=60),
+    "x": col_terms(S + "scoreBand", "Bureau score band", size=10),
     **{k: v for k, v in OUTCOME_Y().items()},
 }
 xy(
@@ -830,7 +855,7 @@ xy(
     colors=OUTCOME_YCOLORS,
 )
 cols = {
-    "x": col_terms("tdsBand", "Total debt service ratio", size=25),
+    "x": col_terms(S + "tdsBand", "Total debt service ratio band", size=10),
     "y": col_terms(P + "outcome", "Outcome", order_col="v", size=3),
     "v": col_count("Decisions", ODM),
 }
@@ -941,30 +966,48 @@ def parity(id_, title, description, field, label, size):
             RATIO,
         )
     )
+    flag_leaves = {k: dict(v) for k, v in leaves.items()}
+    flag_tree = fn(
+        "ifelse",
+        fn("gte", "b", 30),
+        fn("ifelse", fn("lt", tree, 0.8), 1, 0),
+        0,
+    )
+    cols.update(
+        formula_columns(
+            "flag",
+            "Review (1 = ratio below 0.8 with n of 30 or more)",
+            "ifelse(count() >= 30, ifelse(((sum(isApproved) / count()) / (overall_sum(sum(isApproved)) / overall_sum(count()))) < 0.8, 1, 0), 0)",
+            flag_tree,
+            flag_leaves,
+            NUMBER0,
+        )
+    )
     return table(
         id_,
         title,
         description,
         "cc-decisions",
         cols,
-        order=["g", "n", "rate", "di"],
+        order=["g", "n", "rate", "di", "flag"],
         sort=("di", "asc"),
+        flag_col="flag",
     )
 
 
 parity(
     "mn-risk-parity-province",
-    "Approval parity by province",
-    "Approval rate of each province, its sample size (n) and the disparate impact ratio: group rate divided by the overall rate. "
-    "Below 0.8 (four-fifths rule) deserves a look; small n gives noisy ratios.",
+    "Fairness ratios by province",
+    "Approval rate of each province, its sample size (n), the disparate impact ratio (group rate divided by the overall rate) and a review flag. "
+    "Below 0.8 (four-fifths rule) with n of 30 or more is flagged; small n gives noisy ratios.",
     S + "province",
     "Province",
     13,
 )
 parity(
     "mn-risk-parity-age",
-    "Approval parity by age band",
-    "Same as by province, per applicant age band. Below 0.8 deserves a look; read it with n.",
+    "Fairness ratios by age band",
+    "Same as by province, per applicant age band: ratio, n and the review flag.",
     S + "ageBand",
     "Age band",
     6,
@@ -1141,6 +1184,23 @@ xy(
     split="s",
 )
 
+cols = {
+    "tool": col_terms(P + "resourceId", "Tool", order_col="n", size=20),
+    "caller": col_terms(P + "actor", "Caller", order_col="n", size=10),
+    "out": col_terms(P + "result", "Outcome", order_col="n", size=3),
+    "n": col_count("Calls", None, NUMBER0),
+}
+table(
+    "mn-ops-mcp-audit",
+    "MCP audit trail",
+    "Tool calls of the MCP servers (cc-audit, eventType cc.audit.mcp.v1) by tool, caller and outcome (SUCCESS, FAILURE or DENIED). Arguments are never stored, only their names and a hash.",
+    "cc-audit",
+    cols,
+    order=["tool", "caller", "out", "n"],
+    sort=("n", "desc"),
+    query=kql('eventType: "cc.audit.mcp.v1"'),
+)
+
 search(
     "mn-search-recent-decisions",
     "Recent decisions",
@@ -1154,7 +1214,7 @@ search(
         P + "product",
         S + "province",
         S + "ageBand",
-        S + "bureauScore",
+        S + "scoreBand",
     ],
     [["@timestamp", "desc"]],
 )
@@ -1180,8 +1240,9 @@ dashboard(
         ("lens", "mn-ops-latency", 24, 7, 24, 15),
         ("lens", "mn-ops-dlq-table", 0, 22, 24, 14),
         ("lens", "mn-ops-errors", 24, 22, 24, 14),
-        ("search", "mn-search-recent-decisions", 0, 36, 48, 14),
-        ("search", "mn-search-alerts", 0, 50, 48, 10),
+        ("lens", "mn-ops-mcp-audit", 0, 36, 48, 14),
+        ("search", "mn-search-recent-decisions", 0, 50, 48, 14),
+        ("search", "mn-search-alerts", 0, 64, 48, 10),
     ],
     DEC_CONTROLS,
 )

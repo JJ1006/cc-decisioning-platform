@@ -53,6 +53,33 @@ if want kafka && running kafka; then
   else
     fail "kafka host listener certificate did not verify"
   fi
+  # 3b. ACLs (default deny, docs/security-mtls.md): a client with a valid certificate still may only touch its own topics.
+  #     Runs the Kafka CLI in a throw-away container on the compose network with that client's certificate.
+  kafka_as() { # kafka_as CLIENT COMMAND... : output of the command, run with the certificate of CLIENT
+    local client=$1
+    shift
+    printf 'security.protocol=SSL\nssl.keystore.type=PKCS12\nssl.keystore.location=/pki/%s/%s.p12\nssl.keystore.password=%s\nssl.truststore.type=PKCS12\nssl.truststore.location=/pki/truststore.p12\nssl.truststore.password=%s\nssl.endpoint.identification.algorithm=\n' \
+      "$client" "$client" "$(envval PKI_PASSWORD)" "$(envval PKI_PASSWORD)" >"$WORK/$client.properties"
+    docker run --rm -i --network "${COMPOSE_PROJECT_NAME:-ccplatform}_default" -e KAFKA_HEAP_OPTS=-Xmx128m \
+      -v "$PKI:/pki:ro" -v "$WORK/$client.properties:/client.properties:ro" --entrypoint /bin/bash apache/kafka:3.9.2 -c "$*" 2>&1
+  }
+  KB=/opt/kafka/bin
+  out=$(kafka_as notification-svc "$KB/kafka-console-consumer.sh --bootstrap-server kafka:9093 --consumer.config /client.properties --topic cc.applications.submitted.v1 --partition 0 --offset earliest --max-messages 1 --timeout-ms 10000")
+  grep -q "TopicAuthorizationException\|Not authorized to access topics" <<<"$out" \
+    && pass "kafka ACL: notification-svc cannot read cc.applications.submitted.v1" \
+    || fail "kafka ACL: notification-svc was not denied reading cc.applications.submitted.v1: $(tail -1 <<<"$out")"
+  out=$(kafka_as txn-generator "$KB/kafka-console-consumer.sh --bootstrap-server kafka:9093 --consumer.config /client.properties --topic cc.decisions.approved.v1 --partition 0 --offset earliest --max-messages 1 --timeout-ms 10000")
+  grep -q "TopicAuthorizationException\|Not authorized to access topics" <<<"$out" \
+    && pass "kafka ACL: txn-generator (generator) cannot read cc.decisions.approved.v1" \
+    || fail "kafka ACL: txn-generator was not denied reading cc.decisions.approved.v1: $(tail -1 <<<"$out")"
+  out=$(kafka_as notification-svc "echo x | $KB/kafka-console-producer.sh --bootstrap-server kafka:9093 --producer.config /client.properties --topic cc.applications.submitted.v1")
+  grep -q "TopicAuthorizationException\|Not authorized to access topics" <<<"$out" \
+    && pass "kafka ACL: notification-svc cannot write cc.applications.submitted.v1" \
+    || fail "kafka ACL: notification-svc was not denied writing cc.applications.submitted.v1: $(tail -1 <<<"$out")"
+  out=$(kafka_as notification-svc "$KB/kafka-console-consumer.sh --bootstrap-server kafka:9093 --consumer.config /client.properties --topic cc.decisions.approved.v1 --group notification-svc-verify --max-messages 1 --timeout-ms 10000")
+  grep -q "Not authorized\|AuthorizationException" <<<"$out" \
+    && fail "kafka ACL: notification-svc is denied its own topic cc.decisions.approved.v1: $(grep -m1 'uthoriz' <<<"$out")" \
+    || pass "kafka ACL: notification-svc can read its own topic cc.decisions.approved.v1 (control)"
   # 4. audit: every Kafka client of the stack has its own certificate; the only plaintext listener is the KRaft controller,
   #    which is not published on the host
   if "$DC" port kafka 9095 >/dev/null 2>&1; then

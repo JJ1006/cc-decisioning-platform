@@ -1,6 +1,6 @@
 [
   {
-    "name": "decision passes through unchanged",
+    "name": "decision passes through unchanged (no exact score, TDS or income left in cc-decisions)",
     "input": {
       "topic": "cc.decisions.approved.v1",
       "raw": {
@@ -54,11 +54,9 @@
         "applicantSummary": {
           "province": "ON",
           "ageBand": "35-44",
-          "bureauScore": 742,
-          "tdsRatio": 0.35,
-          "annualIncome": 85000,
-          "scoreBand": "740+",
-          "tdsBand": "<=0.35"
+          "scoreBand": "740-900",
+          "tdsBand": "0.00-0.35",
+          "incomeBand": "060-099k"
         }
       },
       "topic": "cc.decisions.approved.v1",
@@ -68,7 +66,7 @@
     }
   },
   {
-    "name": "decision with inputs: bands stay in cc-decisions, the full inputs leave without it",
+    "name": "decision with inputs: bands stay in cc-decisions, the full inputs leave without it (no exact score, TDS or income left in cc-decisions)",
     "input": {
       "topic": "cc.decisions.approved.v1",
       "raw": {
@@ -143,12 +141,10 @@
         "applicantSummary": {
           "province": "ON",
           "ageBand": "35-44",
-          "bureauScore": 742,
-          "tdsRatio": 0.35,
-          "annualIncome": 85000,
-          "scoreBand": "740+",
-          "tdsBand": "<=0.35",
-          "limitBand": "5000-9999"
+          "scoreBand": "740-900",
+          "tdsBand": "0.00-0.35",
+          "limitBand": "05000-09999",
+          "incomeBand": "060-099k"
         },
         "rulesetPath": "/ccApprovalApp/1.0/ccApproval/1.0"
       },

@@ -44,14 +44,14 @@ Prerequisites: Docker Desktop (6.5 GB RAM, Rosetta on), JDK 21, Maven, uv, pre-c
 ```bash
 make bootstrap                        # tools, Docker memory (6 GB or more), Rosetta
 make pki                              # private CA and certificates (not committed)
-make up PROFILE=core,analytics,edge   # creates the local env file on first use, waits until healthy
+make up PROFILE=core,analytics,edge   # creates the local env file on first use, waits until healthy, redeploys the rules if ODM lost them
 make demo                             # deploys the rules if missing, sends 1000 synthetic applications, checks counts
 make test-api-docs                    # runs every curl example of docs/api/README.md
 make verify                           # build, tests, contracts, Logstash pipeline tests, OpenAPI lint
 ```
 
 `make help` lists every target. The APIs are reached only through the gateway, `https://localhost:8443`, with a client certificate
-(`make api-call CLIENT=analyst P=/v1/stats/latency`, [docs/api](docs/api/README.md), [docs/security-mtls.md](docs/security-mtls.md)); `make verify-mtls` checks it from the outside. `make up` hints `run make down V=1` when it finds Elasticsearch indices with an older mapping.
+(`make api-call CLIENT=analyst P=/v1/stats/latency`, [docs/api](docs/api/README.md), [docs/security-mtls.md](docs/security-mtls.md)); `make verify-mtls` checks it from the outside. The ODM dev image keeps the rules in a non-persistent Derby database, so `make up` runs `scripts/ensure-rules.sh` (deploys them only when missing). `make up` hints `run make down V=1` when it finds Elasticsearch indices with an older mapping.
 Stop with `make down` (`make down V=1` also deletes the volumes).
 
 ## Compose profiles (8 GB Mac — never run everything at once)

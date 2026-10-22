@@ -77,19 +77,13 @@
                 "ageBand": {
                   "type": "keyword"
                 },
-                "bureauScore": {
-                  "type": "integer"
-                },
-                "tdsRatio": {
-                  "type": "double"
-                },
-                "annualIncome": {
-                  "type": "double"
-                },
                 "scoreBand": {
                   "type": "keyword"
                 },
                 "tdsBand": {
+                  "type": "keyword"
+                },
+                "incomeBand": {
                   "type": "keyword"
                 },
                 "limitBand": {

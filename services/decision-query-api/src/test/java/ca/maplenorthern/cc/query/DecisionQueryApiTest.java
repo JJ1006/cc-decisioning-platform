@@ -68,7 +68,7 @@ class DecisionQueryApiTest {
       return;
     }
     Path dir = Path.of(System.getProperty("repo.root"), "deploy/es");
-    for (String type : List.of("cc-decisions", "cc-dlq", "cc-logs")) {
+    for (String type : List.of("cc-decisions", "cc-decision-inputs", "cc-dlq", "cc-logs")) {
       var json = Files.readString(dir.resolve(type + ".template.json"));
       es.indices().putIndexTemplate(t -> t.name(type).withJson(new java.io.StringReader(json)));
     }
@@ -88,7 +88,8 @@ class DecisionQueryApiTest {
             List.of("R_BORDERLINE_SCORE"),
             List.of("RISK-DT-05"),
             50,
-            n++));
+            n));
+    index("cc-decision-inputs-000001", inputsDoc("REF-1", 640, n++));
     index("cc-decisions-2026.10.17", manual("REF-1", n++));
     // dead letters
     index("cc-dlq-000001", dlq("d1", "cc.applications.submitted.v1", "2026-10-17T14:05:00Z"));
@@ -129,6 +130,7 @@ class DecisionQueryApiTest {
               List.of("RSN-01"),
               10 + n,
               n));
+      index("cc-decision-inputs-000001", inputsDoc(province + "-" + i, score, n));
       n++;
     }
     return n;
@@ -159,19 +161,17 @@ class DecisionQueryApiTest {
     payload.put("processingMillis", millis);
     payload.put(
         "applicantSummary",
-        Map.of(
-            "province",
-            province,
-            "ageBand",
-            ageBand,
-            "bureauScore",
-            score,
-            "tdsRatio",
-            0.3,
-            "annualIncome",
-            80000));
+        Map.of("province", province, "ageBand", ageBand, "scoreBand", "620-679"));
     return envelope(
         "odm-" + app, "cc.decisions." + outcome.toLowerCase() + "d.v1", n, payload, "ODM");
+  }
+
+  /** The exact values live only in the restricted inputs index. */
+  Map<String, Object> inputsDoc(String app, int score, int n) {
+    Map<String, Object> payload = new LinkedHashMap<>();
+    payload.put("applicationId", app);
+    payload.put("inputs", Map.of("creditScore", score));
+    return envelope("inp-" + app, "cc.decisions.approved.v1", n, payload, "ODM");
   }
 
   Map<String, Object> manual(String app, int n) {
