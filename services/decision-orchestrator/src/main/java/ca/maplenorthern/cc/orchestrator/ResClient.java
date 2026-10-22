@@ -19,6 +19,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.function.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
@@ -37,6 +39,8 @@ public class ResClient {
   /** Fields the BOM does not expose are dropped before the request is sent. */
   @JsonIgnoreProperties({"dateOfBirth", "sin"})
   abstract static class ApplicantOnWire {}
+
+  private static final Logger LOG = LoggerFactory.getLogger(ResClient.class);
 
   private final RestClient http;
   private final ResProperties props;
@@ -101,6 +105,17 @@ public class ResClient {
                         e instanceof ResourceAccessException
                             || e instanceof HttpServerErrorException)
                 .build());
+    // the chaos drill (evals/chaos, scenario odm) found the breaker silent: its state changes are
+    // what an operator needs to see
+    this.breaker
+        .getEventPublisher()
+        .onStateTransition(
+            e ->
+                LOG.warn(
+                    "circuit breaker 'res' {} -> {} (failure rate {}%)",
+                    e.getStateTransition().getFromState(),
+                    e.getStateTransition().getToState(),
+                    String.format("%.0f", breaker.getMetrics().getFailureRate())));
   }
 
   /**
