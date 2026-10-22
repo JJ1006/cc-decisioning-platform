@@ -16,12 +16,12 @@ spec:
     namespace: openshift-operators
   sources:
     - repoURL: https://github.com/JJ1006/cc-decisioning-platform.git
-      targetRevision: v0.1.2
+      targetRevision: v1.0.0
       path: deploy/argocd/operators/openshift
     - repoURL: https://github.com/JJ1006/cc-decisioning-platform.git
-      targetRevision: v0.1.2
+      targetRevision: v1.0.0
       ref: values
   syncPolicy:
     # no `automated`: a human presses Sync (or runs `argocd app sync`) after reviewing the diff - the approval gate of this environment
     syncOptions: [ServerSideApply=true, PruneLast=true]
-    retry: { limit: 5, backoff: { duration: 15s, factor: 2, maxDuration: 3m } }
+    retry: {limit: 5, backoff: {duration: 15s, factor: 2, maxDuration: 3m}}
