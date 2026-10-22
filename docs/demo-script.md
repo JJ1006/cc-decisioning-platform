@@ -126,6 +126,6 @@ make eval-rules          # 300 golden cases against the oracle
 | `make demo` slow | `scripts/demo.sh 200 20 0.01` (200 applications) is enough for every dashboard |
 | Kibana panels empty | `make seed-kibana`, then wait one minute for the first documents |
 | ODM lost its rules after a restart | `scripts/ensure-rules.sh` (or `make up`, which runs it) |
-| Claude Code cannot reach `odm-dc` | `make down && make up PROFILE=core,analytics,edge,mcp`; check `/mcp`; as a last resort run the MCP inspector (`npx @modelcontextprotocol/inspector`) against `scripts/mcp/odm-dc.sh` and call the tools by hand |
+| Claude Code cannot reach `odm-dc` | `make down && make up PROFILE=core,analytics,edge,mcp`; check `/mcp`; as a last resort run the MCP inspector (`npx @modelcontextprotocol/inspector@0.17.2 --cli`) against `scripts/mcp/odm-dc.sh` and call the tools by hand |
 | kind too heavy | show `make argocd-status` output saved from a CI `kind-smoke` run, or the diagrams in [deployment](architecture/deployment.md) |
 | Disk full in the Docker VM | `docker builder prune -a -f` (cache only; do not prune other projects' images or volumes) |
