@@ -1,9 +1,11 @@
+# Weekly version updates. Dependabot understands the `@<sha> # vX` comment of pinned actions and the `tag@sha256:` form of images,
+# and moves both. Review notes: docs/runbooks/dependabot.md. Ignored majors are deliberate (framework upgrades are their own pull request).
 version: 2
 updates:
   - package-ecosystem: maven
     directory: /
     schedule: { interval: weekly }
-    open-pull-requests-limit: 0 # PAUSED - remove limit to re-enable
+    open-pull-requests-limit: 5
     groups:
       maven-minor-patch:
         update-types: [minor, patch]
@@ -14,21 +16,34 @@ updates:
         update-types: [version-update:semver-major]
       - dependency-name: "net.logstash.logback:*"
         update-types: [version-update:semver-major]
-  - package-ecosystem: pip # mcp/odm-dc-mcp-server (uv.lock); paused like the others
+  - package-ecosystem: uv # mcp/odm-dc-mcp-server (pyproject.toml + uv.lock)
     directory: /mcp/odm-dc-mcp-server
     schedule: { interval: weekly }
-    open-pull-requests-limit: 0 # PAUSED - remove limit to re-enable
+    open-pull-requests-limit: 5
+    groups:
+      python-minor-patch:
+        update-types: [minor, patch]
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly }
-    open-pull-requests-limit: 0 # PAUSED - remove limit to re-enable
+    open-pull-requests-limit: 5
     groups:
       actions:
         patterns: ["*"]
-  - package-ecosystem: docker-compose
-    directory: /deploy/compose
+  - package-ecosystem: docker # FROM lines of the services and MCP servers
+    directories: ["/services/*", "/mcp/*"]
     schedule: { interval: weekly }
-    open-pull-requests-limit: 0 # PAUSED - remove limit to re-enable
+    open-pull-requests-limit: 5
     ignore:
       - dependency-name: "*"
         update-types: [version-update:semver-major]
+  - package-ecosystem: docker-compose
+    directory: /deploy/compose
+    schedule: { interval: weekly }
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]
+      # ODM and Elasticsearch/Kibana/Logstash/Filebeat move together by hand (mapping, licence, the Helm charts): see docs/runbooks/dependabot.md
+      - dependency-name: "icr.io/cpopen/odm-k8s/odm"
+      - dependency-name: "docker.elastic.co/*"
