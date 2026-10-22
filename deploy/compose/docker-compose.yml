@@ -549,7 +549,7 @@ services:
       - ../../observability/otel/collector.yaml:/etc/otelcol/collector.yaml:ro
 
   tempo:
-    image: grafana/tempo:2.7.2@sha256:4b0277a9b572a4b1fa43b01468e58911ec214dd69d033f2cd476596d14de9fe3
+    image: grafana/tempo:2.10.8@sha256:f0561deb1c68ec44d6e6e7e4487f30106c4e5e768642077695b37958b105812a
     profiles: [obs]
     mem_limit: 320m # 256m was too tight (it ran at 99%)
     restart: unless-stopped
