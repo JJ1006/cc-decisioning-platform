@@ -16,11 +16,14 @@ case "$tool" in
     ;;
   Bash)
     cmd=$(jq -r '.tool_input.command // empty' <<<"$in")
-    # a command that names the folder and writes: redirection, sed -i, tee, cp, mv, rm, git checkout/restore/apply, patch, perl -i, yq -i
-    if [[ "$cmd" == *"$PROTECTED"* ]] \
-      && [[ "$cmd" =~ (\>|sed[[:space:]]+-[a-zA-Z]*i|tee[[:space:]]|[[:space:]]cp[[:space:]]|[[:space:]]mv[[:space:]]|[[:space:]]rm[[:space:]]|git[[:space:]]+(checkout|restore|apply|rm)|patch[[:space:]]|perl[[:space:]]+-[a-zA-Z]*i|yq[[:space:]]+-i) ]]; then
-      block "shell command that writes in $PROTECTED"
-    fi
+    # a line of the command that names the folder AND writes: redirection, sed -i, tee, cp, mv, rm, git checkout/restore/apply, patch, perl -i, yq -i
+    # (line by line, so a heredoc or a commit message that merely mentions the folder is not a write)
+    while IFS= read -r line; do
+      [[ "$line" == *"$PROTECTED"* ]] || continue
+      if [[ "$line" =~ (\>|sed[[:space:]]+-[a-zA-Z]*i|tee[[:space:]]|[[:space:]]cp[[:space:]]|[[:space:]]mv[[:space:]]|[[:space:]]rm[[:space:]]|git[[:space:]]+(checkout|restore|apply|rm)|patch[[:space:]]|perl[[:space:]]+-[a-zA-Z]*i|yq[[:space:]]+-i) ]]; then
+        block "shell command that writes in $PROTECTED"
+      fi
+    done <<<"$cmd"
     ;;
 esac
 exit 0

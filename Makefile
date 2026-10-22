@@ -63,8 +63,9 @@ verify: ## Full local verification (build + tests + format check)
 	@scripts/gen-rules-catalog.py --check
 	@$(MAKE) --no-print-directory lint-claude
 
-lint-claude: ## Skills, agents, commands, hooks and .mcp.json: frontmatter, unique names, read-only agents, pinned servers
+lint-claude: ## Skills, agents, commands, hooks and .mcp.json: frontmatter, unique names, read-only agents, pinned servers; hook tests with fake stdin
 	@uv run --quiet --with pyyaml python scripts/lint-claude-config.py
+	@scripts/test-claude-hooks.sh
 
 test: ## Unit tests
 	@if grep -q '<module>' pom.xml; then mvn -q test; else echo "no Maven modules yet"; fi
