@@ -16,6 +16,9 @@ updates:
         update-types: [version-update:semver-major]
       - dependency-name: "net.logstash.logback:*"
         update-types: [version-update:semver-major]
+      # springdoc 3 needs Spring Boot 4: it moves with the Boot upgrade
+      - dependency-name: "org.springdoc:*"
+        update-types: [version-update:semver-major]
   - package-ecosystem: uv # mcp/odm-dc-mcp-server (pyproject.toml + uv.lock)
     directory: /mcp/odm-dc-mcp-server
     schedule: { interval: weekly }
@@ -37,6 +40,9 @@ updates:
     ignore:
       - dependency-name: "*"
         update-types: [version-update:semver-major]
+      # the JDK is in the tag (3.9-eclipse-temurin-21), so semver-major does not catch 21 -> 26; the build stays on Java 21 LTS, bumped by hand
+      - dependency-name: "maven"
+      - dependency-name: "eclipse-temurin"
   - package-ecosystem: docker-compose
     directory: /deploy/compose
     schedule: { interval: weekly }
