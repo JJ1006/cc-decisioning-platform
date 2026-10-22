@@ -19,6 +19,7 @@ resources:
   limits: { cpu: "2", memory: 2560Mi } # ODM_MEM default in compose
 env:
   LICENSE: accept
+  JVM_ARGS: "-Xms512m -Xmx1664m -Xss512k" # about 65% of the 2560Mi limit: the OpenJ9 default (75%) left too little native memory and ODM was OOM-killed
   SAMPLE: "false" # true loads the Loan Validation sample
 pkiPasswordEnv: [KEYSTORE_PASSWORD, TRUSTSTORE_PASSWORD]
 pki:

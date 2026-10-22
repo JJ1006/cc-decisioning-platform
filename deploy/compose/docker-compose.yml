@@ -169,6 +169,10 @@ services:
       - "127.0.0.1:9443:9453" # https (Liberty listens on 9453 in this image; host keeps 9443)
     environment:
       LICENSE: accept
+      # The image runs Semeru (OpenJ9), whose default max heap is 75% of the container limit: 1.9 GB of 2.5 GB left too little for the native
+      # memory of Liberty (class memory, JIT, thread stacks, direct buffers) and the kernel OOM-killed ODM (exit 137) under load.
+      # About 65% of ODM_MEM for the heap. OpenJ9 keeps classes in native memory (no -XX:MaxMetaspaceSize); -Xss bounds the thread stacks.
+      JVM_ARGS: ${ODM_JVM_ARGS:--Xms512m -Xmx1664m -Xss512k}
       SAMPLE: ${ODM_SAMPLE:-false} # true loads the Loan Validation sample (format template for scripts/gen_dc_project.py)
       # Liberty HTTPS uses our CA-signed cert and REQUIRES a client certificate signed by our CA (deploy/odm/mtls.xml).
       # The plain http port 9060 is not published: Decision Center reaches RES on it inside the container.
