@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.3](https://github.com/JJ1006/cc-decisioning-platform/compare/v0.1.2...v0.1.3) (2026-10-22)
+
+
+### Features
+
+* **argocd:** GitOps with Argo CD for kind and OpenShift (P11) ([#42](https://github.com/JJ1006/cc-decisioning-platform/issues/42)) ([556afe6](https://github.com/JJ1006/cc-decisioning-platform/commit/556afe6ceafd2855499ab16364d178b09c357737))
+* **claude:** AI tooling: vetted MCP servers, skills, agents, commands, hooks (P13) ([#53](https://github.com/JJ1006/cc-decisioning-platform/issues/53)) ([d74d474](https://github.com/JJ1006/cc-decisioning-platform/commit/d74d47480bfb52a0282e088683a7b3fc373da9f9))
+* **privacy:** guardrails, explainability and privacy requests (P12) ([#49](https://github.com/JJ1006/cc-decisioning-platform/issues/49)) ([0536bd9](https://github.com/JJ1006/cc-decisioning-platform/commit/0536bd9bdb255a0cca466f5426db444503bd9ea0))
+
+
+### Bug Fixes
+
+* **ci:** approve the held workflow runs of bot pull requests ([#47](https://github.com/JJ1006/cc-decisioning-platform/issues/47)) ([5eb206a](https://github.com/JJ1006/cc-decisioning-platform/commit/5eb206a1e60a94bfa450c78709b32e38f78edb40))
+* **ci:** run the required ci check on the branches of bot pull requests ([#45](https://github.com/JJ1006/cc-decisioning-platform/issues/45)) ([3dec1ec](https://github.com/JJ1006/cc-decisioning-platform/commit/3dec1ec12dc12c97c217c5e0878aafcd7f2bff92))
+* **privacy:** P12 follow-ups: bands only in cc-decisions, Kafka ACLs, rules restore, Kibana panels ([#51](https://github.com/JJ1006/cc-decisioning-platform/issues/51)) ([2be7392](https://github.com/JJ1006/cc-decisioning-platform/commit/2be7392b7f3634b599a932daa8d8fbbcea2f57fd))
+
 ## [0.1.2](https://github.com/JJ1006/cc-decisioning-platform/compare/v0.1.1...v0.1.2) (2026-10-18)
 
 
