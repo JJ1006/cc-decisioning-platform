@@ -1,0 +1,13 @@
+# promptfoo config of the correctness suite (threshold 90%). Run by evals/agent/run.sh (make eval-agent). promptfoo is MIT licensed, pinned in run.sh.
+description: "Maple Northern agent evals: correctness (odm-dc MCP tools, read-only)"
+prompts:
+  - "{{prompt}}"
+providers:
+  - id: exec:../../scripts/evals/claude-provider.sh
+    label: claude-sonnet-odm-dc-readonly
+    config:
+      timeout: 360000
+tests: file://correctness.js
+evaluateOptions:
+  maxConcurrency: 2
+  cache: false

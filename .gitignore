@@ -38,3 +38,9 @@ tmp/
 
 # Helm: packaged dependencies are rebuilt by scripts/helm-deps.sh (Chart.lock is committed)
 deploy/helm/**/*.tgz
+evals/agent/fixtures.json
+evals/agent/out/
+evals/rule-regression/out/
+evals/what-if/out/
+evals/k6/out/
+evals/chaos/out/

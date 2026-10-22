@@ -9,7 +9,7 @@ OBS_ENV = $(if $(filter obs,$(subst $(comma), ,$(PROFILE))),APISIX_OTEL_SAMPLER=
 comma := ,
 
 .DEFAULT_GOAL := help
-.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules lint-claude test-logstash lint-api api-docs test-api-docs test-mcp lint-obs up-obs grafana-shots check-dashboards api-call cert-expiry seed-kibana export-kibana kibana-shots demo kind-up kind-deploy-rules kind-demo kind-down helm-sync lint-helm argocd-up argocd-ui argocd-status argocd-down lint-argocd ocp-render eval-rules eval-agent what-if
+.PHONY: help bootstrap up down logs ps verify test pki verify-mtls kafka-topics-mtls deploy-rules dc-export test-rules lint-rules lint-claude test-logstash lint-api api-docs test-api-docs test-mcp lint-obs up-obs grafana-shots check-dashboards api-call cert-expiry seed-kibana export-kibana kibana-shots demo kind-up kind-deploy-rules kind-demo kind-down helm-sync lint-helm argocd-up argocd-ui argocd-status argocd-down lint-argocd ocp-render eval-rules eval-rules-mutation eval-agent eval-agent-fixtures test-evals load-test chaos what-if
 
 help: ## Show targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-12s %s\n", $$1, $$2}'
@@ -62,6 +62,7 @@ verify: ## Full local verification (build + tests + format check)
 	@$(MAKE) --no-print-directory lint-rules
 	@scripts/gen-rules-catalog.py --check
 	@$(MAKE) --no-print-directory lint-claude
+	@scripts/test-evals.sh
 
 lint-claude: ## Skills, agents, commands, hooks and .mcp.json: frontmatter, unique names, read-only agents, pinned servers; hook tests with fake stdin
 	@uv run --quiet --with pyyaml python scripts/lint-claude-config.py
@@ -101,7 +102,7 @@ deploy-rules: ## Deploy rules to RES: default via Decision Center (headless); ma
 dc-export: ## Export the decision service from Decision Center into rules/dc-export/
 	@scripts/dc-export.sh
 
-test-rules: ## Run the 30 scenarios in rules/tests against the deployed ruleset
+test-rules: ## Run the 31 scenarios in rules/tests against the deployed ruleset
 	@python3 rules/tests/check_scenarios.py
 	@scripts/test-ruleset.sh
 
@@ -165,11 +166,26 @@ lint-argocd: ## Argo CD manifests: kubeconform, policy checks per environment, e
 ocp-render: ## helm template for OpenShift values -> out/openshift/*.yaml (add CA=path to embed the CA for re-encrypt Routes)
 	@scripts/ocp-render.sh
 
-eval-rules: ## Golden-dataset rule regression
-	@echo "TODO(P14): eval-rules"; exit 0
+eval-rules: ## Rule regression: the 300 golden cases against the deployed ruleset; any difference fails (report in evals/rule-regression/out)
+	@python3 evals/rule-regression/run.py
 
-eval-agent: ## promptfoo agent/MCP evals (needs ANTHROPIC_API_KEY)
-	@echo "TODO(P14): eval-agent"; exit 0
+eval-rules-mutation: ## Proves the gate: flips a threshold in a temp copy, deploys it, the gate must FAIL; restores and it must PASS
+	@evals/rule-regression/mutation-check.sh
 
-what-if: ## Champion/challenger replay: make what-if CHALLENGER=1.1
-	@echo "TODO(P14): what-if"; exit 0
+what-if: ## Champion/challenger replay of the last N decisions: make what-if CHALLENGER=1.1 N=1000 (report in evals/what-if/out)
+	@CHALLENGER=$(or $(CHALLENGER),1.1) N=$(or $(N),1000) evals/what-if/what-if.sh
+
+eval-agent-fixtures: ## Real application ids for the agent evals (after make demo); seeds one underwriter note with an injection attempt
+	@python3 scripts/evals/pick-fixtures.py
+
+eval-agent: ## promptfoo agent evals through the claude CLI and the read-only odm-dc tools: correctness >= 90%, safety 100% (costs a few dollars)
+	@evals/agent/run.sh $(or $(SUITE),all)
+
+test-evals: ## Evals that need no ODM and no LLM: oracle, golden file, runner, what-if analysis, tool-level evals of the MCP server
+	@scripts/test-evals.sh
+
+load-test: ## k6 through the gateway: 20 rps for 5 min, then 100 rps for 1 min; p95 < 300 ms, errors < 1%, end to end < 2 s (STEADY_DURATION=1m for a short run)
+	@evals/k6/run.sh
+
+chaos: ## Chaos drill: make chaos SCENARIO=kafka|odm|logstash (stop or kill a component under load, prove no decision is lost)
+	@evals/chaos/chaos.sh $(or $(SCENARIO),kafka)
