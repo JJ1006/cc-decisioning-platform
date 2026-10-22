@@ -672,7 +672,7 @@ services:
 
   logstash-exporter:
     # amd64 only image: runs under Rosetta emulation on Apple Silicon (docs/observability.md)
-    image: ghcr.io/kuskoman/logstash-exporter:v1.8.2@sha256:aeb7af626cae119688f3487b8bf04fff4b14d0e1b3e4837f0208fe1aecb94e55
+    image: ghcr.io/kuskoman/logstash-exporter:v1.9.2@sha256:48927299068c78dac075bb21465506eb29c87937c1addcf3ca2f53e66e1056bb
     platform: linux/amd64
     profiles: [obs]
     mem_limit: 64m
