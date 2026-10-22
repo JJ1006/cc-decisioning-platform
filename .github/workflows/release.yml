@@ -19,18 +19,20 @@ jobs:
         if: steps.rp.outputs.release_created == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }} # no checkout in this job: gh needs the repository named
           TAG: ${{ steps.rp.outputs.tag_name }}
         run: |
           gh workflow run images.yml --ref "$TAG"
           gh workflow run promote.yml --ref main --field tag="$TAG"
-      # the release-please pull request starts its workflows held (action_required) and main requires ci: release them
-      - name: Release the held workflow runs of the release pull request
-        if: steps.rp.outputs.prs_created == 'true'
+      # the release-please pull request is pushed with GITHUB_TOKEN, so its pull_request workflows do not start (or start held) and main requires
+      # ci and rules-gate on its head commit: start both with workflow_dispatch (allowed for GITHUB_TOKEN), which attaches them to that commit
+      - name: Start the required checks on the release pull request
+        if: steps.rp.outputs.prs_created == 'true' && steps.rp.outputs.pr != ''
         env:
           GH_TOKEN: ${{ github.token }}
-          BRANCH: ${{ fromJSON(steps.rp.outputs.pr).headBranchName }}
+          GH_REPO: ${{ github.repository }}
+          PR_JSON: ${{ steps.rp.outputs.pr }}
         run: |
-          sleep 20
-          for id in $(gh run list --branch "$BRANCH" --event pull_request --status action_required --json databaseId -q '.[].databaseId'); do
-            gh api -X POST "repos/${GITHUB_REPOSITORY}/actions/runs/$id/approve" || true
-          done
+          branch=$(jq -r '.headBranchName' <<<"$PR_JSON")
+          gh workflow run ci.yml --ref "$branch"
+          gh workflow run rules-gate.yml --ref "$branch"
