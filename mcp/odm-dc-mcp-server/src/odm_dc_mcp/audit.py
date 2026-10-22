@@ -100,7 +100,18 @@ class KafkaSink:
             )
         return self._producer
 
+    def warm(self) -> None:
+        """Connect before the first tool call: the first send after a broker restart used to fail closed. Best effort."""
+        try:
+            self._client().list_topics(self._settings.audit_topic, timeout=5)
+        except Exception:  # noqa: BLE001
+            LOG.warning("audit producer could not warm up; the first call will try again")
+
     def emit(self, event: dict[str, Any], key: str) -> bool:
+        # one retry: a cold or just-restarted connection fails the first send and works the second; the event keeps its eventId, so a duplicate is detectable
+        return self._send(event, key) or self._send(event, key)
+
+    def _send(self, event: dict[str, Any], key: str) -> bool:
         delivered: list[bool] = []
 
         def done(err: Any, _msg: Any) -> None:

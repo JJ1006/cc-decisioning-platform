@@ -18,8 +18,10 @@ spec:
       {{- range .acls }}
       - resource:
           type: {{ .type }}
+          {{- if ne .type "cluster" }}
           name: {{ .name | quote }}
           patternType: {{ .patternType }}
+          {{- end }}
         operations: {{ .operations | toJson }}
       {{- end }}
       {{- if not .acls }} []{{ end }}

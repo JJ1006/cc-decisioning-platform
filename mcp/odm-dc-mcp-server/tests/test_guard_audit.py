@@ -113,3 +113,52 @@ def test_personal_data_in_a_backend_answer_is_masked_before_it_leaves(server):
     )
     out = json.dumps(call(server, "decision_get", application_id="A1"))
     assert "555-0199" not in out and "046" not in out and "Tremblay" not in out
+
+
+class FlakyProducer:
+    """A producer whose first delivery fails (a cold connection after a broker restart) and whose later ones work."""
+
+    def __init__(self, failures: int) -> None:
+        self.failures = failures
+        self.sent: list[str] = []
+        self._callbacks: list = []
+
+    def produce(self, topic: str, key: str, value: str, on_delivery) -> None:
+        self.sent.append(value)
+        self._callbacks.append(on_delivery)
+
+    def flush(self, _timeout: float) -> int:
+        for cb in self._callbacks:
+            cb(RuntimeError("broker not available") if self.failures > 0 else None, None)
+            self.failures -= 1
+        self._callbacks.clear()
+        return 0
+
+    def list_topics(self, _topic: str, timeout: float) -> None:
+        raise RuntimeError("no broker")
+
+
+def test_kafka_sink_retries_the_first_failed_send_once() -> None:
+    from odm_dc_mcp.audit import KafkaSink
+
+    sink = KafkaSink(make_settings())
+    sink._producer = FlakyProducer(failures=1)
+    assert sink.emit({"eventId": "e1"}, "k") is True
+    assert len(sink._producer.sent) == 2 and sink._producer.sent[0] == sink._producer.sent[1]
+
+
+def test_kafka_sink_fails_closed_after_the_retry() -> None:
+    from odm_dc_mcp.audit import KafkaSink
+
+    sink = KafkaSink(make_settings())
+    sink._producer = FlakyProducer(failures=5)
+    assert sink.emit({"eventId": "e1"}, "k") is False
+    assert len(sink._producer.sent) == 2
+
+
+def test_kafka_sink_warm_never_raises() -> None:
+    from odm_dc_mcp.audit import KafkaSink
+
+    sink = KafkaSink(make_settings())
+    sink._producer = FlakyProducer(failures=0)
+    sink.warm()  # the producer's list_topics raises; warm-up is best effort

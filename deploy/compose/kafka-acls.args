@@ -17,6 +17,7 @@
 --allow-principal User:mcp-agent --operation Write --operation Describe --topic cc.audit.v1
 --allow-principal User:kafka-ui --operation Read --operation Describe --topic *
 --allow-principal User:kafka-ui --operation Read --operation Describe --group *
+--allow-principal User:kafka-ui --operation Describe --cluster
 --allow-principal User:kafka-exporter --operation Describe --topic *
 --allow-principal User:kafka-exporter --operation Describe --group *
 --allow-principal User:admin --operation Create --operation Alter --operation Describe --operation Read --topic *

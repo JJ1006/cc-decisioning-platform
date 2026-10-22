@@ -165,6 +165,9 @@ if want gateway && running apisix; then
   code=$(post_app)
   [[ "$code" == 202 ]] && pass "gateway: demo-partner certificate, POST /v1/applications -> 202" || fail "gateway: demo-partner POST -> HTTP $code"
   code=$(gw analyst -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' --data @"$WORK/app.json" /v1/applications)
+  head -c 100000 /dev/zero | tr '\0' 'a' >"$WORK/big.json"
+  code=$(gw demo-partner -s -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' --data-binary @"$WORK/big.json" /v1/applications)
+  [[ "$code" == 413 ]] && pass "gateway: a 100 KB body -> 413 (body size limit 64 KiB, OWASP F-4)" || fail "gateway: a 100 KB body -> HTTP $code (expected 413)"
   [[ "$code" == 403 ]] && pass "gateway: analyst certificate, POST /v1/applications -> 403 (role ANALYST may not submit)" || fail "gateway: analyst POST -> HTTP $code"
   if curl -s --max-time 10 --cacert "$CA" -o /dev/null https://localhost:8443/v1/stats/latency; then
     fail "gateway: a request WITHOUT client certificate was accepted"
