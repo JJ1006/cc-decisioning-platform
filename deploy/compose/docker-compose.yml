@@ -560,7 +560,7 @@ services:
       - tempo-data:/var/tempo
 
   prometheus:
-    image: prom/prometheus:v3.2.1@sha256:6927e0919a144aa7616fd0137d4816816d42f6b816de3af269ab065250859a62
+    image: prom/prometheus:v3.15.0@sha256:efd719c99d83b060d9daefdcf00360461adf279f45ef5391f8d111892118753e
     profiles: [obs]
     mem_limit: 256m
     restart: unless-stopped
