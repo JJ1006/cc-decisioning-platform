@@ -17,6 +17,8 @@ from collections import deque
 from collections.abc import Callable
 from typing import Any
 
+from mcp.server.mcpserver.exceptions import ToolError
+
 from .audit import Sink, build_event
 from .config import Settings
 from .masking import mask
@@ -33,8 +35,9 @@ CALLER: contextvars.ContextVar[str | None] = contextvars.ContextVar("caller", de
 CORRELATION: contextvars.ContextVar[str | None] = contextvars.ContextVar("correlation", default=None)
 
 
-class ToolRefused(Exception):
-    """A guardrail refused the call (rate limit, disabled tool, audit unavailable). The message is safe to show to the model."""
+class ToolRefused(ToolError):
+    """A guardrail refused the call (rate limit, disabled tool, audit unavailable). The message is safe to show to the model.
+    A ToolError, so the SDK returns the message to the client; any other exception is reported only as 'Error executing tool'."""
 
 
 class RateLimiter:
@@ -91,7 +94,7 @@ class Guard:
             raise ToolRefused("audit trail unavailable (cc.audit.v1): the call was not allowed to return data")
 
     def tool(self, fn: Callable[..., Any]) -> Callable[..., str]:
-        """Wrap a tool function: the wrapper keeps the signature (FastMCP builds the input schema from it)."""
+        """Wrap a tool function: the wrapper keeps the signature (MCPServer builds the input schema from it)."""
         name = fn.__name__
 
         @functools.wraps(fn)

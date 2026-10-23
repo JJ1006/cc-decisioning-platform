@@ -40,8 +40,8 @@ def main(argv: list[str] | None = None) -> None:
 
     if not (args.tls_cert and args.tls_key and args.tls_ca):
         parser.error("streamable-http needs --tls-cert, --tls-key and --tls-ca: the remote server only speaks mutual TLS")
-    mcp = build_server(settings, guard, host=args.host, port=args.port)
-    app = ClientCertMiddleware(mcp.streamable_http_app(), settings.allowed_client_cns, settings.gateway_cn)
+    mcp = build_server(settings, guard)
+    app = ClientCertMiddleware(mcp.streamable_http_app(host=args.host), settings.allowed_client_cns, settings.gateway_cn)
     uvicorn.run(
         app,
         host=args.host,

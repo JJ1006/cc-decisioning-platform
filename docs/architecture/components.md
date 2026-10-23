@@ -40,7 +40,7 @@ Our MCP server for AI agents. Every tool passes through the same guard; nothing 
 flowchart TB
   CLIENT["MCP client (Claude Code / Desktop, inspector)<br/>stdio locally, streamable HTTP through the gateway"]
   subgraph mcp["odm-dc-mcp-server"]
-    SRV["<b>server.py</b><br/>FastMCP, transport, identity from X-Consumer<br/>(believed only from CN=apisix)"]
+    SRV["<b>server.py</b><br/>MCPServer, transport, identity from X-Consumer<br/>(believed only from CN=apisix)"]
     TL["<b>tools.py</b><br/>decision_get, decision_explain, decision_inputs,<br/>decisions_search, stats_*, whatif,<br/>dc_get_rules, dc_list_*, dc_run_tests, dc_build_report,<br/>dc_deploy_ruleapp (refused by default)"]
     GD["<b>guard.py</b><br/>rate limit, size cap 20 KB,<br/>result envelope {notice, tool, data}"]
     UT["<b>untrusted.py</b><br/>strip hidden characters, cap length,<br/>wrap free text as &lt;data&gt;"]

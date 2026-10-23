@@ -16,8 +16,8 @@ import ssl
 import sys
 from typing import Any
 
-import httpx
-from mcp.client.streamable_http import streamablehttp_client
+import httpx2
+from mcp.client.streamable_http import streamable_http_client
 
 from mcp import ClientSession
 
@@ -27,18 +27,12 @@ URL = os.environ.get("MCP_URL", "https://localhost:8443/mcp/dc")
 CLIENT = os.environ.get("MCP_CLIENT_CERT_NAME", "mcp-client")
 
 
-def factory(
-    headers: dict[str, str] | None = None,
-    timeout: httpx.Timeout | None = None,
-    auth: httpx.Auth | None = None,
-) -> httpx.AsyncClient:
+def http_client() -> httpx2.AsyncClient:
     ctx = ssl.create_default_context(cafile=str(PKI / "ca/ca.crt"))
     ctx.load_cert_chain(
         str(PKI / CLIENT / f"{CLIENT}.crt"), str(PKI / CLIENT / f"{CLIENT}.key")
     )
-    return httpx.AsyncClient(
-        headers=headers, timeout=timeout or httpx.Timeout(60), auth=auth, verify=ctx
-    )
+    return httpx2.AsyncClient(timeout=httpx2.Timeout(60), verify=ctx)
 
 
 def parse(pairs: list[str]) -> dict[str, Any]:
@@ -54,7 +48,7 @@ def parse(pairs: list[str]) -> dict[str, Any]:
 
 async def main(argv: list[str]) -> int:
     async with (
-        streamablehttp_client(URL, httpx_client_factory=factory) as (read, write, _),
+        streamable_http_client(URL, http_client=http_client()) as (read, write),
         ClientSession(read, write) as session,
     ):
         await session.initialize()
@@ -65,7 +59,7 @@ async def main(argv: list[str]) -> int:
         result = await session.call_tool(argv[1], parse(argv[2:]))
         text = result.content[0].text  # type: ignore[union-attr]
         print(text)
-        return 1 if result.isError else 0
+        return 1 if result.is_error else 0
 
 
 if __name__ == "__main__":
