@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.1](https://github.com/JJ1006/cc-decisioning-platform/compare/v1.0.0...v1.0.1) (2026-10-23)
+
+
+### Bug Fixes
+
+* **ci:** start required checks on the release pull request when it is updated ([#85](https://github.com/JJ1006/cc-decisioning-platform/issues/85)) ([8fd0d62](https://github.com/JJ1006/cc-decisioning-platform/commit/8fd0d6236a78a56d3458b1adc13226e0fb1c65db))
+* **ci:** start tag images and release-PR checks from the release workflow ([#75](https://github.com/JJ1006/cc-decisioning-platform/issues/75)) ([cc48ee9](https://github.com/JJ1006/cc-decisioning-platform/commit/cc48ee93e2a07531aae9b72d45025044c60229ed))
+* **deps:** raise the cryptography floor to 50 in the odm-dc MCP server ([#81](https://github.com/JJ1006/cc-decisioning-platform/issues/81)) ([d71d458](https://github.com/JJ1006/cc-decisioning-platform/commit/d71d45801e79734eae35492de9f9a60ad4cdb3f3))
+
 ## [1.0.0](https://github.com/JJ1006/cc-decisioning-platform/compare/v0.1.3...v1.0.0) (2026-10-22)
 
 
