@@ -19,7 +19,7 @@ import httpx
 import pytest
 import respx
 from conftest import RecordingSink, call, make_settings
-from mcp.server.fastmcp.exceptions import ToolError
+from mcp.server.mcpserver.exceptions import ToolError
 from odm_dc_mcp.guard import Guard
 from odm_dc_mcp.tools import build_server
 

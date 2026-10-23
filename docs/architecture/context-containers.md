@@ -99,7 +99,7 @@ flowchart LR
 | decision-query-api | Spring Boot | read access to Elasticsearch behind roles | write |
 | notification-svc | Spring Boot | the notice wording from reason codes | send real mail |
 | Logstash | 8.19 | PII masking and routing to indices | keep an unmasked copy outside the DLQ topics |
-| odm-dc-mcp | Python 3.13, FastMCP | masked, audited, read-only tools | approve, decline, change a limit, deploy without a human token |
+| odm-dc-mcp | Python 3.13, MCP SDK 2 (MCPServer) | masked, audited, read-only tools | approve, decline, change a limit, deploy without a human token |
 | ODM | IBM ODM 9.5 dev image | rules, versions, the decision | persist rules across restarts (Derby, dev image) |
 
 Detail: [components.md](components.md), [sequence-application.md](sequence-application.md), [trust-boundaries.md](trust-boundaries.md).

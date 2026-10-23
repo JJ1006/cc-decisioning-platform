@@ -10,7 +10,7 @@ Rules every tool follows (docs/mcp.md):
 import hmac
 from typing import Annotated, Any, Literal, cast
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from pydantic import Field
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
@@ -66,11 +66,9 @@ def _rule_view(r: dict[str, Any], with_definition: bool) -> dict[str, Any]:
     return view
 
 
-def build_server(settings: Settings, guard: Guard, host: str = "127.0.0.1", port: int = 3001) -> FastMCP:
-    mcp = FastMCP(
+def build_server(settings: Settings, guard: Guard) -> MCPServer:
+    mcp = MCPServer(
         "odm-dc-mcp-server",
-        host=host,
-        port=port,
         instructions=f"Maple Northern Bank decisioning (fictitious bank, synthetic data). {DATA} "
         "Read-only; ODM is the system of record; an LLM never decides or overrides a credit decision.",
     )
