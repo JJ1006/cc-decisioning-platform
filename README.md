@@ -96,7 +96,7 @@ More in [docs/images](docs/images). The Argo CD and underwriter-copilot screens 
 | APIs | [API docs](docs/api/README.md) ([application-api](docs/api/application-api.yaml), [decision-query-api](docs/api/decision-query-api.yaml)), [Apigee mapping](docs/apigee-mapping.md), [gateway](gateway/apisix/README.md) |
 | Security and privacy | [mutual TLS](docs/security-mtls.md), [threat model](docs/security/threat-model.md), [data classification](docs/privacy/data-classification.md), [compliance](docs/compliance.md), [SECURITY](SECURITY.md) |
 | Analytics and ops | [Kibana](docs/kibana.md), [observability](docs/observability.md), [runbooks](docs/runbooks/README.md) (alerts, local setup, GitOps, Dependabot, Decision Center API, event services) |
-| AI | [MCP servers](docs/mcp.md), [underwriter copilot](docs/underwriter-copilot.md) |
+| AI | [MCP servers](docs/mcp.md), [underwriter copilot](docs/underwriter-copilot.md), [AI pull request review](docs/ai-review.md) |
 | Evidence | [evals](docs/evals.md) (golden dataset, rule regression, what-if, agent evals, k6, chaos) |
 | Deploy | [Kubernetes and OpenShift](docs/deploy-kubernetes.md), [GitOps runbook](docs/runbooks/gitops.md) |
 
