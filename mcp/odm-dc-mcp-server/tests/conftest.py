@@ -6,7 +6,7 @@ import pathlib
 from typing import Any
 
 import pytest
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 
 from odm_dc_mcp.config import Settings
 from odm_dc_mcp.guard import Guard
@@ -50,13 +50,12 @@ def settings() -> Settings:
 
 
 @pytest.fixture
-def server(settings: Settings, sink: RecordingSink) -> FastMCP:
+def server(settings: Settings, sink: RecordingSink) -> MCPServer:
     return build_server(settings, Guard(settings, sink))
 
 
-def call(server: FastMCP, tool: str, **args: Any) -> dict[str, Any]:
+def call(server: MCPServer, tool: str, **args: Any) -> dict[str, Any]:
     """Call a tool the way a client does; returns the parsed result envelope."""
-    content = asyncio.run(server.call_tool(tool, args))
-    blocks = content[0] if isinstance(content, tuple) else content
-    text = blocks[0].text
+    result = asyncio.run(server.call_tool(tool, args))
+    text = result.content[0].text
     return json.loads(text)  # type: ignore[no-any-return]

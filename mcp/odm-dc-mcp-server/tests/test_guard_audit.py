@@ -6,7 +6,7 @@ import httpx
 import pytest
 import respx
 from jsonschema import Draft202012Validator
-from mcp.server.fastmcp.exceptions import ToolError
+from mcp.server.mcpserver.exceptions import ToolError
 from referencing import Registry, Resource
 
 from conftest import REPO, RecordingSink, call, make_settings
