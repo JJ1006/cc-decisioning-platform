@@ -498,7 +498,7 @@ services:
   apisix:
     # Apache APISIX 3.x, standalone (declarative gateway/apisix/apisix.yaml.tmpl, no etcd). The only published port of the
     # APIs: 8443, mutual TLS, client certificate required. Replaces Apigee (docs/apigee-mapping.md).
-    image: apache/apisix:3.13.0-debian@sha256:c5c7a55ebb5c07abc210dbb963a37f41030e12c91d23bacedbaa168fec633bd7
+    image: apache/apisix:3.19.0-debian@sha256:9a7e45dc943fbf10ec916d1232bae4cda9302ae28a4696cfb83c2da01d261141
     profiles: [edge]
     labels:
       co.elastic.logs/enabled: "true" # Filebeat ships this container's logs
