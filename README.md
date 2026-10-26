@@ -5,6 +5,9 @@
 [![rules-gate](https://github.com/JJ1006/cc-decisioning-platform/actions/workflows/rules-gate.yml/badge.svg)](https://github.com/JJ1006/cc-decisioning-platform/actions/workflows/rules-gate.yml)
 [![release](https://img.shields.io/github/v/release/JJ1006/cc-decisioning-platform?display_name=tag)](https://github.com/JJ1006/cc-decisioning-platform/releases)
 [![license](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-yellow.svg)](https://www.conventionalcommits.org)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-code%20of%20conduct-4baaaa.svg)](CODE_OF_CONDUCT.md)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/JJ1006/cc-decisioning-platform/badge)](https://scorecard.dev/viewer/?uri=github.com/JJ1006/cc-decisioning-platform)
 
 A free-to-run demo of how a large Canadian bank (fictitious) could approve credit cards in real time, with the controls a regulated bank needs.
@@ -17,6 +20,8 @@ gates every rule change, and an agent eval proves the AI cannot decide.
 > ⚠ **ODM licence:** IBM ODM for Developers is *not* open source and is for development and evaluation only. It is pulled at run time and never redistributed. Read [NOTICE](NOTICE).
 >
 > All data is synthetic. "Maple Northern Bank" is fictitious. This is not production software: [docs/limitations.md](docs/limitations.md).
+
+**Contents:** [Quickstart](#quickstart-5-minutes-after-the-first-image-pull) · [Compose profiles](#compose-profiles-8-gb-mac-never-run-everything-at-once) · [Repository layout](#repository-layout) · [Screenshots](#screenshots) · [Fake vs real](#what-is-fake-and-what-is-real) · [Documentation](#documentation) · [Verify a release](#verify-a-release) · [Contributing and releases](#contributing-and-releases) · [Getting help](#getting-help-and-reporting-security-issues) · [License and trademarks](#license-and-trademarks)
 
 ```mermaid
 flowchart LR
@@ -65,6 +70,19 @@ The ODM developer image loses its rules on restart, so `make up` runs `scripts/e
 
 Kubernetes: `make kind-up PROFILE=lite` (7 GB VM, compose stopped) or `full` (12 GB+); `make argocd-up ENV=kind-lite`; `make ocp-render` for OpenShift ([docs](docs/deploy-kubernetes.md), [GitOps runbook](docs/runbooks/gitops.md)).
 
+## Repository layout
+
+| Path | What is there |
+|---|---|
+| `services/` | Spring Boot 3 / Java 21 services: `application-api`, `decision-orchestrator`, `decision-query-api`, `notification-svc`, `txn-generator`, `common-lib` |
+| `rules/` | ODM rule project, rule apps, tests and the Decision Center export ([rules README](rules/README.md)) |
+| `contracts/` | JSON Schemas of every Kafka event |
+| `mcp/` | The two MCP servers (`odm-dc-mcp-server`, `odm-res-mcp`) |
+| `deploy/` | Compose, Helm charts, Argo CD apps, kind, Logstash, Filebeat, Elasticsearch |
+| `gateway/`, `security/`, `observability/` | APISIX gateway, PKI, Grafana / Prometheus / Tempo / Kibana content |
+| `evals/` | Golden dataset, rule regression, what-if, agent evals, k6, chaos |
+| `scripts/`, `docs/` | Automation and documentation (ADRs, runbooks, API specs) |
+
 ## Screenshots
 
 | Kibana: executive | Kibana: risk and fairness |
@@ -100,7 +118,29 @@ More in [docs/images](docs/images). The Argo CD and underwriter-copilot screens 
 | Evidence | [evals](docs/evals.md) (golden dataset, rule regression, what-if, agent evals, k6, chaos) |
 | Deploy | [Kubernetes and OpenShift](docs/deploy-kubernetes.md), [GitOps runbook](docs/runbooks/gitops.md) |
 
+## Verify a release
+
+Release images are on GHCR, signed with cosign (keyless, GitHub OIDC) and carry an SBOM attestation. Check one before you run it ([details](docs/deploy-kubernetes.md)):
+
+```bash
+cosign verify ghcr.io/jj1006/cc-txn-generator:<tag> \
+  --certificate-identity-regexp 'https://github.com/JJ1006/cc-decisioning-platform/.*' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
+
 ## Contributing and releases
 
 [CONTRIBUTING](CONTRIBUTING.md), [Code of conduct](CODE_OF_CONDUCT.md), [SECURITY](SECURITY.md). Conventional Commits, squash merge only; versions and [CHANGELOG](CHANGELOG.md) come from release-please, never by hand.
-Release images (multi-arch, signed with cosign, SBOM attached) are on GHCR; ODM is never in them.
+Every change passes `make verify` and CI (build, tests, contracts, rule regression, pins, CodeQL, gitleaks, Trivy); GitHub Actions are pinned to commit SHAs and Dependabot keeps them current. Maintainers can ask for an optional AI review of a pull request ([how it works](docs/ai-review.md)); it only comments and never decides.
+ODM is never in the release images.
+
+## Getting help and reporting security issues
+
+- **Question or bug:** open an [issue](https://github.com/JJ1006/cc-decisioning-platform/issues/new/choose) (bug, feature or rule-change template). Start with [limitations](docs/limitations.md) and the [runbooks](docs/runbooks/README.md).
+- **Vulnerability:** do not open a public issue. Use a [private security advisory](https://github.com/JJ1006/cc-decisioning-platform/security/advisories/new) ([SECURITY](SECURITY.md)).
+- **Status:** a demo maintained in spare time. Supported: the latest release and `main`. Best effort, no SLA.
+
+## License and trademarks
+
+The code of this repository is [Apache-2.0](LICENSE). Third-party software keeps its own licences ([NOTICE](NOTICE)). IBM ODM for Developers is **not** open source: it is pulled at run time for development and evaluation and is not covered by this licence.
+IBM, Kafka, Elasticsearch, Kibana, Grafana, APISIX, Argo CD, OpenShift and other product names belong to their owners; this project is not affiliated with or endorsed by them. "Maple Northern Bank" is fictitious.
