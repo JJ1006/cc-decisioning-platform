@@ -136,7 +136,8 @@ ODM is never in the release images.
 
 ## Getting help and reporting security issues
 
-- **Question or bug:** open an [issue](https://github.com/JJ1006/cc-decisioning-platform/issues/new/choose) (bug, feature or rule-change template). Start with [limitations](docs/limitations.md) and the [runbooks](docs/runbooks/README.md).
+- **Question or idea:** start a [discussion](https://github.com/JJ1006/cc-decisioning-platform/discussions).
+- **Bug or feature request:** open an [issue](https://github.com/JJ1006/cc-decisioning-platform/issues/new/choose) (bug, feature or rule-change template). Start with [limitations](docs/limitations.md) and the [runbooks](docs/runbooks/README.md).
 - **Vulnerability:** do not open a public issue. Use a [private security advisory](https://github.com/JJ1006/cc-decisioning-platform/security/advisories/new) ([SECURITY](SECURITY.md)).
 - **Status:** a demo maintained in spare time. Supported: the latest release and `main`. Best effort, no SLA.
 
