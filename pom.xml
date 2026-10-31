@@ -46,10 +46,10 @@
     <tomcat.version>10.1.61</tomcat.version>
     <datafaker.version>2.7.0</datafaker.version>
     <resilience4j.version>2.4.0</resilience4j.version>
-    <springdoc.version>2.9.1</springdoc.version>
+    <springdoc.version>2.10.0</springdoc.version>
     <wiremock.version>3.13.2</wiremock.version>
     <spotless.version>2.46.1</spotless.version>
-    <jacoco.version>0.8.15</jacoco.version>
+    <jacoco.version>0.8.16</jacoco.version>
     <google-java-format.version>1.25.2</google-java-format.version>
   </properties>
 
@@ -79,7 +79,7 @@
       <dependency>
         <groupId>at.yawk.lz4</groupId>
         <artifactId>lz4-java</artifactId>
-        <version>1.12.0</version>
+        <version>1.12.1</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
